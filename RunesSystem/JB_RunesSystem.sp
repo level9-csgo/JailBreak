@@ -196,7 +196,7 @@ char g_szProgressSounds[][] =
 int g_AuthorizedClients[] = 
 {
 	912414245,  // KoNLiG 
-	411516057 // IlayBro
+	928490446  // Ravid
 };
 
 // Must be with the same difference between every capacity expantion tier

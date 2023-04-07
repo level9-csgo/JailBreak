@@ -91,7 +91,8 @@ ConVar g_cvChatSilenceMsgTime;
 // Stores the steam account id of authorized clients for commands
 int g_AuthorizedClients[] = 
 {
-	912414245 // KoNLiG 
+	912414245, // KoNLiG 
+	928490446  // Ravid
 };
 
 public Plugin myinfo = 

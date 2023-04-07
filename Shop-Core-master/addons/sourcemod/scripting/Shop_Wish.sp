@@ -84,10 +84,7 @@ int m_iHideHUDOffset;
 int g_AuthorizedClients[] = 
 {
 	912414245,  // KoNLiG 
-	420568778,  // Hispter
-	105469958, // Actually Hacking
-	100689172, // Toster
-	457166215 // Daniel;
+	928490446  // Ravid
 };
 
 public Plugin myinfo = 
