@@ -99,11 +99,7 @@ public Plugin myinfo =
 	author = "Kodua, KoNLiG, Ravid", 
 	description = "This plugin is for demonstration of some animations from Fortnite in CS:GO.", 
 	version = "1.0.0", 
-<<<<<<< HEAD
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
-=======
-	url = "play-il.co.il"
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 };
 
 public void OnPluginStart()
@@ -298,25 +294,18 @@ public void OnEntityDestroyed(int entity)
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
-<<<<<<< HEAD
 	static int m_afButtonReleasedOffset;
 	if (!m_afButtonReleasedOffset && (m_afButtonReleasedOffset = FindDataMapInfo(client, "m_afButtonReleased")) <= 0)
 	{
 		SetFailState("Failed to find offset CCSPlayer::m_afButtonReleased");
 	}
 	
-=======
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	if (g_ClientsData[client].IsDancing() && !(GetEntityFlags(client) & FL_ONGROUND))
 	{
 		StopEmote(client);
 	}
 	
-<<<<<<< HEAD
 	if (!g_ClientsData[client].IsDancing() && (GetEntData(client, m_afButtonReleasedOffset) & IN_RELOAD))
-=======
-	if (!g_ClientsData[client].IsDancing() && (GetEntProp(client, Prop_Data, "m_afButtonReleased") & IN_RELOAD))
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	{
 		ItemId toggled_dance = GetToggledItem(client, Shop_Dances);
 		
@@ -583,14 +572,11 @@ void StopEmote(int client)
 		}
 	}
 	
-<<<<<<< HEAD
 	if (!IsValidEntity(client))
 	{
 		return;
 	}
 	
-=======
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	int stuck_entity = GetStuckEntity(client);
 	if (stuck_entity == -1)
 	{

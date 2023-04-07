@@ -17,11 +17,7 @@ public Plugin myinfo =
 	author = PLUGIN_AUTHOR, 
 	description = "Daily quest for the quests system.", 
 	version = JAILBREAK_VERSION, 
-<<<<<<< HEAD
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
-=======
-	url = "play-il.co.il"
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 };
 
 public void OnLibraryAdded(const char[] name)

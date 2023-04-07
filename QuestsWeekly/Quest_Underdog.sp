@@ -27,11 +27,7 @@ public void OnLibraryAdded(const char[] name)
 
 public void Shop_OnJackpotResults(int winner, float chance, int bet, int prize)
 {
-<<<<<<< HEAD
 	if (chance <= 1.0)
-=======
-	if (chance < 1.0)
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	{
 		// Add quest progress points for the winner
 		JB_AddQuestProgress(winner, g_QuestIndex);

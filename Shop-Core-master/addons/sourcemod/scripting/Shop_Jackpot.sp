@@ -90,11 +90,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	return APLRes_Success;
 }
 
-<<<<<<< HEAD
 void Call_OnJackpotResults(int winner, float chance, int bet, int prize)
-=======
-void Call_OnQuestsReset(int winner, float chance, int bet, int prize)
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 {
 	Call_StartForward(g_OnJackpotResults);
 	Call_PushCell(winner);
@@ -195,11 +191,7 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 		
 		g_Jackpot.Clear();
 		
-<<<<<<< HEAD
 		Call_OnJackpotResults(-1, 0.0, 0, jackpot_sum);
-=======
-		Call_OnQuestsReset(-1, 0.0, 0, jackpot_sum);
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 		
 		return;
 	}
@@ -214,13 +206,9 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 	
 	g_Jackpot.Clear();
 	
-<<<<<<< HEAD
 	PrintToConsoleAll("%f", BetData.win_chance);
 	
 	Call_OnJackpotResults(winner_index, BetData.win_chance, BetData.bet_amount, jackpot_sum);
-=======
-	Call_OnQuestsReset(winner_index, BetData.win_chance, BetData.bet_amount, jackpot_sum);
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 }
 
 //================================[ Commands ]================================//

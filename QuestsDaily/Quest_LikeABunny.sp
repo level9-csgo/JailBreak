@@ -10,11 +10,7 @@
 
 #define BHOP_REQUIRED_SPEED 550.0
 
-<<<<<<< HEAD
 int g_TickInterval;
-=======
-float g_TickInterval;
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 
 int g_QuestIndex = -1;
 
@@ -26,20 +22,12 @@ public Plugin myinfo =
 	author = PLUGIN_AUTHOR, 
 	description = "Daily quest for the quests system.", 
 	version = JAILBREAK_VERSION, 
-<<<<<<< HEAD
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
-=======
-	url = "play-il.co.il"
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 };
 
 public void OnPluginStart()
 {
-<<<<<<< HEAD
 	g_TickInterval = RoundFloat(1.0 / GetTickInterval());
-=======
-	g_TickInterval = GetTickInterval();
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	
 	m_vecVelocityOffset = FindSendPropInfo("CBasePlayer", "m_vecVelocity[0]");
 }
@@ -63,11 +51,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	float client_vel[3];
 	GetEntDataVector(client, m_vecVelocityOffset, client_vel);
 	
-<<<<<<< HEAD
 	if (GetVectorLength(client_vel) > BHOP_REQUIRED_SPEED && !(tickcount % g_TickInterval))
-=======
-	if (GetVectorLength(client_vel) > BHOP_REQUIRED_SPEED && tickcount % RoundToZero(1.0 / g_TickInterval) == 0)
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	{
 		// Add quest progress points for the client
 		JB_AddQuestProgress(client, g_QuestIndex);

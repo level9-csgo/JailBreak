@@ -201,11 +201,7 @@ Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast
 		{
 			int winner_index = (client == lobby_client_index ? lobby_rival_index : lobby_client_index);
 			
-<<<<<<< HEAD
 			PrintCenterText(winner_index, " <font color='#31ee31'>Coinflip Match:</font>\nAmount: <font color='#FF0000'>%s Credits</font>\nAgainst:<font color='#4DB0A7'>%N</font>\nResult:<font color='#4EB35D'>You Won</font>", AddCommas(CurrentLobbyData.held_credits * 2), client);
-=======
-			PrintHintText(winner_index, " <font color='#31ee31'>Coinflip Match:</font>\nAmount: <font color='#FF0000'>%s Credits</font>\nAgainst:<font color='#4DB0A7'>%N</font>\nResult:<font color='#4EB35D'>You Won</font>", AddCommas(CurrentLobbyData.held_credits * 2), client);
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 			
 			PrintToChatAll("%s \x04%N\x01 has been disconnected, therefore \x04%N\x01 won \x02%s credits\x01 as a technical victory!", PREFIX, client, winner_index, AddCommas(CurrentLobbyData.held_credits * 2));
 			

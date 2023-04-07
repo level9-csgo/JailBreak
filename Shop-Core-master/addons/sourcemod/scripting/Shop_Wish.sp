@@ -84,14 +84,10 @@ int m_iHideHUDOffset;
 int g_AuthorizedClients[] = 
 {
 	912414245,  // KoNLiG 
-<<<<<<< HEAD
 	420568778,  // Hispter
 	105469958, // Actually Hacking
 	100689172, // Toster
 	457166215 // Daniel;
-=======
-	468217606 // pmPzy
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 };
 
 public Plugin myinfo = 
@@ -385,7 +381,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	return APLRes_Success;
 }
 
-<<<<<<< HEAD
 void Call_OnRewishExecuted(int client, int giver, bool natural)
 {
 	Call_StartForward(g_fwdOnRewishExecuted);
@@ -395,8 +390,6 @@ void Call_OnRewishExecuted(int client, int giver, bool natural)
 	Call_Finish();
 }
 
-=======
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 int Native_GetClientWishes(Handle plugin, int numParams)
 {
 	// Get and verify the the client index
@@ -667,20 +660,12 @@ Action Timer_ClearOverlay(Handle timer, int serial)
 	// Make sure the client index is the index we want from the serial
 	if (!client || g_ClientsData[client].IsWishRolling())
 	{
-<<<<<<< HEAD
 		return Plugin_Continue;
 	}
 	
 	ClientCommand(client, "r_screenoverlay \"\"");
 	TogglePlayerCrosshair(client, false);
 	return Plugin_Continue;
-=======
-		return;
-	}
-	
-	ClientCommand(client, "r_screenoverlay \"\"");
-	HidePlayerCrosshair(client, false);
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 }
 
 //================================[ Functions ]================================//
@@ -723,11 +708,7 @@ void ExecuteWishAnimation(int client)
 	
 	g_ClientsData[client].WishAnimationTimer = CreateTimer(0.25, Timer_WishAnimation, GetClientSerial(client), TIMER_REPEAT);
 	
-<<<<<<< HEAD
 	TogglePlayerCrosshair(client, true);
-=======
-	HidePlayerCrosshair(client, true);
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 }
 
 void GiveWishAward(int client, int index)
@@ -826,19 +807,6 @@ int CalculateRewishDuration()
 	}
 	
 	return hours_dif * 60 * 60 + minutes_dif * 60;
-<<<<<<< HEAD
-=======
-}
-
-any Math_Min(any value, any minv)
-{
-	return value < minv ? value : minv;
-}
-
-any Math_Max(any value, any maxv)
-{
-	return value > maxv ? value : maxv;
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 }
 
 any Math_Min(any value, any minv)
@@ -879,21 +847,11 @@ bool IsClientAllowed(int client)
 	return false;
 }
 
-<<<<<<< HEAD
 void TogglePlayerCrosshair(int client, bool state)
 {
 	if (IsPlayerCrosshairHidden(client) == state)
 	{
 		return;
-=======
-void HidePlayerCrosshair(int client, bool state)
-{
-	static int m_iHideHUDOffset;
-	
-	if (!m_iHideHUDOffset)
-	{
-		m_iHideHUDOffset = GetEntSendPropOffs(client, "m_iHideHUD", true);
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	}
 	
 	if (state)
@@ -906,13 +864,10 @@ void HidePlayerCrosshair(int client, bool state)
 	}
 }
 
-<<<<<<< HEAD
 // Retrieves whether a client crosshair is hidden.
 bool IsPlayerCrosshairHidden(int client)
 {
 	return (GetEntData(client, m_iHideHUDOffset) & HIDEHUD_CROSSHAIR) != 0;
 }
 
-=======
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 //================================================================//

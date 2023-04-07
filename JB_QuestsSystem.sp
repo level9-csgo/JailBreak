@@ -216,14 +216,6 @@ void CheckForQuestsSwitch()
 	{
 		SwitchQuests(QuestType_Weekly);
 	}
-<<<<<<< HEAD
-=======
-	
-	AddFileToDownloadsTable("sound/"...QUEST_COMPLETED_SOUND);
-	PrecacheSound(QUEST_COMPLETED_SOUND);
-	AddFileToDownloadsTable("sound/"...FINAL_REWARD_COLLECT);
-	PrecacheSound(FINAL_REWARD_COLLECT);
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 }
 
 public void OnClientPutInServer(int client)
