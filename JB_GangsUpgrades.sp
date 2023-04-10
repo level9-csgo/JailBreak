@@ -361,7 +361,7 @@ void SQL_AfterGangsLoaded(int gangsCount)
 	for (int iCurrentUpgrade = 0; iCurrentUpgrade < g_UpgradesData.Length; iCurrentUpgrade++)
 	{
 		FormatEx(szName, sizeof(szName), "upgrade_%s", GetUpgradeByIndex(iCurrentUpgrade).upgrade_unique);
-		Gangs_CreateDBColumn(szName, "INT");
+		Gangs_CreateDBColumn(szName, "INT", "0");
 	}
 	
 	g_GangsData.Clear();

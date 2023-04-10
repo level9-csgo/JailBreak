@@ -1013,7 +1013,6 @@ public int Handler_MembersList(Menu menu, MenuAction action, int client, int ite
 		char szItem[32];
 		menu.GetItem(itemNum, szItem, sizeof(szItem));
 		
-		
 		switch (itemNum)
 		{
 			case 0:
@@ -1705,13 +1704,15 @@ public void SQL_CB_OnDatabaseConnected(Database db, const char[] error, any data
 	g_dbDatabase = db;
 	
 	g_dbDatabase.Query(SQL_CheckForErrors, "CREATE TABLE IF NOT EXISTS `jb_gangs` (`name` VARCHAR(128) NOT NULL, `desc` VARCHAR(256) NOT NULL, `cash` INT NOT NULL, `members` INT NOT NULL, `slots` INT NOT NULL, `expiration` INT NOT NULL, `color` VARCHAR(64) NOT NULL, UNIQUE(`name`))");
-	g_dbDatabase.Query(SQL_CheckForErrors, "CREATE TABLE IF NOT EXISTS `jb_gangs_players` (`steam_id` VARCHAR(128) NOT NULL, `name` VARCHAR(128) NOT NULL, `gang` VARCHAR(128) NOT NULL, `rank` INT NOT NULL DEFAULT -1, `donations` INT NOT NULL, `joindate` INT NOT NULL, UNIQUE(`steam_id`))");
+    g_dbDatabase.Query(SQL_CheckForErrors, "CREATE TABLE IF NOT EXISTS `jb_gangs_players` (`steam_id` VARCHAR(128) NOT NULL, `name` VARCHAR(128) NOT NULL, `gang` VARCHAR(128) NOT NULL DEFAULT '', `rank` INT NOT NULL DEFAULT -1, `donations` INT NOT NULL DEFAULT 0, `joindate` INT NOT NULL DEFAULT 0, UNIQUE(`steam_id`))");
+	
 	SQL_AfterTableCreated();
 }
 
 void SQL_AfterTableCreated()
 {
-	for (int iCurrentGang = 0; iCurrentGang < MAX_GANGS; iCurrentGang++) {
+	for (int iCurrentGang = 0; iCurrentGang < MAX_GANGS; iCurrentGang++)
+	{
 		g_esGangs[iCurrentGang].reset();
 	}
 	

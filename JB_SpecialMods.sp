@@ -15,8 +15,6 @@
 
 #define SPECIAL_MODS_BUTTON_INFO "special_mods"
 
-#define SPECIAL_MOD_VOTE_PERCENT 80
-
 #define PANEL_DISPLAY_TIME 7
 #define VOTE_DISPLAY_TIME 15
 
@@ -45,6 +43,7 @@ GlobalForward g_fwdOnSpecialModEnd;
 ConVar g_cvPricePerPrisoner;
 ConVar g_cvRequiredOnlinePrisoners;
 ConVar g_cvSecondsUntilLock;
+ConVar g_cvVotePercent;
 
 int g_SpecialModBuyBlockCounter;
 int g_CurrentSpecialMod = -1;
@@ -68,12 +67,13 @@ public void OnPluginStart()
 	g_cvPricePerPrisoner = CreateConVar("jb_special_mod_price_per_prisoner", "5000", "The price per online prisoner. (Calculate: prisoners * convar)", _, true, 2500.0, true, 12500.0);
 	g_cvRequiredOnlinePrisoners = CreateConVar("jb_special_mod_required_prisoners", "12", "Required online prisonres for executing a special mod.", _, true, 1.0, true, 16.0);
 	g_cvSecondsUntilLock = CreateConVar("jb_special_mod_seconds_until_lock", "30", "Seconds until the main guard will not be able to buy a special mod.", _, true, 10.0, true, 60.0);
+	g_cvVotePercent = CreateConVar("jb_special_mod_vote_percent", "70", "Required percentage of positive votes in order for a special mod vote to pass.", .hasMin = true, .hasMax = true, .max = 100.0);
 	
 	AutoExecConfig(true, "SpecialMods", "JailBreak");
 	
 	// Event Hooks
-	HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_Post);
-	HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_Post);
+	HookEvent("round_prestart", Event_RoundPreStart);
+	HookEvent("round_freeze_end", Event_RoundFreezeEnd);
 }
 
 //================================[ Events ]================================//
@@ -119,7 +119,7 @@ public void JB_OnVoteCTStart(bool action)
 	}
 }
 
-Action Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 {
 	// Check if a special mod is running, and there is no guards
 	if (g_CurrentSpecialMod != -1 && JB_GetDay() >= Day_Friday)
@@ -128,7 +128,7 @@ Action Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	g_RoundStartUnixstamp = GetTime();
 }
@@ -170,7 +170,7 @@ public int Handler_SpecialMods(Menu menu, MenuAction action, int param1, int par
 		if (JB_GetClientGuardRank(client) != Guard_Main)
 		{
 			PrintToChat(client, "%s You are no longer the \x0CMain Guard\x01 anymore!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		ShowSpecialModDetailMenu(client, item_position);
@@ -184,6 +184,8 @@ public int Handler_SpecialMods(Menu menu, MenuAction action, int param1, int par
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowSpecialModDetailMenu(int client, int special_mod_index)
@@ -207,7 +209,7 @@ void ShowSpecialModDetailMenu(int client, int special_mod_index)
 	Format(item_display, sizeof(item_display), "Buy %s [%s Credits]", SpecialModData.mod_name, JB_AddCommas(buy_price >= g_cvPricePerPrisoner.IntValue * g_cvRequiredOnlinePrisoners.IntValue ? buy_price : g_cvPricePerPrisoner.IntValue * g_cvRequiredOnlinePrisoners.IntValue));
 	menu.AddItem(item_info, item_display, special_mod_req == REQ_NONE ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	
-	Format(item_display, sizeof(item_display), "Execute A Vote For Free [%d%%+]", SPECIAL_MOD_VOTE_PERCENT);
+	Format(item_display, sizeof(item_display), "Execute A Vote For Free [%d%%+]", g_cvVotePercent.IntValue);
 	menu.AddItem("", item_display, (special_mod_req == REQ_NONE || special_mod_req == REQ_NOT_ENOUGH_CREDITS) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	
 	// Set the exit back button as true, and fix the back button gap
@@ -228,7 +230,7 @@ public int Handler_SpecialModDetail(Menu menu, MenuAction action, int param1, in
 		if (JB_GetClientGuardRank(client) != Guard_Main)
 		{
 			PrintToChat(client, "%s You're no longer the \x0CMain Guard\x01 anymore!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		// Get the special mod index by the item information
@@ -247,7 +249,7 @@ public int Handler_SpecialModDetail(Menu menu, MenuAction action, int param1, in
 				if (special_mod_req != REQ_NONE)
 				{
 					PrintToChat(client, "%s You're no longer meeting the special mod requirements!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				// Execute the special mod!
@@ -262,7 +264,7 @@ public int Handler_SpecialModDetail(Menu menu, MenuAction action, int param1, in
 				if (!(special_mod_req == REQ_NONE || special_mod_req == REQ_NOT_ENOUGH_CREDITS))
 				{
 					PrintToChat(client, "%s You're no longer meeting the special mod requirements!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				StartSpecialModVote(special_mod_index);
@@ -278,6 +280,8 @@ public int Handler_SpecialModDetail(Menu menu, MenuAction action, int param1, in
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void StartSpecialModVote(int specialModId)
@@ -327,9 +331,9 @@ public int Handler_SpecialModVote(Menu menu, MenuAction action, int param1, int 
 		}
 		
 		int vote_percent = RoundToFloor(float(positive_votes) / float(total_votes) * 100);
-		bool vote_succeed = vote_percent >= SPECIAL_MOD_VOTE_PERCENT && StrEqual(item_info, "1");
+		bool vote_succeed = vote_percent >= g_cvVotePercent.IntValue && StrEqual(item_info, "1");
 		
-		Format(item_info, sizeof(item_info), "failed. %d%% vote required", SPECIAL_MOD_VOTE_PERCENT);
+		Format(item_info, sizeof(item_info), "failed. %d%% vote required", g_cvVotePercent.IntValue);
 		PrintToChatAll("%s Vote %s. (Received %d%% of %d votes)", PREFIX, vote_succeed ? "successful" : item_info, vote_percent, total_votes);
 		
 		if (vote_succeed)
@@ -342,6 +346,8 @@ public int Handler_SpecialModVote(Menu menu, MenuAction action, int param1, int 
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Natives & Forwards ]================================//

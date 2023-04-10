@@ -2701,7 +2701,7 @@ any[] GetRuneByIndex(int index)
 
 int CreateRuneBox(float pos[3], int runeId, int star, int level = RuneLevel_1, bool natural = true)
 {
-	int iEntity = CreateEntityByName("prop_dynamic_override");
+	int iEntity = CreateEntityByName("prop_physics_override");
 	
 	// Make sure the class name has found and the entity is valid
 	if (iEntity == -1 || !IsValidEntity(iEntity))
@@ -2748,6 +2748,7 @@ int CreateRuneBox(float pos[3], int runeId, int star, int level = RuneLevel_1, b
 	
 	// Apply the model on the entity
 	DispatchKeyValue(iEntity, "model", RUNE_MODEL_PATH);
+	// DispatchKeyValue(iEntity, "solid", "1");
 	
 	DispatchKeyValueVector(iEntity, "origin", pos);
 	
