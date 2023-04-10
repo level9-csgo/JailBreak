@@ -73,11 +73,7 @@ enum struct Client
 	
 	void Reset()
 	{
-<<<<<<< HEAD
 		this.chosen_weapon = 0;
-=======
-		this.chosen_weapon = -1;
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 		
 		this.DeleteTimer();
 	}
@@ -230,11 +226,7 @@ public void JB_OnClientSetupSpecialDay(int client, int specialDayId)
 	
 	DisarmPlayer(client);
 	
-<<<<<<< HEAD
 	for (int current_weapon; current_weapon < sizeof(g_CustomWeapons); current_weapon++)
-=======
-	for (int current_weapon = 0; current_weapon < sizeof(g_CustomWeapons); current_weapon++)
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	{
 		if (StrEqual(g_CustomWeapons[current_weapon][Item_DefaultLoadout], "1"))
 		{
@@ -242,14 +234,11 @@ public void JB_OnClientSetupSpecialDay(int client, int specialDayId)
 		}
 	}
 	
-<<<<<<< HEAD
 	if (!g_ClientsData[client].chosen_weapon)
 	{
 		g_ClientsData[client].chosen_weapon = GetDefaultPrimaryIndex();
 	}
 	
-=======
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	GiveClientCustomWeapon(client, g_ClientsData[client].chosen_weapon);
 	
 	GivePlayerItem(client, UTILITY_WEAPON_TAG);

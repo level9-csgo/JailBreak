@@ -16,11 +16,7 @@ public Plugin myinfo =
 	author = "KoNLiG", 
 	description = "Replaces +lookatweapon with a toggleable flashlight. Also adds the command: sm_flashlight", 
 	version = "1.0.0", 
-<<<<<<< HEAD
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
-=======
-	url = "play-il.co.il"
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 };
 
 public void OnPluginStart()

@@ -5,7 +5,7 @@
 
 #define PREMIUM_WISHES_BONUS 1
 #define PREMIUM_GAMBLE_BONUS_CHANCES 2
-#define PREMIUM_SHOP_DISCOUNT_PERCENT 10
+#define PREMIUM_SHOP_CASHBACK_PERCENT 10
 
 /**
  *	Checks if a client is a premium member.

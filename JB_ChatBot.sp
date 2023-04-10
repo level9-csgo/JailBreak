@@ -91,7 +91,8 @@ ConVar g_cvChatSilenceMsgTime;
 // Stores the steam account id of authorized clients for commands
 int g_AuthorizedClients[] = 
 {
-	912414245 // KoNLiG 
+	912414245, // KoNLiG 
+	928490446  // Ravid
 };
 
 public Plugin myinfo = 
@@ -343,6 +344,7 @@ public int Handler_BotMain(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	return 0;
 }
 
 void ShowCreateSentenceMenu(int client)
@@ -439,7 +441,7 @@ public int Handler_CreateSentence(Menu menu, MenuAction action, int param1, int 
 					// Display the menu again
 					ShowCreateSentenceMenu(client);
 					
-					return;
+					return 0;
 				}
 				
 				if (!g_ClientsData[client].EditSentenceData.answer_1[0] && !g_ClientsData[client].EditSentenceData.answer_2[0] && !g_ClientsData[client].EditSentenceData.answer_3[0] && !g_ClientsData[client].EditSentenceData.answer_4[0])
@@ -450,7 +452,7 @@ public int Handler_CreateSentence(Menu menu, MenuAction action, int param1, int 
 					// Display the menu again
 					ShowCreateSentenceMenu(client);
 					
-					return;
+					return 0;
 				}
 				
 				// Create the bot sentence
@@ -482,6 +484,7 @@ public int Handler_CreateSentence(Menu menu, MenuAction action, int param1, int 
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	return 0;
 }
 
 void ShowSentenceDetailMenu(int client, int sentence_index)
@@ -579,6 +582,7 @@ public int Handler_SentenceDetail(Menu menu, MenuAction action, int param1, int 
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	return 0;
 }
 
 //================================[ Responde Functions ]================================//
@@ -908,9 +912,10 @@ public Action Timer_PrintBotMessage(Handle timer, DataPack dp)
 	{
 		if (IsClientInGame(current_client))
 		{
-			CPrintToChat(current_client, false, "%s {%s}%s :\x01 %s", BOT_PREFIX, GetClientTeam(current_client) == CS_TEAM_T ? "red" : "blue", bot_name, message);
+			CPrintToChat(current_client, "%s {%s}%s :\x01 %s", BOT_PREFIX, GetClientTeam(current_client) == CS_TEAM_T ? "red" : "blue", bot_name, message);
 		}
 	}
+	return Plugin_Continue;
 }
 
 public Action Timer_ChatSilence(Handle timer)
@@ -920,6 +925,7 @@ public Action Timer_ChatSilence(Handle timer)
 	g_ChatSilenceTimer = INVALID_HANDLE;
 	
 	RecreateChatSilenceTimer();
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//

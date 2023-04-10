@@ -541,11 +541,7 @@ bool IsEntityBetween(float startPosition[3], float endPosition[3])
 			TE_SetupGlowSprite(fHitPosition, g_iGlowSprite, SHOW_PATH_TIME, 1.5, 200);
 			TE_SendToAll();
 			
-<<<<<<< HEAD
 			PrecacheModel("materials/sprites/ledglow.vmt");
-=======
-			PrecacheModel("materials/sprites/ledglow.vmt")
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 			
 			TR_TraceRayFilter(endPosition, startPosition, MASK_SHOT, RayType_EndPoint, Filter_DontHitPlayers);
 			TR_GetEndPosition(fHitPosition);

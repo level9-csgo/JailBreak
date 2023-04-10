@@ -163,11 +163,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	
 	if (aimed_entity <= 0)
 	{
-<<<<<<< HEAD
 		PrintCenterText(client, "<font color='#0000B3'> Doors Configuration</font>\n No entity has detected.");
-=======
-		PrintHintText(client, "<font color='#0000B3'> Doors Configuration</font>\n No entity has detected.");
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 		return Plugin_Continue;
 	}
 	
@@ -177,11 +173,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	GetEntityName(aimed_entity, entity_name, sizeof(entity_name));
 	
 	// Display the information
-<<<<<<< HEAD
 	PrintCenterText(client, "<font color='#0000B3'> Doors Configuration</font>\n  • Class Name: %s\n  • Name: %s\n  • Index: %d\n  • Hammer ID: %d", entity_class_name, entity_name[0] == '\0' ? "NULL" : entity_name, aimed_entity, GetEntityHammerId(aimed_entity));
-=======
-	PrintHintText(client, "<font color='#0000B3'> Doors Configuration</font>\n  • Class Name: %s\n  • Name: %s\n  • Index: %d\n  • Hammer ID: %d", entity_class_name, entity_name[0] == '\0' ? "NULL" : entity_name, aimed_entity, GetEntityHammerId(aimed_entity));
->>>>>>> 2d57143d7a5e8f106bd8fca2a91e560f144a9eab
 	
 	return Plugin_Continue;
 }
