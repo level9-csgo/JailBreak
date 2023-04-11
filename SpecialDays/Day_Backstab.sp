@@ -93,23 +93,28 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 
 bool IsStabBackstab(int attacker, int victim)
 {
-    // Initialize buffers.
-    float abs_angles[3], victim_forward[3], attacker_origin[3], victim_origin[3], vec_los[3];
-    
-    GetClientAbsAngles(victim, abs_angles);
-    GetAngleVectors(abs_angles, victim_forward, NULL_VECTOR, NULL_VECTOR);
-    
-    GetClientAbsOrigin(attacker, attacker_origin);
-    GetClientAbsOrigin(victim, victim_origin);
-    
-    SubtractVectors(victim_origin, attacker_origin, vec_los);
-    NormalizeVector(vec_los, vec_los);
-    
-    // 2D Vectors representation.
-    vec_los[2] = 0.0;
-    victim_forward[2] = 0.0;
-    
-    return GetVectorDotProduct(victim_forward, vec_los) > 0.475;
+	if (!(1 <= attacker <= MaxClients))
+	{
+		return false;
+	}
+	
+	// Initialize buffers.
+	float abs_angles[3], victim_forward[3], attacker_origin[3], victim_origin[3], vec_los[3];
+	
+	GetClientAbsAngles(victim, abs_angles);
+	GetAngleVectors(abs_angles, victim_forward, NULL_VECTOR, NULL_VECTOR);
+	
+	GetClientAbsOrigin(attacker, attacker_origin);
+	GetClientAbsOrigin(victim, victim_origin);
+	
+	SubtractVectors(victim_origin, attacker_origin, vec_los);
+	NormalizeVector(vec_los, vec_los);
+	
+	// 2D Vectors representation.
+	vec_los[2] = 0.0;
+	victim_forward[2] = 0.0;
+	
+	return GetVectorDotProduct(victim_forward, vec_los) > 0.475;
 }
 
 //================================[ Functions ]================================//
