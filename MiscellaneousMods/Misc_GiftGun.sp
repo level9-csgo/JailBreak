@@ -58,6 +58,7 @@ public void OnMapStart()
 	
 	PrecacheModel(GIFTGUN_VIEW_MODEL);
 	PrecacheModel(GIFTGUN_WORLD_MODEL);
+	PrecacheModel(GIFTGUN_DROPPED_MODEL);
 	
 	PrecacheScriptSound(GIFTGUN_SHOT_SOUND);
 	
