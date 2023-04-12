@@ -84,7 +84,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	g_GangEntrys = new ArrayList(sizeof(GangEntry));
-	
+
 	if (g_Lateload)
 	{
 		Lateload();
@@ -94,7 +94,7 @@ public void OnPluginStart()
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	g_Lateload = late;
-	
+
 	return APLRes_Success;
 }
 
@@ -114,12 +114,12 @@ public void JB_OnTopMenuSelect(int client, int item_pos, Menu menu)
 {
 	char item_info[16];
 	menu.GetItem(item_pos, item_info, sizeof(item_info));
-	
+
 	if (!StrEqual(item_info, MENU_ITEM_IDENTIFIER))
 	{
 		return;
 	}
-	
+
 	DisplayTopGangWinsMenu(client);
 }
 
@@ -129,18 +129,18 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 	{
 		return;
 	}
-	
+
 	int gang_id = Gangs_GetPlayerGang(winner);
 	if (gang_id == -1)
 	{
 		return;
 	}
-	
+
 	GangEntry gang_entry;
 	g_GangEntrys.GetArray(gang_id, gang_entry);
-	
+
 	gang_entry.wins++;
-	
+
 	gang_entry.UpdateMyself();
 	gang_entry.UpdateMySQLData();
 }
@@ -154,40 +154,45 @@ void DisplayTopGangWinsMenu(int client)
 		PrintToChat(client, "%s There are no gangs at this moment.", PREFIX);
 		return;
 	}
-	
+
 	char client_gang_progress[32];
-	
+	GangEntry gang_entry;
+
 	int client_gang_id = Gangs_GetPlayerGang(client);
 	if (client_gang_id == -1)
 	{
 		client_gang_progress = "You have no gang.";
 	}
-	
-	GangEntry gang_entry;
-	g_GangEntrys.GetArray(client_gang_id, gang_entry);
-	
-	Format(client_gang_progress, sizeof(client_gang_progress), "%d wins.", gang_entry.wins);
-	
+	else
+	{
+		g_GangEntrys.GetArray(client_gang_id, gang_entry);
+
+		Format(client_gang_progress, sizeof(client_gang_progress), "%d wins.", gang_entry.wins);
+	}
+
 	Menu menu = new Menu(Handler_TopGangWins);
 	menu.SetTitle("%s Top System - Viewing %s\n• Description: Top special day wins of each and every gang in the server!\n• My gang progress: %s\n \n", PREFIX_MENU, TOP_NAME, client_gang_progress);
-	
+
 	char item_display[256];
-	
+
 	ArrayList sorted_gang_entries = g_GangEntrys.Clone();
 	sorted_gang_entries.SortCustom(SortGangEntries);
-	
+
 	for (int current_gang; current_gang < sorted_gang_entries.Length; current_gang++)
 	{
 		sorted_gang_entries.GetArray(current_gang, gang_entry);
-		
+
 		RTLify(item_display, sizeof(item_display), gang_entry.name);
 		Format(item_display, sizeof(item_display), "(#%d) %s - %d Wins", current_gang + 1, item_display, gang_entry.wins);
-		
+
 		menu.AddItem("", item_display);
 	}
-	
+
 	delete sorted_gang_entries;
-	
+
+	menu.ExitBackButton = true;
+	JB_FixMenuGap(menu);
+
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -198,15 +203,23 @@ int Handler_TopGangWins(Menu menu, MenuAction action, int param1, int param2)
 		case MenuAction_Select:
 		{
 			int client = param1/*, selected_item = param2*/;
-			
+
 			DisplayTopGangWinsMenu(client);
+		}
+		case MenuAction_Cancel:
+		{
+			int client = param1, cancel_reason = param2;
+			if (cancel_reason == MenuCancel_ExitBack)
+			{
+				ClientCommand(client, "sm_top");
+			}
 		}
 		case MenuAction_End:
 		{
 			delete menu;
 		}
 	}
-	
+
 	return 0;
 }
 

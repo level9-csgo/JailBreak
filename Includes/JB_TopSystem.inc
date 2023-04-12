@@ -5,7 +5,7 @@
 
 /**
  * Creates a new top category to the core.
- * 
+ *
  * @param unique             Unique name of the top, used to be stored for the database.
  * @param name               Name of the top.
  * @param description        Description of the top, will be shown on the top detail.
@@ -17,7 +17,7 @@ native int JB_CreateTopCategory(char[] unique, char[] name, char[] description, 
 
 /**
  * Finds and returns the top category index, by searching the index with the given unique.
- * 
+ *
  * @param unique              The unique for the specified top category.
  * @return                   Top category index, or -1 if there is no top category matching the given unique.
  */
@@ -25,7 +25,7 @@ native int JB_FindTopCategory(char[] unique);
 
 /**
  * Gets a client points from a specific top category.
- * 
+ *
  * @param client             Client Index.
  * @param topId              Top categoty index to get the points from.
  * @return                  Client Points.
@@ -35,7 +35,7 @@ native int JB_GetTopPoints(int client, int topId);
 
 /**
  * Adds a points for a specific client.
- * 
+ *
  * @param client             Client Index.
  * @param topId              Top categoty index to add the points.
  * @param points             Points to be added.
@@ -57,7 +57,7 @@ native void JB_TakeTopPoints(int client, int topId, int points, bool broadcast =
 
 /**
  * Shows to a certain client the top category menu by the given top index.
- * 
+ *
  * @param client             Client Index.
  * @param topId              Top categoty index to display the menu from.
  * @error                  Invalid client index.
@@ -66,7 +66,7 @@ native void JB_ShowTopCategoryMenu(int client, int topId);
 
 /**
  * Called when the top statistics has reset.
- * 
+ *
  * @param topId              Top category index.
  */
 forward void JB_OnTopCategoryReset(int topId);
