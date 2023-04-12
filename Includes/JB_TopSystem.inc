@@ -71,6 +71,23 @@ native void JB_ShowTopCategoryMenu(int client, int topId);
  */
 forward void JB_OnTopCategoryReset(int topId);
 
+/**
+ * Called when a client is accessing the top menu.
+ *
+ * @param client	Client index.
+ * @param menu		Service menu handle.
+ */
+forward void JB_OnTopMenu(int client, Menu menu);
+
+/**
+ * Called when a client had selected a vehicles garage service.
+ *
+ * @param client	Client index.
+ * @param item_pos	Selected menu item position index.
+ * @param menu		Service menu handle.
+ */
+forward void JB_OnTopMenuSelect(int client, int item_pos, Menu menu);
+
 #if !defined REQUIRE_PLUGIN
 public void __pl_JB_TopSystem_SetNTVOptional()
 {

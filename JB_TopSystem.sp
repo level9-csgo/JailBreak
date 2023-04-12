@@ -67,6 +67,8 @@ Client g_esClientData[MAXPLAYERS + 1];
 
 Database g_Database = null;
 
+GlobalForward g_OnTopMenu;
+GlobalForward g_OnTopMenuSelect;
 GlobalForward g_fwdOnTopCategoryReset;
 
 ConVar g_cvTopClientsAmount;
@@ -229,9 +231,24 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("JB_AddTopPoints", Native_AddTopPoints);
 	CreateNative("JB_TakeTopPoints", Native_TakeTopPoints);
 	CreateNative("JB_ShowTopCategoryMenu", Native_ShowTopCategoryMenu);
-	
+
+	g_OnTopMenu = new GlobalForward(
+		"JB_OnTopMenu", 
+		ET_Ignore,  // Always return 0
+		Param_Cell,  // int client
+		Param_Cell // Menu menu
+		);
+
+	g_OnTopMenuSelect = new GlobalForward(
+		"JB_OnTopMenuSelect", 
+		ET_Ignore,  // Always return 0
+		Param_Cell,  // int client
+		Param_Cell,  // int item_pos
+		Param_Cell // Menu menu
+		);
+
 	g_fwdOnTopCategoryReset = CreateGlobalForward("JB_OnTopCategoryReset", ET_Event, Param_Cell);
-	
+
 	RegPluginLibrary("JB_TopSystem");
 	return APLRes_Success;
 }
@@ -455,6 +472,11 @@ void showTopsMainMenu(int client)
 		menu.AddItem("", "No top category was found.\n ", ITEMDRAW_DISABLED);
 	}
 	
+	Call_StartForward(g_OnTopMenu);
+	Call_PushCell(client);
+	Call_PushCell(menu);
+	Call_Finish();
+
 	Format(szItem, sizeof(szItem), "Last Top Winners%s", IsClientAllowed(client) ? "\n ":"");
 	menu.AddItem("LastWinners", szItem, g_cvDaysUntilReset.IntValue != 0 ? ITEMDRAW_DEFAULT:ITEMDRAW_IGNORE);
 	
@@ -565,13 +587,21 @@ public int Handler_Tops(Menu menu, MenuAction action, int client, int itemNum)
 	{
 		char szItem[16];
 		menu.GetItem(itemNum, szItem, sizeof(szItem));
-		int iTopId = StringToInt(szItem);
+		int iTopId;
 		
 		if (StrEqual(szItem, "LastWinners")) {
 			showLastWinnersMenu(client);
 		}
 		else if (StrEqual(szItem, "ResetTop")) {
 			showResetTopMenu(client);
+		}
+		else if (!StringToIntEx(szItem, iTopId))
+		{
+			Call_StartForward(g_OnTopMenuSelect);
+			Call_PushCell(client);
+			Call_PushCell(itemNum);
+			Call_PushCell(menu);
+			Call_Finish();
 		}
 		else
 		{
@@ -591,6 +621,8 @@ public int Handler_Tops(Menu menu, MenuAction action, int client, int itemNum)
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showLastWinnersMenu(int client)
@@ -628,6 +660,8 @@ public int Handler_LastWinners(Menu menu, MenuAction action, int client, int ite
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showResetTopMenu(int client)
@@ -669,6 +703,8 @@ public int Handler_ResetTop(Menu menu, MenuAction action, int client, int itemNu
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Database ]================================//
