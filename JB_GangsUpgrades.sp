@@ -109,6 +109,13 @@ public void Gangs_OnGangDelete(int gangId, char[] name)
 	}
 }
 
+public void Gangs_GangNameUpdated(int gang, char[] oldName, char[] newName)
+{
+	Gang gang_data; gang_data = GetGangByIndex(gang);
+	strcopy(gang_data.szName, sizeof(gang_data.szName), newName);
+	g_GangsData.SetArray(gang, gang_data);
+}
+
 public void Gangs_GangsUserOpenMainMenu(int client, Menu menu)
 {
 	menu.InsertItem(ITEM_POSITION, "gangupgrades", "Gang Upgrades", Gangs_GetPlayerGang(client) != NO_GANG ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
