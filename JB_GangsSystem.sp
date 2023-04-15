@@ -1716,7 +1716,7 @@ void SQL_AfterTableCreated()
 		g_esGangs[iCurrentGang].reset();
 	}
 	
-	SQL_FetchGangs(false);
+	SQL_FetchGangs();
 	
 	for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
 	{
@@ -1726,14 +1726,14 @@ void SQL_AfterTableCreated()
 	}
 }
 
-void SQL_FetchGangs(bool fixGang)
+void SQL_FetchGangs()
 {
 	char szQuery[32];
 	g_dbDatabase.Format(szQuery, sizeof(szQuery), "SELECT * FROM `jb_gangs`");
-	g_dbDatabase.Query(SQL_FetchGangs_CB, szQuery, fixGang);
+	g_dbDatabase.Query(SQL_FetchGangs_CB, szQuery);
 }
 
-public void SQL_FetchGangs_CB(Database db, DBResultSet results, const char[] error, bool fixGang)
+public void SQL_FetchGangs_CB(Database db, DBResultSet results, const char[] error, any data)
 {
 	if (!StrEqual(error, ""))
 	{
@@ -1769,13 +1769,10 @@ public void SQL_FetchGangs_CB(Database db, DBResultSet results, const char[] err
 		while (results.FetchRow());
 	}
 	
-	if (!fixGang)
-	{
-		Call_StartForward(g_fwdGangsLoaded);
-		Call_PushCell(db);
-		Call_PushCell(g_iNumOfGangs);
-		Call_Finish();
-	}
+	Call_StartForward(g_fwdGangsLoaded);
+	Call_PushCell(db);
+	Call_PushCell(g_iNumOfGangs);
+	Call_Finish();
 }
 
 void SQL_FetchUser(int client)
@@ -2139,7 +2136,7 @@ void FixGangs()
 		g_esGangs[iCurrentGang].reset();
 	}
 	
-	SQL_FetchGangs(true);
+	SQL_FetchGangs();
 	
 	for (int i = 1; i <= MaxClients; i++)
 	{
