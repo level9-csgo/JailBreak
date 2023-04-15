@@ -60,7 +60,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_box", Command_Box, "Access the box settings configuration menu.");
 	
 	// Event hooks
-	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Post);
+	HookEvent("player_death", Event_PlayerDeath);
 	
 	// Loop through all the online clients, for late plugin load
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
@@ -103,7 +103,7 @@ public void OnMapEnd()
 	}
 }
 
-public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	if (g_bIsBoxEnabled && (GetOnlineTeamCount(CS_TEAM_T) <= 1 || GetOnlineTeamCount(CS_TEAM_CT) <= 0))
 	{
@@ -220,7 +220,7 @@ public int Handler_Box(Menu menu, MenuAction action, int client, int itemNum)
 		if (!IsClientAllowed(client))
 		{
 			PrintToChat(client, "%s Box menu is allowed only for \x04admins and guards\x01.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -230,7 +230,7 @@ public int Handler_Box(Menu menu, MenuAction action, int client, int itemNum)
 				if (GetOnlineTeamCount(CS_TEAM_T) < 2)
 				{
 					PrintToChat(client, "%s Cannot start box with less then \x102 prisoner\x01 alive!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				g_bIsBoxEnabled = !g_bIsBoxEnabled;
@@ -260,6 +260,8 @@ public int Handler_Box(Menu menu, MenuAction action, int client, int itemNum)
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ API ]================================//
@@ -359,13 +361,6 @@ void FreezePrisoners(bool freeze = true)
 		if (IsClientInGame(current_client) && IsPlayerAlive(current_client) && GetClientTeam(current_client) == CS_TEAM_T)
 		{
 			SetEntPropFloat(current_client, Prop_Data, "m_flLaggedMovementValue", freeze ? 0.0 : 1.0);
-			
-			if (freeze) {
-				SetEntityRenderColor(current_client, GetRandomInt(1, 175), GetRandomInt(25, 175), GetRandomInt(175, 255), 255);
-			}
-			else {
-				SetEntityRenderColor(current_client, 255, 255, 255, 255);
-			}
 		}
 	}
 }
