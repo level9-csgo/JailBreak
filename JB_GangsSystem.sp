@@ -169,6 +169,14 @@ public void OnPluginStart()
 
 /* Events */
 
+public void OnMapStart()
+{
+	if(g_dbDatabase)
+	{
+		FixGangs();
+	}
+}
+
 public void OnClientPostAdminCheck(int client)
 {
 	g_esClients[client].reset();
