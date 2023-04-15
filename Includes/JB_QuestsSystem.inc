@@ -19,7 +19,7 @@ enum ExecuteType
 enum struct QuestStats
 {
 	bool is_quest_skipped;
-	bool is_quest_reward_claimed;
+	bool is_quest_reward_collected;
 	int reward_amount;
 	int quest_progress;
 	int quest_target_progress;

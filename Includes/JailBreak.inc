@@ -12,8 +12,8 @@
 #define PARENT_SOUNDS_DIR "playil_jailbreak"
 #define DB_CLIENTS_TABLE "jb_clients_data"
 
-#define PREFIX " \x04[Play-IL]\x01"
-#define PREFIX_MENU "[Play-IL]"
+#define PREFIX " \x04[Level9]\x01"
+#define PREFIX_MENU "[Level9]"
 #define PREFIX_ERROR " \x02[Error]\x01"
 
 #define MAX_DAYS 7
@@ -84,7 +84,7 @@ stock void JB_WriteLogLine(const char[] log, any...)
 	LogToFile(szPath, szLogLine);
 }
 
-stock char JB_AddCommas(int value, const char[] seperator = ",")
+stock char[] JB_AddCommas(int value, const char[] seperator = ",")
 {
 	// Static regex insted of a global one.
 	static Regex rgxCommasPostions = null;

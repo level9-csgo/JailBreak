@@ -57,10 +57,17 @@ enum struct Rune
 
 enum struct ClientRune
 {
-	int iRuneId;
-	int iRuneStar;
-	int iRuneLevel;
-	bool bIsRuneEquipped;
+	int RowId;
+	int RuneId;
+	int RuneStar;
+	int RuneLevel;
+	bool IsRuneEquipped;
+	bool IsInGarbageCollector;
+
+	int FindIndex(ArrayList inventory)
+	{
+		return inventory.FindValue(this.RowId);
+	}
 }
 
 /**
