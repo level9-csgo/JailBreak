@@ -84,7 +84,8 @@ int m_iHideHUDOffset;
 int g_AuthorizedClients[] = 
 {
 	912414245,  // KoNLiG 
-	928490446  // Ravid
+	928490446,  // Ravid
+	133307701 // Nur
 };
 
 public Plugin myinfo = 

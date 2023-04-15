@@ -77,7 +77,8 @@ char g_TableName[32];
 int g_AuthorizedClients[] = 
 {
 	912414245,  // KoNLiG 
-	928490446  // Ravid
+	928490446,  // Ravid
+	133307701 // Nur
 };
 
 public Plugin myinfo = 
@@ -173,7 +174,7 @@ public bool Shop_OnItemDescription(int client, ShopMenu menu_action, CategoryId 
 		return false;
 	}
 	
-	Format(buffer, maxlength, "◾ %d%% Premium Cash-Back - %s Credits!\n \n%s", PREMIUM_SHOP_CASHBACK_PERCENT, AddCommas(item_price * PREMIUM_SHOP_CASHBACK_PERCENT / 100), buffer);
+	Format(buffer, maxlength, "◾ %d%% Premium Cash-Back - %s Credits!\n \n%s", PREMIUM_SHOP_DISCOUNT_PERCENT, AddCommas(item_price * PREMIUM_SHOP_DISCOUNT_PERCENT / 100), buffer);
 	
 	return true;
 }
@@ -186,10 +187,10 @@ public Action Shop_OnItemBuy(int client, CategoryId category_id, const char[] ca
 	}
 	
 	// Notify the client about the cash back
-	PrintToChat(client, "%s You've been awarded \x04%s\x01 credits from the \x10Premium Cash - Back\x01!", PREFIX, AddCommas(price * PREMIUM_SHOP_CASHBACK_PERCENT / 100));
+	PrintToChat(client, "%s You've been awarded \x04%s\x01 credits from the \x10Premium Cash - Back\x01!", PREFIX, AddCommas(price * PREMIUM_SHOP_DISCOUNT_PERCENT / 100));
 	
 	// Discount the percentage from the item price
-	price -= price / PREMIUM_SHOP_CASHBACK_PERCENT;
+	price -= price / PREMIUM_SHOP_DISCOUNT_PERCENT;
 	
 	return Plugin_Changed;
 }
