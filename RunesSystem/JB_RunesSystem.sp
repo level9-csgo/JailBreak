@@ -37,7 +37,6 @@ ConVar g_cvDefaultRunesCapacity;
 
 // [1000] = 100%
 // 
-
 // 953 = 95.3%
 // 46  = 4.6%
 // 1   = 0.1%
@@ -196,7 +195,7 @@ char g_szProgressSounds[][] =
 int g_AuthorizedClients[] = 
 {
 	912414245,  // KoNLiG 
-	928490446  // Ravid
+	928490446 // Ravid
 };
 
 // Must be with the same difference between every capacity expantion tier
@@ -693,6 +692,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("JB_GetClientOwnedRunes", Native_GetClientOwnedRunes);
 	CreateNative("JB_PerformRuneLevelUpgrade", Native_PerformRuneLevelUpgrade);
 	CreateNative("JB_ToggleRune", Native_ToggleRune);
+	CreateNative("JB_GetClientRuneInventory", Native_GetClientRuneInventory);
 	
 	g_fwdOnRunesStarted = new GlobalForward("JB_OnRunesStarted", ET_Ignore);
 	g_fwdOnRuneSpawn = new GlobalForward("JB_OnRuneSpawn", ET_Event, Param_Cell, Param_Array, Param_CellByRef, Param_Array, Param_CellByRef, Param_CellByRef, Param_Cell);
@@ -1255,6 +1255,23 @@ public int Native_ToggleRune(Handle plugin, int numParams)
 	return true;
 }
 
+any Native_GetClientRuneInventory(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	
+	if (!(1 <= client <= MaxClients))
+	{
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index (%d)", client);
+	}
+	
+	if (!IsClientConnected(client))
+	{
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not connected", client);
+	}
+	
+	return view_as<ArrayList>(CloneHandle(g_ClientsData[client].RunesInventory, plugin));
+}
+
 //================================[ Menus ]================================//
 
 void ShowRunesMainMenu(int client)
@@ -1266,7 +1283,9 @@ void ShowRunesMainMenu(int client)
 	
 	menu.AddItem("", "Personal Runes");
 	menu.AddItem("", is_garbage_collector_purchased ? "Garbage Collector" : "Garbage Collector [Purchasable through the shop]", is_garbage_collector_purchased ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
-	menu.AddItem("", "Capacity Expansion");
+	menu.AddItem("", "Capacity Expansion\n ");
+	
+	menu.AddItem("", "╭Auction House\n    ╰┄Marketplace where you can sell your personal runes to everyone!");
 	
 	// Display the menu to the client
 	menu.Display(client, MENU_TIME_FOREVER);
@@ -1294,6 +1313,10 @@ public int Handler_RunesMain(Menu menu, MenuAction action, int param1, int param
 			{
 				// Display the runes capacity expansion menu
 				ShowCapacityExpansionMenu(client);
+			}
+			case 3:
+			{
+				ClientCommand(client, "sm_ah");
 			}
 		}
 	}

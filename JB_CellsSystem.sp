@@ -49,6 +49,8 @@ bool g_UpdateMapData;
 
 int g_RoundStartUnixstamp;
 
+int g_NextCellActionTime[MAXPLAYERS + 1];
+
 public Plugin myinfo = 
 {
 	name = "[CS:GO] JailBreak - Cells System", 
@@ -96,6 +98,7 @@ public void OnClientPostAdminCheck(int client)
 {
 	// Make sure to reset the client variables, to avoid client data override
 	g_IsClientInMenu[client] = false;
+	g_NextCellActionTime[client] = 0;
 }
 
 public void OnMapStart()
@@ -243,6 +246,8 @@ public Action Command_Open(int client, int args)
 	
 	// Set the cells open state to true
 	g_IsCellsOpened = true;
+	
+	g_NextCellActionTime[client] = GetTime();
 	
 	return Plugin_Handled;
 }

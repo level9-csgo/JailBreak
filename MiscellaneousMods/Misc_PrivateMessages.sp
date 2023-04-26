@@ -2,6 +2,7 @@
 #pragma newdecls required
 
 #include <sourcemod>
+#include <basecomm>
 
 #define PREFIX " \x04[Play-IL]\x01"
 
@@ -38,7 +39,7 @@ public Plugin myinfo =
 	name = "[CS:GO] Private Messages", 
 	author = "KoNLiG", 
 	description = "Private messages system, futures blockpm and message reply.", 
-	version = JAILBREAK_VERSION, 
+	version = "1.0.0", 
 	url = "play-il.co.il"
 };
 
@@ -74,6 +75,12 @@ public Action Command_PrivateMessage(int client, int args)
 	// Deny the command access from the server console
 	if (!client)
 	{
+		return Plugin_Handled;
+	}
+	
+	if (BaseComm_IsClientGagged(client))
+	{
+		PrintToChat(client, "%s \x02You cannot pm while you're gagged. To see your gag status type /gagged\x01", PREFIX);
 		return Plugin_Handled;
 	}
 	

@@ -2,6 +2,7 @@
 #pragma newdecls required
 
 #include <sourcemod>
+#include <basecomm>
 #include <JailBreak>
 #include <JB_GangsSystem>
 #include <rtler>
@@ -171,7 +172,7 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
-	if(g_dbDatabase)
+	if (g_dbDatabase)
 	{
 		FixGangs();
 	}
@@ -203,6 +204,12 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 	{
 		if (szArgs[0] == '~' && gangId != NO_GANG)
 		{
+			if (BaseComm_IsClientGagged(client))
+			{
+				PrintToChat(client, "%s \x02You cannot use the gang chat while you're gagged. To see your gag status type /gagged\x01", PREFIX);
+				return Plugin_Handled;
+			}
+			
 			PrintGangMessage(gangId, "\x0B%N\x01 : %s", client, szArgs[1]);
 			return Plugin_Handled;
 		}

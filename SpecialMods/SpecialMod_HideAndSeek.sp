@@ -15,7 +15,7 @@
 #define MOD_DESC "An old school hide and seek mod.\nThe guards have 45 seconds to hide, and the prisoners cant see/hear you at all!"
 
 #define PRISONERS_FREEZE_TIME 60 // Time in seconds the prisoners will be freezed in every start of round
-#define PRISONERS_SPAWN_PROTECTION_TIME 15 // Time in seconds for the prisoners spawn protection
+#define PRISONERS_SPAWN_PROTECTION_TIME 10 // Time in seconds for the prisoners spawn protection
 
 #define PRISONERS_PRIMARY_WEAPON "weapon_ak47"
 #define PRISONERS_SECONDARY_WEAPON "weapon_deagle"

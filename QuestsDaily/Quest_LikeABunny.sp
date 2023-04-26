@@ -36,7 +36,7 @@ public void OnLibraryAdded(const char[] name)
 {
 	if (StrEqual(name, "JB_QuestsSystem"))
 	{
-		g_QuestIndex = JB_CreateQuest("likeabunny", "Like A Bunny", "Bunnyhop for {progress} seconds straight.", QuestType_Daily, 6500, 300, 600);
+		g_QuestIndex = JB_CreateQuest("likeabunny", "Like A Bunny", "Bunnyhop for {progress} seconds straight.", QuestType_Daily, 6500, 120, 180);
 	}
 }
 

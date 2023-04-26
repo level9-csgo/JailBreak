@@ -116,7 +116,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	// ConVars Configurate
-	g_CreditsTaxPercentage = CreateConVar("shop_trade_credits_tax_percentage", "10", "Credits percentage to take down when credits being transferred. (0 To disable)", _, true, 0.0, true, 100.0);
+	g_CreditsTaxPercentage = CreateConVar("shop_trade_credits_tax_percentage", "5", "Credits percentage to take down when credits being transferred. (0 To disable)", _, true, 0.0, true, 100.0);
 	
 	g_MaxMoney = FindConVar("mp_maxmoney");
 	g_DisableRader = FindConVar("sv_disable_radar");
@@ -755,7 +755,7 @@ public int Handler_CategoryItems(Menu menu, MenuAction action, int param1, int p
 		// Make sure the client actually has the selected item
 		if (!Shop_IsClientHasItem(client, item_id))
 		{
-			PrintToChat(client, "%s You no longer have the selected shop item, please select another.", PREFIX_ERROR);
+			PrintToChat(client, "%s You no longer have the selected shop item, please choose another.", PREFIX_ERROR);
 			ShowCategoryItemsMenu(client, category_id);
 			return;
 		}
@@ -1061,7 +1061,6 @@ bool FillCategoryItems(int client, Menu menu, CategoryId category_id)
 bool FillPersonalRunes(int client, Menu menu)
 {
 	int client_runes_amount = JB_GetClientRunesAmount(client);
-	
 	if (!client_runes_amount)
 	{
 		return false;

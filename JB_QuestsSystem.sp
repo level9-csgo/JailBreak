@@ -104,7 +104,13 @@ enum struct Client
 	// @return              True if the quest is completed, false otherwise.
 	bool IsQuestCompleted(int quest_index)
 	{
-		return this.QuestsStatsData.Get(quest_index, QuestStats::quest_progress) >= this.QuestsStatsData.Get(quest_index, QuestStats::quest_target_progress);
+		int target_progress = this.QuestsStatsData.Get(quest_index, QuestStats::quest_target_progress);
+		if (!target_progress)
+		{
+			return false;
+		}
+		
+		return this.QuestsStatsData.Get(quest_index, QuestStats::quest_progress) >= target_progress;
 	}
 }
 
@@ -150,7 +156,7 @@ public void OnPluginStart()
 	g_DefaultSkips[QuestType_Daily] = CreateConVar("quests_default_skips_daily", "2", "Default amount of skips for daily quests.", _, true, 0.0, true, g_QuestsPer[QuestType_Daily].FloatValue);
 	g_DefaultSkips[QuestType_Weekly] = CreateConVar("quests_default_skips_weekly", "2", "Default amount of skips for weekly quests.", _, true, 0.0, true, g_QuestsPer[QuestType_Weekly].FloatValue);
 	
-	g_MinRequiredPlayers = CreateConVar("quests_min_players", "1", "Minimum players required for quest progress to be achieved.", _, true, 0.0, true, float(MAXPLAYERS));
+	g_MinRequiredPlayers = CreateConVar("quests_min_players", "5", "Minimum players required for quest progress to be achieved.", _, true, 0.0, true, float(MAXPLAYERS));
 	
 	// AutoExecConfig(true, "QuestsSystem", "JailBreak");
 	
@@ -189,8 +195,6 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
-	KV_LoadQuests();
-	
 	AddFileToDownloadsTable("sound/"...QUEST_COMPLETED_SOUND);
 	PrecacheSound(QUEST_COMPLETED_SOUND);
 	AddFileToDownloadsTable("sound/"...FINAL_REWARD_COLLECT);
@@ -207,6 +211,8 @@ void CheckForQuestsSwitch()
 		return;
 	}
 	
+	KV_LoadQuests();
+	
 	if (g_SwitchUnixstamp[QuestType_Daily] <= GetTime())
 	{
 		SwitchQuests(QuestType_Daily);
@@ -218,7 +224,7 @@ void CheckForQuestsSwitch()
 	}
 }
 
-public void OnClientPutInServer(int client)
+public void OnClientAuthorized(int client, const char[] auth)
 {
 	// If the authorized client is fake or we couldn't get the client steam account id, don't continue
 	if (IsFakeClient(client) || !(g_ClientsData[client].account_id = GetSteamAccountID(client)))
@@ -248,10 +254,21 @@ public void OnClientDisconnect(int client)
 
 Action Command_Quests(int client, int args)
 {
+	if (args)
+	{
+		SwitchQuests(QuestType_Weekly);
+	}
+	
 	if (!client)
 	{
 		return Plugin_Handled;
 	}
+	
+	/*if (!(GetUserFlagBits(client) & ADMFLAG_ROOT))
+	{
+		PrintToChat(client, " \x02The Quests System is currently in maintenance, and will be back very soon.");
+		return Plugin_Handled;
+	}*/
 	
 	ShowQuestsMainMenu(client);
 	return Plugin_Handled;
@@ -449,7 +466,6 @@ any Native_AddQuestProgress(Handle plugin, int numParams)
 	
 	// Get and verify the progress amount
 	int progress = GetNativeCell(3);
-	
 	if (progress <= 0)
 	{
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid progress amount (%d), must be over 0.", progress);
@@ -746,6 +762,8 @@ int Handler_QuestsMain(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowQuestsListMenu(int client, int quests_type)
@@ -826,8 +844,6 @@ int Handler_QuestsList(Menu menu, MenuAction action, int param1, int param2)
 				// Initialize the final reward type
 				int quests_type = g_Quests.Get(StringToInt(item_info), Quest::quest_type);
 				
-				Quest QuestData; QuestData = GetQuestByIndex(quest_index);
-				
 				g_ClientsData[client].is_final_reward_collected[quests_type] = true;
 				
 				// Display the quests list menu again by the given quests type
@@ -858,6 +874,8 @@ int Handler_QuestsList(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowQuestDetailMenu(int client, int quest_index)
@@ -873,9 +891,7 @@ void ShowQuestDetailMenu(int client, int quest_index)
 	int target_progress = g_ClientsData[client].QuestsStatsData.Get(quest_index, QuestStats::quest_target_progress);
 	
 	// Replace the {progress} to the real quest progress
-	char progress_str[32];
-	IntToString(target_progress, progress_str, sizeof(progress_str));
-	ReplaceString(QuestData.desc, sizeof(QuestData.desc), PROGRESS_REPLACE_SYMBOL, progress_str);
+	ReplaceString(QuestData.desc, sizeof(QuestData.desc), PROGRESS_REPLACE_SYMBOL, JB_AddCommas(target_progress));
 	
 	char quest_reward[64];
 	Call_OnQuestRewardDisplay(client, quest_index, ExecuteType_Pre, quest_reward, sizeof(quest_reward));
@@ -953,7 +969,7 @@ int Handler_QuestDetail(Menu menu, MenuAction action, int client, int param2)
 					PrintToChat(client, "You don't have enough credits. (missing \x02%s\x01)", AddCommas(QuestData.skip_price - client_credits));
 					ShowQuestDetailMenu(client, quest_index);
 					
-					return;
+					return 0;
 				}
 				
 				
@@ -973,8 +989,8 @@ int Handler_QuestDetail(Menu menu, MenuAction action, int client, int param2)
 				g_ClientsData[client].completed_quests[QuestData.quest_type]++;
 				g_ClientsData[client].skips_amount[QuestData.quest_type]--;
 				
-				//PrintToChat(client, "%s You have \x0Dskipped\x01 quest \x0E%s\x01, and you received \x04%s\x01 %s for the quest reward!", PREFIX, QuestData.name, AddCommas(QuestData.iReward), QuestData.iRewardType == Reward_Cash ? "cash":"rank points");
-				//WriteLogLine("Player \"%L\" has skipped quest \"%s\" for %s cash.", client, QuestData.name, AddCommas(QuestData.skip_price));
+				PrintToChat(client, "%s You have \x0Dskipped\x01 quest \x0E%s\x01.", PREFIX, QuestData.name);
+				WriteLogLine("Player \"%L\" has skipped quest \"%s\" for %s cash.", client, QuestData.name, AddCommas(QuestData.skip_price));
 				ShowQuestsListMenu(client, QuestData.quest_type);
 			}
 			default:
@@ -996,6 +1012,8 @@ int Handler_QuestDetail(Menu menu, MenuAction action, int client, int param2)
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Database ]================================//
@@ -1033,22 +1051,59 @@ void SQL_FetchClient(int client)
 	// Get the client user id, and parse it through the queries data
 	int client_userid = GetClientUserId(client);
 	
-	char query[128];
+	// Daily.
+	char query[4096] = "SELECT * FROM `quests_clients_progress` WHERE (`unique`=";
 	
-	// Execute the 
-	FormatEx(query, sizeof(query), "SELECT * FROM `quests_clients_progress` WHERE `account_id` = %d", g_ClientsData[client].account_id);
-	g_Database.Query(SQL_FetchClientProgress_CB, query, client_userid, DBPrio_High);
+	ArrayList quests_list = GetQuestsList(QuestType_Daily);
+	
+	Quest quest;
+	for (int current_quest; current_quest < quests_list.Length; current_quest++)
+	{
+		quests_list.GetArray(current_quest, quest);
+		if (quest.quest_type != QuestType_Daily)
+		{
+			continue;
+		}
+		
+		Format(query, sizeof(query), "%s'%s'%s", query, quest.unique, current_quest < quests_list.Length - 1 ? " OR `unique`=" : "");
+	}
+	
+	delete quests_list;
+	
+	Format(query, sizeof(query), "%s) AND `account_id` = %d", query, g_ClientsData[client].account_id);
+	g_Database.Query(SQL_FetchClientDailyProgress_CB, query, client_userid, DBPrio_High);
+	
+	// Weekly.
+	query = "SELECT * FROM `quests_clients_progress` WHERE (`unique`=";
+	
+	quests_list = GetQuestsList(QuestType_Weekly);
+	
+	for (int current_quest; current_quest < quests_list.Length; current_quest++)
+	{
+		quests_list.GetArray(current_quest, quest);
+		if (quest.quest_type != QuestType_Weekly)
+		{
+			continue;
+		}
+		
+		Format(query, sizeof(query), "%s'%s'%s", query, quest.unique, current_quest < quests_list.Length - 1 ? " OR `unique`=" : "");
+	}
+	
+	Format(query, sizeof(query), "%s) AND `account_id` = %d", query, g_ClientsData[client].account_id);
+	g_Database.Query(SQL_FetchClientWeeklyProgress_CB, query, client_userid, DBPrio_High);
+	
+	delete quests_list;
 	
 	// Execute the 
 	FormatEx(query, sizeof(query), "SELECT * FROM `quests_clients_data` WHERE `account_id` = %d", g_ClientsData[client].account_id);
 	g_Database.Query(SQL_FetchClientData_CB, query, client_userid);
 }
 
-void SQL_FetchClientProgress_CB(Database db, DBResultSet results, const char[] error, int userid)
+void SQL_FetchClientDailyProgress_CB(Database db, DBResultSet results, const char[] error, int userid)
 {
 	if (!db || !results || error[0])
 	{
-		ThrowError("Client progress fetching error, %s", error);
+		ThrowError("Client daily progress fetching error, %s", error);
 		return;
 	}
 	
@@ -1129,7 +1184,7 @@ void SQL_FetchClientProgress_CB(Database db, DBResultSet results, const char[] e
 			stats.is_quest_reward_collected = false;
 			stats.is_quest_skipped = false;
 			stats.quest_progress = 0;
-			stats.quest_target_progress = RoundToDivider(GetRandomInt(QuestData.min_progress, QuestData.max_progress));
+			stats.quest_target_progress = RoundToDivider(GetRandomInt(QuestData.min_progress, QuestData.max_progress), 5);
 			
 			Call_OnQuestAssigned(client, quest_index, stats.quest_target_progress, stats.reward_amount, ExecuteType_Pre);
 			
@@ -1151,8 +1206,72 @@ void SQL_FetchClientProgress_CB(Database db, DBResultSet results, const char[] e
 			Call_OnQuestAssigned(client, quest_index, stats.quest_target_progress, stats.reward_amount, ExecuteType_Post);
 		}
 		
-		// Clear the entries of the selected quests
-		selected_quests.Clear();
+		// Don't leak handles.
+		delete selected_quests;
+	}
+}
+
+void SQL_FetchClientWeeklyProgress_CB(Database db, DBResultSet results, const char[] error, int userid)
+{
+	if (!db || !results || error[0])
+	{
+		ThrowError("Client weekly progress fetching error, %s", error);
+		return;
+	}
+	
+	// Initialize the client index by the passed query data, and make sure it's valid
+	int client = GetClientOfUserId(userid);
+	
+	if (!client)
+	{
+		return;
+	}
+	
+	// If the client quests progress data is already exists inside the database, fetch it
+	if (results.FetchRow())
+	{
+		int quest_index = -1;
+		
+		char quest_unique[64];
+		
+		do
+		{
+			// Fetch the current quest unique string, and get the quest index from it
+			results.FetchString(1, quest_unique, sizeof(quest_unique));
+			
+			// Make sure the quest index is valid
+			if ((quest_index = GetQuestByUnique(quest_unique)) == -1)
+			{
+				continue;
+			}
+			
+			// Fetch the rest quest data
+			QuestStats stats;
+			
+			stats.is_quest_reward_collected = results.FetchInt(5) == 1;
+			stats.is_quest_skipped = results.FetchInt(6) == 1;
+			stats.reward_amount = results.FetchInt(4);
+			stats.quest_progress = results.FetchInt(2);
+			stats.quest_target_progress = results.FetchInt(3);
+			
+			// Set the quest stats to the updated database data
+			g_ClientsData[client].QuestsStatsData.SetArray(quest_index, stats);
+			
+			// If the current quest is completed, inscrease the completed quests variable value
+			if (g_ClientsData[client].IsQuestCompleted(quest_index))
+			{
+				g_ClientsData[client].completed_quests[GetQuestByIndex(quest_index).quest_type]++;
+			}
+		} while (results.FetchRow());
+	}
+	
+	// If the client quests data data isn't exists inside the database, insert it
+	else
+	{
+		// Create the arraylist that will store the selected quests indexes
+		ArrayList selected_quests = new ArrayList();
+		
+		char query[256];
 		
 		int weekly_quests = GetFixedQuestsCount(QuestType_Weekly);
 		
@@ -1177,7 +1296,7 @@ void SQL_FetchClientProgress_CB(Database db, DBResultSet results, const char[] e
 			stats.is_quest_reward_collected = false;
 			stats.is_quest_skipped = false;
 			stats.quest_progress = 0;
-			stats.quest_target_progress = RoundToDivider(GetRandomInt(QuestData.min_progress, QuestData.max_progress));
+			stats.quest_target_progress = RoundToDivider(GetRandomInt(QuestData.min_progress, QuestData.max_progress), 5);
 			
 			Call_OnQuestAssigned(client, quest_index, stats.quest_target_progress, stats.reward_amount, ExecuteType_Pre);
 			
@@ -1258,9 +1377,23 @@ void SQL_UpdateClient(int client)
 	char query[256];
 	QuestStats stats;
 	
+	Transaction txn = new Transaction();
+	
 	for (int current_quest = 0; current_quest < g_Quests.Length; current_quest++)
 	{
 		g_ClientsData[client].GetQuestStatsData(current_quest, stats);
+		
+		if (stats.reward_amount && !stats.quest_target_progress)
+		{
+			LogError("[SQL_UpdateClient] QUEST HAS REWARD BUT 0 TARGET PROGRESS. %d(%N) %d", client, client, g_ClientsData[client].account_id);
+			continue;
+		}
+		
+		// Quest is not active.
+		if (stats.quest_target_progress <= 0)
+		{
+			//continue;
+		}
 		
 		g_Database.Format(query, sizeof(query), "UPDATE `quests_clients_progress` SET `progress` = %d, `target_progress` = %d, `reward_collected` = %d, `quest_skipped` = %d WHERE `account_id` = %d AND `unique` = '%s'", 
 			stats.quest_progress, 
@@ -1271,8 +1404,10 @@ void SQL_UpdateClient(int client)
 			GetQuestByIndex(current_quest).unique
 			);
 		
-		g_Database.Query(SQL_CheckForErrors, query);
+		txn.AddQuery(query);
 	}
+	
+	g_Database.Execute(txn, OnUpdateClientSuccess, OnUpdateClientFailure);
 	
 	FormatEx(query, sizeof(query), "UPDATE `quests_clients_data` SET `skips_daily` = %d, `skips_weekly` = %d, `final_collected_daily` = %d, `final_collected_weekly` = %d WHERE `account_id` = %d", 
 		g_ClientsData[client].skips_amount[QuestType_Daily], 
@@ -1288,6 +1423,15 @@ void SQL_UpdateClient(int client)
 	g_ClientsData[client].Reset();
 }
 
+void OnUpdateClientSuccess(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
+{
+}
+
+void OnUpdateClientFailure(Database db, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
+{
+	LogError("[OnUpdateClientFailure] [%d] %s", failIndex, error);
+}
+
 void SQL_ResetUserData(int quests_type)
 {
 	char query[128];
@@ -1295,11 +1439,29 @@ void SQL_ResetUserData(int quests_type)
 	g_Database.Query(SQL_CheckForErrors, query);
 }
 
-public void SQL_CheckForErrors(Database db, DBResultSet results, const char[] error, any data)
+void SQL_CheckForErrors(Database db, DBResultSet results, const char[] error, any data)
 {
 	if (!db || !results || error[0])
 	{
 		ThrowError("General databse error, %s", error);
+	}
+}
+
+void SQL_PostSwitchQuests(Database db, DBResultSet results, const char[] error, any data)
+{
+	if (!db || !results || error[0])
+	{
+		ThrowError("[SQL_PostSwitchQuests] %s", error);
+	}
+	
+	for (int current_client = 1; current_client <= MaxClients; current_client++)
+	{
+		if (IsClientInGame(current_client) && !IsFakeClient(current_client))
+		{
+			g_ClientsData[current_client].Reset();
+			
+			OnClientAuthorized(current_client, "");
+		}
 	}
 }
 
@@ -1414,9 +1576,11 @@ Action Timer_LateClientsLoop(Handle timer)
 	{
 		if (IsClientInGame(current_client) && !IsFakeClient(current_client))
 		{
-			OnClientPutInServer(current_client);
+			OnClientAuthorized(current_client, "");
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//
@@ -1455,7 +1619,7 @@ int GetFixedQuestsCount(int quests_type)
 	return quests_count < g_QuestsPer[quests_type].IntValue ? quests_count : g_QuestsPer[quests_type].IntValue;
 }
 
-char GetProgressBar(int value, int all)
+char[] GetProgressBar(int value, int all)
 {
 	char progress_str[PROGRESS_LENGTH * 6];
 	int length = PROGRESS_LENGTH;
@@ -1496,7 +1660,7 @@ void PerformFinalReward(int client, int quests_type)
 // @param client         Client index.
 // 
 // @return				 Formatted awards string.
-char AwardClient(int client, int quests_type)
+char[] AwardClient(int client, int quests_type)
 {
 	StringMap rewards = g_FinalRewards[quests_type].Get(GetRandomInt(0, g_FinalRewards[quests_type].Length - 1));
 	
@@ -1581,23 +1745,49 @@ void SwitchQuests(int quests_type)
 {
 	SQL_ResetUserData(quests_type);
 	
-	g_Database.Query(SQL_CheckForErrors, "DELETE FROM `quests_clients_progress`");
+	char query[4096] = "DELETE FROM `quests_clients_progress` WHERE `unique`=";
+	
+	ArrayList quests_list = GetQuestsList(quests_type);
+	
+	Quest quest;
+	for (int current_quest; current_quest < quests_list.Length; current_quest++)
+	{
+		quests_list.GetArray(current_quest, quest);
+		if (quest.quest_type != quests_type)
+		{
+			continue;
+		}
+		
+		Format(query, sizeof(query), "%s'%s'%s", query, quest.unique, current_quest < quests_list.Length - 1 ? " OR `unique`=" : "");
+	}
+	
+	delete quests_list;
+	
+	g_Database.Query(SQL_PostSwitchQuests, query);
 	
 	KV_SetQuestsData(quests_type);
 	
 	Call_OnQuestsReset(quests_type);
 	
-	for (int current_client = 1; current_client <= MaxClients; current_client++)
+	WriteLogLine("%s quests has automatically reset.", quests_type == QuestType_Daily ? "Daily" : "Weekly");
+}
+
+ArrayList GetQuestsList(int quests_type)
+{
+	ArrayList array = new ArrayList(sizeof(Quest));
+	
+	Quest quest;
+	for (int current_quest; current_quest < g_Quests.Length; current_quest++)
 	{
-		if (IsClientInGame(current_client) && !IsFakeClient(current_client))
+		// Initialize the current quest data struct
+		quest = GetQuestByIndex(current_quest);
+		if (quest.quest_type == quests_type)
 		{
-			g_ClientsData[current_client].Reset();
-			
-			OnClientPutInServer(current_client);
+			array.PushArray(quest);
 		}
 	}
 	
-	WriteLogLine("%s quests has automatically reset.", quests_type == QuestType_Daily ? "Daily" : "Weekly");
+	return array;
 }
 
 //================================================================//

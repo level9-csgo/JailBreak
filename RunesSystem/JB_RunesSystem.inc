@@ -63,7 +63,7 @@ enum struct ClientRune
 	int RuneLevel;
 	bool IsRuneEquipped;
 	bool IsInGarbageCollector;
-
+	
 	int FindIndex(ArrayList inventory)
 	{
 		return inventory.FindValue(this.RowId);
@@ -247,6 +247,15 @@ native bool JB_PerformRuneLevelUpgrade(int client, int clientRuneIndex, int succ
 native bool JB_ToggleRune(int runeIndex, bool toggleMode);
 
 /**
+ * Retrieves a client rune inventory array.
+ * 
+ * @param client             	Client index.
+ * 
+ * @error                       If the client is not connected an error will be thrown.
+ */
+native ArrayList JB_GetClientRuneInventory(int client);
+
+/**
  * Called on a rune box spawn.
  * 
  * @param entity              Entity index of the rune box.
@@ -350,6 +359,7 @@ public void __pl_JB_RunesSystem_SetNTVOptional()
 	MarkNativeAsOptional("JB_GetClientOwnedRunes");
 	MarkNativeAsOptional("JB_PerformRuneLevelUpgrade");
 	MarkNativeAsOptional("JB_ToggleRune");
+	MarkNativeAsOptional("JB_GetClientRuneInventory");
 }
 #endif
 

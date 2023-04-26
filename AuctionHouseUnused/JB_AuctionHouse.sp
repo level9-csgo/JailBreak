@@ -434,18 +434,15 @@ public int Handler_CreateAuction(Menu menu, MenuAction action, int client, int i
 
 void showAuctionItemSelectionMenu(int client)
 {
-	// char szItem[64];
 	Menu menu = new Menu(Handler_AuctionItemSelection);
 	menu.SetTitle("%s Auction House - Item Selection\n ", PREFIX_MENU);
 	
-	menu.AddItem("", "Runes");
-	menu.AddItem("", "Shop Categories", ITEMDRAW_DISABLED);
+	menu.AddItem("", "Personal Runes");
+	menu.AddItem("", "Shop Items");
 	
-	// Set the exit back button as true, and fix the back button gap
 	menu.ExitBackButton = true;
 	JB_FixMenuGap(menu);
 	
-	// Display the menu to the client
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -491,12 +488,12 @@ void showRunesInventoryMenu(int client)
 	for (int iCurrentClientRune = 0; iCurrentClientRune < JB_GetClientRunesAmount(client); iCurrentClientRune++)
 	{
 		JB_GetClientRuneData(client, iCurrentClientRune, ClientRuneData);
-		JB_GetRuneData(ClientRuneData.iRuneId, RuneData);
+		JB_GetRuneData(ClientRuneData.RuneId, RuneData);
 		
 		// Convert the current data into a string, required for sending through the menu item info
-		Format(szItemInfo, sizeof(szItemInfo), "%s:%d:%d:%d", RuneData.szRuneUnique, ClientRuneData.iRuneStar, ClientRuneData.iRuneLevel, iCurrentClientRune);
+		Format(szItemInfo, sizeof(szItemInfo), "%s:%d:%d:%d", RuneData.szRuneUnique, ClientRuneData.RuneStar, ClientRuneData.RuneLevel, iCurrentClientRune);
 		
-		menu.AddItem(szItemInfo, GetAuctionItemName(RuneData.szRuneUnique, ClientRuneData.iRuneStar, ClientRuneData.iRuneLevel));
+		menu.AddItem(szItemInfo, GetAuctionItemName(RuneData.szRuneUnique, ClientRuneData.RuneStar, ClientRuneData.RuneLevel));
 	}
 	
 	// Set the exit back button as true, and fix the back button gap
@@ -639,21 +636,21 @@ char GetAuctionItemName(char[] item_unique, int star, int level)
 	return szItemName;
 }
 
-char GetAuctionDuration(int duration)
+// param 'duration' is minutes represented.
+void GetDurationString(int duration, char[] buffer, int length)
 {
-	char szDuration[32];
-	
-	if (duration < 60) {
-		Format(szDuration, sizeof(szDuration), "%d Minutes", duration);
+	if (duration < 60)
+	{
+		Format(buffer, length, "%d Minutes", duration);
 	}
-	else if (60 <= duration < 1440) {
-		Format(szDuration, sizeof(szDuration), "%d Hour%s", duration / 60, duration / 60 != 1 ? "s" : "");
+	else if (60 <= duration < 1440)
+	{
+		Format(buffer, length, "%d Hour%s", duration / 60, duration / 60 != 1 ? "s" : "");
 	}
-	else {
-		Format(szDuration, sizeof(szDuration), "%d Day%s", duration / 1440, duration / 1440 != 1 ? "s" : "");
+	else
+	{
+		Format(buffer, length, "%d Day%s", duration / 1440, duration / 1440 != 1 ? "s" : "");
 	}
-	
-	return szDuration;
 }
 
 //================================================================//
