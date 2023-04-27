@@ -88,17 +88,16 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 
 public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int HitGroup)
 {
+	if (!(1 <= attacker <= MaxClients))
+	{
+		return Plugin_Continue;
+	}
+
 	return IsStabBackstab(attacker, victim) ? Plugin_Continue : Plugin_Handled;
 }
 
 bool IsStabBackstab(int attacker, int victim)
 {
-	if (!(1 <= attacker <= MaxClients))
-	{
-		return false;
-	}
-	
-	// Initialize buffers.
 	float abs_angles[3], victim_forward[3], attacker_origin[3], victim_origin[3], vec_los[3];
 	
 	GetClientAbsAngles(victim, abs_angles);
@@ -107,15 +106,13 @@ bool IsStabBackstab(int attacker, int victim)
 	GetClientAbsOrigin(attacker, attacker_origin);
 	GetClientAbsOrigin(victim, victim_origin);
 	
+	attacker_origin[2] = victim_origin[2];
+	
 	SubtractVectors(victim_origin, attacker_origin, vec_los);
 	NormalizeVector(vec_los, vec_los);
 	
-	// 2D Vectors representation.
-	vec_los[2] = 0.0;
-	victim_forward[2] = 0.0;
-	
 	return GetVectorDotProduct(victim_forward, vec_los) > 0.475;
-}
+} 
 
 //================================[ Functions ]================================//
 

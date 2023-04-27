@@ -367,7 +367,6 @@ void FreezePrisoners(bool freeze = true)
 
 bool IsStabBackstab(int attacker, int victim)
 {
-	// Initialize buffers.
 	float abs_angles[3], victim_forward[3], attacker_origin[3], victim_origin[3], vec_los[3];
 	
 	GetClientAbsAngles(victim, abs_angles);
@@ -376,15 +375,13 @@ bool IsStabBackstab(int attacker, int victim)
 	GetClientAbsOrigin(attacker, attacker_origin);
 	GetClientAbsOrigin(victim, victim_origin);
 	
+	attacker_origin[2] = victim_origin[2];
+	
 	SubtractVectors(victim_origin, attacker_origin, vec_los);
 	NormalizeVector(vec_los, vec_los);
 	
-	// 2D Vectors representation.
-	vec_los[2] = 0.0;
-	victim_forward[2] = 0.0;
-	
 	return GetVectorDotProduct(victim_forward, vec_los) > 0.475;
-}
+} 
 
 bool IsClientAllowed(int client)
 {

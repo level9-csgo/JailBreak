@@ -189,6 +189,11 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int HitGroup)
 {
+	if (!(1 <= attacker <= MaxClients))
+	{
+		return Plugin_Continue;
+	}
+
 	if ((victim == g_esSetupData.iPrisoner && attacker != g_esSetupData.iAgainst) || (victim != g_esSetupData.iAgainst && attacker == g_esSetupData.iPrisoner)) 
 	{
 		return Plugin_Handled;
@@ -204,24 +209,21 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 
 bool IsStabBackstab(int attacker, int victim)
 {
-    // Initialize buffers.
-    float abs_angles[3], victim_forward[3], attacker_origin[3], victim_origin[3], vec_los[3];
-    
-    GetClientAbsAngles(victim, abs_angles);
-    GetAngleVectors(abs_angles, victim_forward, NULL_VECTOR, NULL_VECTOR);
-    
-    GetClientAbsOrigin(attacker, attacker_origin);
-    GetClientAbsOrigin(victim, victim_origin);
-    
-    SubtractVectors(victim_origin, attacker_origin, vec_los);
-    NormalizeVector(vec_los, vec_los);
-    
-    // 2D Vectors representation.
-    vec_los[2] = 0.0;
-    victim_forward[2] = 0.0;
-    
-    return GetVectorDotProduct(victim_forward, vec_los) > 0.475;
-}
+	float abs_angles[3], victim_forward[3], attacker_origin[3], victim_origin[3], vec_los[3];
+	
+	GetClientAbsAngles(victim, abs_angles);
+	GetAngleVectors(abs_angles, victim_forward, NULL_VECTOR, NULL_VECTOR);
+	
+	GetClientAbsOrigin(attacker, attacker_origin);
+	GetClientAbsOrigin(victim, victim_origin);
+	
+	attacker_origin[2] = victim_origin[2];
+	
+	SubtractVectors(victim_origin, attacker_origin, vec_los);
+	NormalizeVector(vec_los, vec_los);
+	
+	return GetVectorDotProduct(victim_forward, vec_los) > 0.475;
+} 
 
 /*  */
 
