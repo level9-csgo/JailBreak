@@ -240,6 +240,8 @@ public int Handler_Music(Menu menu, MenuAction action, int client, int itemNum)
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowSongsListMenu(int client, int start_item = 0)
@@ -294,6 +296,8 @@ public int Handler_SongsList(Menu menu, MenuAction action, int client, int itemN
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 int AlphabeticSortCaseInsensative(int index1, int index2, Handle array, Handle hndl)
@@ -348,7 +352,7 @@ public int Handler_AddSong(Menu menu, MenuAction action, int client, int itemNum
 				{
 					PrintToChat(client, "%s Invalid parameters specified.", PREFIX_ERROR);
 					ShowAddSongMenu(client);
-					return;
+					return 0;
 				}
 				
 				KV_AddSong(client);
@@ -376,6 +380,8 @@ public int Handler_AddSong(Menu menu, MenuAction action, int client, int itemNum
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowSongDetailsMenu(int client, int songId, int menu_selection)
@@ -476,6 +482,8 @@ public int Handler_SongDetails(Menu menu, MenuAction action, int client, int ite
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Natives ]================================//
@@ -685,9 +693,7 @@ public Action Timer_PlaySong(Handle timer, DataPack dPack)
 	float fSettingVolume = StringToFloat(szSettingValue);
 	if (fSettingVolume != 0.0)
 	{
-		EmitSoundToClient(client, szSongPath, client, .volume = (fSettingVolume == 1.0 ? 0.9 : fSettingVolume));
-		
-		PrintToConsole(client, "Volume: %f", (fSettingVolume == 1.0 ? 0.9 : fSettingVolume));
+		EmitSoundToClient(client, szSongPath, SOUND_FROM_PLAYER, .volume = (fSettingVolume == 1.0 ? 0.9 : fSettingVolume));
 		
 		if (dPack.ReadCell())
 		{
@@ -737,7 +743,7 @@ void StopMusicToClient(int client)
 	}
 }
 
-char GetFileExt(const char[] filePath)
+char[] GetFileExt(const char[] filePath)
 {
 	char ext[8];
 	
