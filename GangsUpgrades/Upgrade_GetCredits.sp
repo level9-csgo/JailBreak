@@ -17,7 +17,7 @@ enum
 	Item_Reward
 }
 
-bool g_IsGetCreditsClaimed[MAXPLAYERS + 1] =  { true, ... };
+bool g_IsGetCreditsClaimed[MAXPLAYERS + 1] = { true, ... };
 
 int g_UpgradeIndex = -1;
 int g_UpgradeLevels[][] = 
@@ -89,6 +89,11 @@ public Action Event_RoundPreStart(Event event, const char[] name, bool dontBroad
 
 public Action Command_GetCredits(int client, int args)
 {
+	if (!IsClientInGame(client))
+	{
+		return Plugin_Handled;
+	}
+	
 	int iClientGangIndex = Gangs_GetPlayerGang(client);
 	if (iClientGangIndex == NO_GANG)
 	{
