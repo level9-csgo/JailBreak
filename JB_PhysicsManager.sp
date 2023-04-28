@@ -33,8 +33,7 @@ public void OnPluginStart()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	// SDK Hook trace attack on every non-player entity
-	if (StrContains(classname, "weapon_") != -1 || StrContains(classname, "func_physbox") != -1 || StrContains(classname, "prop_physics") != -1)
+	if (StrContains(classname, "func_physbox") != -1 || StrContains(classname, "prop_physics") != -1)
 	{
 		SDKHook(entity, SDKHook_TraceAttack, Hook_OnTraceAttack);
 	}
@@ -52,19 +51,10 @@ public Action Hook_OnTraceAttack(int entity, int &attacker, int &inflictor, floa
 	char classname[32];
 	GetEntityClassname(entity, classname, sizeof(classname));
 	
-	bool IsEntityWeapon = (StrContains(classname, "weapon") != -1);
-	
-	if (IsEntityWeapon && GetEntPropEnt(entity, Prop_Send, "m_hPrevOwner") == -1)
-	{
-		return Plugin_Continue;
-	}
-	
 	float client_angles[3];
-	
 	GetClientEyeAngles(attacker, client_angles);
 	
 	float fwd[3];
-	
 	GetAngleVectors(client_angles, fwd, NULL_VECTOR, NULL_VECTOR);
 	
 	// Scale up the velocity vector to make a knockback effect
