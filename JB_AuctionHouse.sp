@@ -326,6 +326,22 @@ enum struct Auction
 		return false;
 	}
 	
+	bool FindBidByBidder(int client, AuctionBid bid, int &idx = -1)
+	{
+		for (int current_bid; current_bid < this.bids_array.Length; current_bid++)
+		{
+			this.bids_array.GetArray(current_bid, bid);
+			
+			if (bid.bidder_account_id == GetPlayer(client).account_id)
+			{
+				idx = current_bid;
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	int GetDuration()
 	{
 		return (this.end_time - this.start_time) / 60;
@@ -451,6 +467,13 @@ enum struct Auction
 		dp.WriteCell(bid.bid_time);
 		
 		g_Database.Query(SQL_InsertAuctionBid_CB, query, dp);
+	}
+	
+	void UpdateBidData(AuctionBid bid)
+	{
+		char query[512];
+		g_Database.Format(query, sizeof(query), "UPDATE `jb_auctions_bids` SET `value` = %d, `bid_time` = %d WHERE `auction_id` = %d AND `bidder_account_id` = %d", bid.value, bid.bid_time, this.row_id, bid.bidder_account_id);
+		g_Database.Query(SQL_CheckForErrors, query);
 	}
 	
 	void DeleteData()
@@ -688,7 +711,7 @@ public void OnPluginStart()
 	
 	// Configurate cvars.
 	jb_ah_fee_percent = CreateConVar("jb_ah_fee_percent", "5", "Fee percent to charge from the auction item price.", .hasMin = true, .hasMax = true, .max = 100.0);
-	jb_ah_fee_percent = CreateConVar("jb_ah_fee_percent", "5", "Fee percent to charge from the auction item price.", .hasMin = true, .hasMax = true, .max = 100.0);
+	jb_ah_over_bid_percent = CreateConVar("jb_ah_over_bid_percent", "5", "Overbid percent to add from the previous bid value.", .hasMin = true, .hasMax = true, .max = 100.0);
 	jb_ah_default_value = CreateConVar("jb_ah_default_value", "500", "Default auction value in credits.");
 	
 	#if !defined DEVELOPMENT
@@ -759,13 +782,6 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				return Plugin_Handled;
 			}
 			
-			int client_credits = Shop_GetClientCredits(client);
-			if (client_credits < value)
-			{
-				PrintToChat(client, "You don't have enough credits to place a bid the item. (missing \x02%s\x01)", JB_AddCommas(value - client_credits));
-				return Plugin_Handled;
-			}
-			
 			Auction auction;
 			
 			if (!auction.FindByRowID(g_Players[client].auction_id))
@@ -777,19 +793,53 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 			AuctionBid highest_bid;
 			if (auction.FindHighestBid(highest_bid))
 			{
-				if (highest_bid.GetOverBidValue() >= value)
+				int overbid;
+				if ((overbid = highest_bid.GetOverBidValue()) >= value)
 				{
-					PrintToChat(client, "%s Your bid must be larger than the highest bid.", PREFIX_ERROR);
+					PrintToChat(client, "%s Your bid must be larger than the highest bid, \x06%s\x01.", PREFIX_ERROR, JB_AddCommas(overbid));
 					return Plugin_Handled;
 				}
 			} else {
-				
-				
-				if (auction.value  >= value)
+				if (auction.value >= value)
 				{
 					PrintToChat(client, "%s Your bid must be larger than the starting bid.", PREFIX_ERROR);
 					return Plugin_Handled;
 				}
+			}
+			
+			AuctionBid bid;
+			int idx;
+			
+			int client_credits = Shop_GetClientCredits(client);
+			
+			if (auction.FindBidByBidder(client, bid, idx))
+			{
+				int difference = value - bid.value;
+				
+				if (client_credits < difference)
+				{
+					PrintToChat(client, "You don't have enough credits to increase your bid on the item. (missing \x02%s\x01)", JB_AddCommas(difference - client_credits));
+					return Plugin_Handled;
+				}
+				
+				bid.bid_time = GetTime();
+				bid.value = value;
+				
+				auction.bids_array.SetArray(idx, bid);
+				
+				Shop_TakeClientCredits(client, difference, CREDITS_BY_BUY_OR_SELL);
+				
+				char item_name[64];
+				auction.item.GetName(item_name, sizeof(item_name));
+				PrintToChat(client, "%s Successfully increased your bid to \x03%s\x01 credits on \x0E%s\x01 auction.", PREFIX, JB_AddCommas(value), item_name);
+				auction.UpdateBidData(bid);
+				return Plugin_Handled;
+			}
+			
+			if (client_credits < value)
+			{
+				PrintToChat(client, "You don't have enough credits to place a bid on the item. (missing \x02%s\x01)", JB_AddCommas(value - client_credits));
+				return Plugin_Handled;
 			}
 			
 			Shop_TakeClientCredits(client, value, CREDITS_BY_BUY_OR_SELL);
@@ -927,7 +977,7 @@ void DisplayAuctionOverviewMenu(int client, Auction auction)
 	{
 		Format(item_display, sizeof(item_display), "◾ Highest Bid: %s credits\n", JB_AddCommas(bid.value));
 	}
-	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n◾Auction Type: %s\n%s  ", 
+	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n◾ Auction Type: %s\n%s  ", 
 		PREFIX_MENU, 
 		item_name, 
 		auction.type == AuctionType_Bids ? "Starting bid is ":"", 
@@ -1664,7 +1714,12 @@ void SQL_FetchAuctionBids_CB(Database db, DBResultSet results, const char[] erro
 		
 		int idx;
 		Auction auction;
-		auction.FindByRowID(auction_id, idx);
+		
+		if (!auction.FindByRowID(auction_id, idx))
+		{
+			ThrowError("[SQL_FetchAuctionBids_CB] Failed to find auction. (auction_id: %d)", auction_id);
+			return;
+		}
 		
 		auction.bids_array.PushArray(new_auction_bid);
 		g_Auctions.SetArray(idx, auction);
