@@ -770,11 +770,9 @@ void ShowQuestsListMenu(int client, int quests_type)
 {
 	char item_display[128], item_info[4];
 	
-	// Calculate the time until the next reset for the given quests type
-	float quests_reset_time = (float(g_SwitchUnixstamp[quests_type]) - float(GetTime())) / (quests_type == QuestType_Daily ? float(SECONDS_HOUR):float(SECONDS_DAY));
-	
 	// Format the reset time display buffer
-	Format(item_display, sizeof(item_display), "%.1f %s", quests_reset_time, quests_type == QuestType_Daily ? "Hours" : "Days");
+	int remaining_minutes = (g_SwitchUnixstamp[quests_type] - GetTime()) / 60;
+	FormatMinutes(remaining_minutes, item_display, sizeof(item_display));
 	
 	Menu menu = new Menu(Handler_QuestsList);
 	menu.SetTitle("%s Quests System - %s Quests (%d/%d Completed)\n \n• Next reset: %s\n* Complete each quest, to recive these rewards:\n   [???????]\n ", 
@@ -782,7 +780,7 @@ void ShowQuestsListMenu(int client, int quests_type)
 		quests_type == QuestType_Daily ? "Daily" : "Weekly", 
 		g_ClientsData[client].completed_quests[quests_type], 
 		g_QuestsPer[quests_type].IntValue, 
-		quests_reset_time <= 0.09 ? "Next Map!" : item_display
+		remaining_minutes <= 0 ? "Next Map!" : item_display
 		);
 	
 	menu.AddItem("", g_ClientsData[client].is_final_reward_collected[quests_type] ? "Final Reward Collected\n " : "Collect Final Reward!\n ", g_ClientsData[client].completed_quests[quests_type] >= g_QuestsPer[quests_type].IntValue && !g_ClientsData[client].is_final_reward_collected[quests_type] ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
@@ -1142,7 +1140,13 @@ void SQL_FetchClientDailyProgress_CB(Database db, DBResultSet results, const cha
 			stats.quest_progress = results.FetchInt(2);
 			stats.quest_target_progress = results.FetchInt(3);
 			
-			// Set the quest stats to the updated database data
+			if (!stats.quest_target_progress)
+			{
+				LogError("[SQL_FetchClientDailyProgress_CB] Loaded 0 quest progress for client %d(%N) [%d] and quest '%s'", client, client, g_ClientsData[client].account_id, GetQuestByIndex(quest_index).unique);
+				continue;
+			}
+			
+			// Set the quest stats to the updated database data.
 			g_ClientsData[client].QuestsStatsData.SetArray(quest_index, stats);
 			
 			// If the current quest is completed, inscrease the completed quests variable value
@@ -1385,19 +1389,13 @@ void SQL_UpdateClient(int client)
 		
 		if (stats.reward_amount && !stats.quest_target_progress)
 		{
+			DebugClientData(client);
 			LogError("[SQL_UpdateClient] QUEST HAS REWARD BUT 0 TARGET PROGRESS. %d(%N) %d", client, client, g_ClientsData[client].account_id);
 			continue;
 		}
 		
-		// Quest is not active.
-		if (stats.quest_target_progress <= 0)
-		{
-			//continue;
-		}
-		
-		g_Database.Format(query, sizeof(query), "UPDATE `quests_clients_progress` SET `progress` = %d, `target_progress` = %d, `reward_collected` = %d, `quest_skipped` = %d WHERE `account_id` = %d AND `unique` = '%s'", 
+		g_Database.Format(query, sizeof(query), "UPDATE `quests_clients_progress` SET `progress` = %d, `reward_collected` = %d, `quest_skipped` = %d WHERE `account_id` = %d AND `unique` = '%s'", 
 			stats.quest_progress, 
-			stats.quest_target_progress, 
 			stats.is_quest_reward_collected, 
 			stats.is_quest_skipped, 
 			g_ClientsData[client].account_id, 
@@ -1788,6 +1786,73 @@ ArrayList GetQuestsList(int quests_type)
 	}
 	
 	return array;
+}
+
+void DebugClientData(int client)
+{
+	/*enum struct QuestStats
+	{
+		bool is_quest_skipped;
+		bool is_quest_reward_collected;
+		int reward_amount;
+		int quest_progress;
+		int quest_target_progress;
+	}*/
+	
+	LogError("-----------------------------------------------------------------");
+	
+	QuestStats stats;
+	Quest quest;
+	for (int i; i < g_ClientsData[client].QuestsStatsData.Length; i++)
+	{
+		g_ClientsData[client].QuestsStatsData.GetArray(i, stats);
+		quest = GetQuestByIndex(i);
+		
+		LogError("%N - [%d] %s (%d, %d, %d, %d, %d)", client, i, quest.unique, stats.is_quest_skipped, stats.is_quest_reward_collected, stats.reward_amount, stats.quest_progress, stats.quest_target_progress);
+	}
+	
+	LogError("-----------------------------------------------------------------");
+}
+
+// Param 'duration' is minutes represented.
+void FormatMinutes(int minutes, char[] buffer, int length)
+{
+	if (minutes < 0)
+	{
+		return;
+	}
+	
+	buffer[0] = '\0';
+	
+	int totalMinutes = minutes % 60;
+	int totalHours = (minutes / 60) % 24;
+	int totalDays = (minutes / (60 * 24)) % 7;
+	int totalWeeks = minutes / (60 * 24 * 7);
+	
+	if (totalWeeks > 0)
+	{
+		Format(buffer, length, "%d Week%s", totalWeeks, totalWeeks != 1 ? "s" : "");
+	}
+	
+	if (totalDays > 0)
+	{
+		Format(buffer, length, "%s%s%d Day%s", buffer, buffer[0] ? ", " : "", totalDays, totalDays != 1 ? "s" : "");
+	}
+	
+	if (totalHours > 0)
+	{
+		Format(buffer, length, "%s%s%d Hour%s", buffer, buffer[0] ? ", " : "", totalHours, totalHours != 1 ? "s" : "");
+	}
+	
+	if (totalMinutes > 0)
+	{
+		Format(buffer, length, "%s%s%d Minute%s", buffer, buffer[0] ? ", " : "", totalMinutes, totalMinutes != 1 ? "s" : "");
+	}
+	
+	if (!buffer[0])
+	{
+		strcopy(buffer, length, "Couple of seconds");
+	}
 }
 
 //================================================================//

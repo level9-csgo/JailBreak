@@ -9,7 +9,7 @@
 
 //==========[ Settings ]==========//
 
-#define PREFIX " \x04[Play-IL]\x01"
+#define PREFIX " \x04[Level9]\x01"
 #define PREFIX_ERROR " \x02[Error]\x01"
 
 //====================//
@@ -206,7 +206,7 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 	
 	g_Jackpot.Clear();
 	
-	PrintToConsoleAll("%f", BetData.win_chance);
+	PrintToConsoleAll("BetData.win_chance: %f", BetData.win_chance);
 	
 	Call_OnJackpotResults(winner_index, BetData.win_chance, BetData.bet_amount, jackpot_sum);
 }
