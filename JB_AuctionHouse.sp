@@ -2,6 +2,7 @@
 #include <JailBreak>
 #include <JB_RunesSystem>
 #include <shop>
+#include <rtler>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -181,8 +182,11 @@ enum struct AuctionBid
 	// Credits value of the auction bid.
 	int value;
 	
-	//Time when the bid was created
+	// Time when the bid was created
 	int bid_time;
+	
+	// If the bid will be returned when the auction end
+	bool return_bid;
 	
 	void GetTimeStr(char[] buffer, int maxlen)
 	{
@@ -399,15 +403,17 @@ enum struct Auction
 	
 	bool FindHighestBid(AuctionBid bid)
 	{
-		// Sort the client's personal runes by the rune star, level, and equipped runes. See SortADTRunesInventory for the preferences
+		if (!this.bids_array.Length)
+		{
+			return false;
+			
+		}
+		
+		// Sort the auction's bids by the bid value. See SortADTBidsArray for the preferences
 		this.bids_array.SortCustom(SortADTBidsArray);
 		
-		if (this.bids_array.Length)
-		{
-			this.bids_array.GetArray(0, bid);
-			return true;
-		}
-		return false;
+		this.bids_array.GetArray(0, bid);
+		return true;
 	}
 	
 	//================[ Database ]================//
@@ -458,8 +464,8 @@ enum struct Auction
 	{
 		char query[512];
 		g_Database.Format(query, sizeof(query), "INSERT INTO `jb_auctions_bids` \
-		(`auction_id`, `bidder_account_id`, `bidder_name`, `value`, `bid_time`) \
-		VALUES (%d, %d, '%s', %d, %d)", this.row_id, bid.bidder_account_id, bid.bidder_name, bid.value, bid.bid_time);
+		(`auction_id`, `bidder_account_id`, `bidder_name`, `value`, `bid_time`, `return_bid`) \
+		VALUES (%d, %d, '%s', %d, %d, %d)", this.row_id, bid.bidder_account_id, bid.bidder_name, bid.value, bid.bid_time, bid.return_bid);
 		
 		DataPack dp = new DataPack();
 		dp.WriteCell(this.row_id);
@@ -472,7 +478,7 @@ enum struct Auction
 	void UpdateBidData(AuctionBid bid)
 	{
 		char query[512];
-		g_Database.Format(query, sizeof(query), "UPDATE `jb_auctions_bids` SET `value` = %d, `bid_time` = %d WHERE `auction_id` = %d AND `bidder_account_id` = %d", bid.value, bid.bid_time, this.row_id, bid.bidder_account_id);
+		g_Database.Format(query, sizeof(query), "UPDATE `jb_auctions_bids` SET `return_bid` = %d WHERE `auction_id` = %d AND `bidder_account_id` = %d", bid.return_bid, this.row_id, bid.bidder_account_id);
 		g_Database.Query(SQL_CheckForErrors, query);
 	}
 	
@@ -800,7 +806,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 					return Plugin_Handled;
 				}
 			} else {
-				if (auction.value >= value)
+				if (auction.value > value)
 				{
 					PrintToChat(client, "%s Your bid must be larger than the starting bid.", PREFIX_ERROR);
 					return Plugin_Handled;
@@ -822,37 +828,52 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 					return Plugin_Handled;
 				}
 				
-				bid.bid_time = GetTime();
-				bid.value = value;
-				
+				bid.return_bid = false;
 				auction.bids_array.SetArray(idx, bid);
+				auction.UpdateBidData(bid);
 				
 				Shop_TakeClientCredits(client, difference, CREDITS_BY_BUY_OR_SELL);
 				
-				char item_name[64];
-				auction.item.GetName(item_name, sizeof(item_name));
-				PrintToChat(client, "%s Successfully increased your bid to \x03%s\x01 credits on \x0E%s\x01 auction.", PREFIX, JB_AddCommas(value), item_name);
-				auction.UpdateBidData(bid);
-				return Plugin_Handled;
 			}
-			
-			if (client_credits < value)
+			else
 			{
-				PrintToChat(client, "You don't have enough credits to place a bid on the item. (missing \x02%s\x01)", JB_AddCommas(value - client_credits));
-				return Plugin_Handled;
+				if (client_credits < value)
+				{
+					PrintToChat(client, "You don't have enough credits to place a bid on the item. (missing \x02%s\x01)", JB_AddCommas(value - client_credits));
+					return Plugin_Handled;
+				}
+				
+				Shop_TakeClientCredits(client, value, CREDITS_BY_BUY_OR_SELL);
 			}
 			
-			Shop_TakeClientCredits(client, value, CREDITS_BY_BUY_OR_SELL);
+			char item_name[64];
+			auction.item.GetName(item_name, sizeof(item_name));
+			
+			for (int current_bid = 1; current_bid < auction.bids_array.Length; current_bid++)
+			{
+				auction.bids_array.GetArray(current_bid, bid);
+				
+				// Don't return because the client overbid himself
+				if (!bid.return_bid)
+				{
+					continue;
+				}
+				
+				int previous_bidder = GetClientOfAccountId(bid.bidder_account_id);
+				if (previous_bidder)
+				{
+					PrintToChat(previous_bidder, "%s \x07%N\x01 has placed a bid of \x03%s\x01 that is higher than yours on \x0E%s\x01 auction.", PREFIX, client, JB_AddCommas(value), item_name);
+				}
+			}
 			
 			AuctionBid new_auction_bid;
 			new_auction_bid.bidder_account_id = g_Players[client].account_id;
 			GetClientName(client, new_auction_bid.bidder_name, sizeof(AuctionBid::bidder_name));
 			new_auction_bid.value = value;
 			new_auction_bid.bid_time = GetTime();
+			new_auction_bid.return_bid = true;
 			auction.bids_array.PushArray(new_auction_bid);
 			
-			char item_name[64];
-			auction.item.GetName(item_name, sizeof(item_name));
 			PrintToChat(client, "%s Successfully placed your bid of \x03%s\x01 credits on \x0E%s\x01 auction.", PREFIX, JB_AddCommas(value), item_name);
 			auction.InsertBidData(new_auction_bid);
 		}
@@ -885,13 +906,13 @@ Action Command_AuctionHouse(int client, int argc)
 
 Action Command_Market(int client, int argc)
 {
-	PrintToChat(client, "%s \x04You meant \x0E/ah\x01?", PREFIX);
+	PrintToChat(client, "%s You meant \x0E/ah\x01? you boomer!", PREFIX);
 	return Plugin_Handled;
 }
 
 //================================[ Menus ]================================//
 
-void DisplayAuctionHouseMenu(int client)
+void DisplayAuctionHouseMenu(int client, int first_item = 0)
 {
 	Menu menu = new Menu(Handler_AuctionHouseMain);
 	menu.SetTitle("%s Auction House - Auctions Browser:\n \nTime to get rich!\n ", PREFIX_MENU);
@@ -901,22 +922,32 @@ void DisplayAuctionHouseMenu(int client)
 	menu.AddItem("", item_display);
 	
 	Auction auction;
-	char item_name[64], item_info[11];
+	AuctionBid bid;
 	
-	for (int current_auction; current_auction < g_Auctions.Length; current_auction++)
+	char item_name[64], item_info[11];
+	bool has_highest_bid;
+	
+	ArrayList sorted_array = g_Auctions.Clone();
+	sorted_array.SortCustom(SortADTAuctions);
+	
+	for (int current_auction; current_auction < sorted_array.Length; current_auction++)
 	{
-		g_Auctions.GetArray(current_auction, auction);
+		sorted_array.GetArray(current_auction, auction);
+		
+		has_highest_bid = (auction.type == AuctionType_Bids && auction.FindHighestBid(bid));
 		
 		auction.item.GetName(item_name, sizeof(item_name));
-		Format(item_display, sizeof(item_display), "%s [%s credits]", item_name, JB_AddCommas(auction.value));
+		Format(item_display, sizeof(item_display), "%s [%s credits]", item_name, !has_highest_bid ? JB_AddCommas(auction.value):JB_AddCommas(bid.value));
 		
 		IntToString(auction.row_id, item_info, sizeof(item_info));
 		
 		menu.AddItem(item_info, item_display);
 	}
 	
+	delete sorted_array;
+	
 	// Display the menu to the client
-	menu.Display(client, MENU_TIME_FOREVER);
+	menu.DisplayAt(client, first_item, MENU_TIME_FOREVER);
 }
 
 int Handler_AuctionHouseMain(Menu menu, MenuAction action, int param1, int param2)
@@ -951,7 +982,7 @@ int Handler_AuctionHouseMain(Menu menu, MenuAction action, int param1, int param
 					return 0;
 				}
 				
-				DisplayAuctionOverviewMenu(client, auction);
+				DisplayAuctionOverviewMenu(client, auction, menu.Selection);
 			}
 		}
 	}
@@ -963,38 +994,50 @@ int Handler_AuctionHouseMain(Menu menu, MenuAction action, int param1, int param
 	return 0;
 }
 
-void DisplayAuctionOverviewMenu(int client, Auction auction)
+void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 {
-	char item_display[64], item_info[11], item_name[64], remaining_time[64];
+	char item_info[11], menu_selection[11], item_name[64], remaining_time[64];
 	IntToString(auction.row_id, item_info, sizeof(item_info));
+	IntToString(first_item, menu_selection, sizeof(menu_selection));
 	auction.item.GetName(item_name, sizeof(item_name));
 	FormatMinutes(auction.GetRemainingTime(), remaining_time, sizeof(remaining_time));
 	
 	Menu menu = new Menu(Handler_AuctionOverview);
 	
 	AuctionBid bid;
-	if (auction.type == AuctionType_Bids && auction.FindHighestBid(bid))
+	bool has_highest_bid = (auction.type == AuctionType_Bids && auction.FindHighestBid(bid));
+	
+	bool is_shop_item;
+	
+	char item_display[128];
+	if ((is_shop_item = auction.item.IsShopItem()))
 	{
-		Format(item_display, sizeof(item_display), "◾ Highest Bid: %s credits\n", JB_AddCommas(bid.value));
+		CategoryId category_id = Shop_GetItemCategoryId(auction.item.shop_item_id);
+		Shop_GetCategoryNameById(category_id, item_display, sizeof(item_display));
+	} else {
+		strcopy(item_display, sizeof(item_display), GetRuneBenefitDisplay(auction.item.rune_identifier, auction.item.rune_star, auction.item.rune_level));
 	}
-	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n◾ Auction Type: %s\n%s  ", 
+	
+	RTLify(auction.owner_name, sizeof(Auction::owner_name), auction.owner_name);
+	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n◾ %s: %s\n◾ Auction Type: %s\n ", 
 		PREFIX_MENU, 
 		item_name, 
-		auction.type == AuctionType_Bids ? "Starting bid is ":"", 
-		JB_AddCommas(auction.value), 
+		auction.type == AuctionType_Regular ? "":has_highest_bid ? "Highest bid is ":"Starting bid is ", 
+		!has_highest_bid ? JB_AddCommas(auction.value):JB_AddCommas(bid.value), 
 		auction.owner_name, 
 		remaining_time, 
-		auction.type == AuctionType_Bids ? "Bids":"Buy It Now!", 
-		item_display
+		is_shop_item ? "Category":"Benefit", 
+		item_display, 
+		auction.type == AuctionType_Bids ? "Bids":"Buy It Now!"
 		);
 	
 	if (auction.type == AuctionType_Regular)
 	{
 		menu.AddItem(item_info, "Purchase", g_Players[client].account_id != auction.owner_account_id ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
-		menu.AddItem("", "Cancel", g_Players[client].account_id == auction.owner_account_id ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+		menu.AddItem(menu_selection, "Cancel", g_Players[client].account_id == auction.owner_account_id ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	} else {
 		menu.AddItem(item_info, "Place a bid", g_Players[client].account_id != auction.owner_account_id ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
-		menu.AddItem("", "View bid list", auction.bids_array.Length ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+		menu.AddItem(menu_selection, "View bid list", auction.bids_array.Length ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	}
 	
 	menu.ExitBackButton = true;
@@ -1066,7 +1109,12 @@ int Handler_AuctionOverview(Menu menu, MenuAction action, int param1, int param2
 				{
 					if (auction.type == AuctionType_Bids)
 					{
-						DisplayAuctionBidListMenu(client, auction);
+						
+						menu.GetItem(1, item_info, sizeof(item_info));
+						
+						int first_item = StringToInt(item_info);
+						
+						DisplayAuctionBidListMenu(client, auction, first_item);
 						return 0;
 					}
 					
@@ -1081,7 +1129,12 @@ int Handler_AuctionOverview(Menu menu, MenuAction action, int param1, int param2
 			int client = param1, cancel_reason = param2;
 			if (cancel_reason == MenuCancel_ExitBack)
 			{
-				DisplayAuctionHouseMenu(client);
+				char item_info[11];
+				menu.GetItem(1, item_info, sizeof(item_info));
+				
+				int first_item = StringToInt(item_info);
+				
+				DisplayAuctionHouseMenu(client, first_item);
 			}
 		}
 		case MenuAction_End:
@@ -1093,28 +1146,28 @@ int Handler_AuctionOverview(Menu menu, MenuAction action, int param1, int param2
 	return 0;
 }
 
-void DisplayAuctionBidListMenu(int client, Auction auction)
+void DisplayAuctionBidListMenu(int client, Auction auction, int first_item)
 {
-	char item_display[64], item_info[11], item_name[64], remaining_time[64];
+	char item_display[64], menu_selection[11], item_info[11], item_name[64], remaining_time[64];
 	IntToString(auction.row_id, item_info, sizeof(item_info));
+	IntToString(first_item, menu_selection, sizeof(menu_selection));
 	auction.item.GetName(item_name, sizeof(item_name));
 	FormatMinutes(auction.GetRemainingTime(), remaining_time, sizeof(remaining_time));
 	
 	Menu menu = new Menu(Handler_AuctionBidList);
 	
 	AuctionBid bid;
-	if (auction.FindHighestBid(bid))
-	{
-		Format(item_display, sizeof(item_display), "◾ Highest Bid: %s credits\n", JB_AddCommas(bid.value));
-	}
-	menu.SetTitle("%s Auction House - Auction Bid List:\n \n╭%s\n╰┄Starting bid is %s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n%s  ", 
+	bool found_highest_bid = auction.FindHighestBid(bid);
+	
+	menu.SetTitle("%s Auction House - Auction Bid List:\n \n╭%s\n╰┄%s bid is %s credits\n ", 
 		PREFIX_MENU, 
 		item_name, 
-		JB_AddCommas(auction.value), 
-		auction.owner_name, 
-		remaining_time, 
-		item_display
+		found_highest_bid ? "Highest" : "Starting", 
+		found_highest_bid ? JB_AddCommas(bid.value) : JB_AddCommas(auction.value)
 		);
+	
+	menu.AddItem(item_info, item_display, ITEMDRAW_IGNORE);
+	menu.AddItem(menu_selection, item_display, ITEMDRAW_IGNORE);
 	
 	for (int current_bid; current_bid < auction.bids_array.Length; current_bid++)
 	{
@@ -1122,9 +1175,10 @@ void DisplayAuctionBidListMenu(int client, Auction auction)
 		
 		bid.GetTimeStr(item_display, sizeof(item_display));
 		
+		RTLify(bid.bidder_name, sizeof(AuctionBid::bidder_name), bid.bidder_name);
 		Format(item_display, sizeof(item_display), "%s [%s credits] (%s ago)", bid.bidder_name, JB_AddCommas(bid.value), item_display);
 		
-		menu.AddItem(item_info, item_display, ITEMDRAW_DISABLED);
+		menu.AddItem("", item_display, ITEMDRAW_DISABLED);
 	}
 	
 	menu.ExitBackButton = true;
@@ -1147,6 +1201,9 @@ int Handler_AuctionBidList(Menu menu, MenuAction action, int param1, int param2)
 				
 				int row_id = StringToInt(item_info);
 				
+				menu.GetItem(1, item_info, sizeof(item_info));
+				int first_item = StringToInt(item_info);
+				
 				Auction auction;
 				
 				if (!auction.FindByRowID(row_id))
@@ -1155,7 +1212,7 @@ int Handler_AuctionBidList(Menu menu, MenuAction action, int param1, int param2)
 					return 0;
 				}
 				
-				DisplayAuctionOverviewMenu(client, auction);
+				DisplayAuctionOverviewMenu(client, auction, first_item);
 			}
 		}
 		case MenuAction_End:
@@ -1591,6 +1648,12 @@ Action Timer_EndAuction(Handle timer, int row_id)
 		{
 			auction.bids_array.GetArray(current_bid, bid);
 			
+			// Don't return because the client overbid himself
+			if (!bid.return_bid)
+			{
+				continue;
+			}
+			
 			int bidder = GetClientOfAccountId(bid.bidder_account_id);
 			if (bidder)
 			{
@@ -1656,6 +1719,7 @@ public void JB_OnDatabaseConnected(Database db)
          `bidder_name` VARCHAR(128) NOT NULL DEFAULT '', \
          `value` INT NOT NULL DEFAULT 0, \
          `bid_time` INT NOT NULL DEFAULT 0, \
+         `return_bid` INT(1) NOT NULL DEFAULT 1, \
          PRIMARY KEY (`id`), \
          FOREIGN KEY (auction_id) REFERENCES jb_auctions(id) \
          ON DELETE CASCADE \
@@ -1711,6 +1775,7 @@ void SQL_FetchAuctionBids_CB(Database db, DBResultSet results, const char[] erro
 		results.FetchString(3, new_auction_bid.bidder_name, sizeof(AuctionBid::bidder_name));
 		new_auction_bid.value = results.FetchInt(4);
 		new_auction_bid.bid_time = results.FetchInt(5);
+		new_auction_bid.return_bid = results.FetchInt(6) == 1;
 		
 		int idx;
 		Auction auction;
@@ -2052,6 +2117,80 @@ int SortADTBidsArray(int index1, int index2, Handle array, Handle hndl)
 	AuctionBid Struct2; sorter.GetArray(index2, Struct2, sizeof(Struct2));
 	
 	return (Struct1.value > Struct2.value) ? -1 : (Struct1.value < Struct2.value) ? 1:0;
+}
+
+public int SortADTAuctions(int index1, int index2, Handle array, Handle hndl)
+{
+	ArrayList sorter = view_as<ArrayList>(array);
+	
+	Auction Struct1; sorter.GetArray(index1, Struct1, sizeof(Struct1));
+	Auction Struct2; sorter.GetArray(index2, Struct2, sizeof(Struct2));
+	
+	bool auction1_item_shop = Struct1.item.IsShopItem(), auction2_item_shop = Struct2.item.IsShopItem();
+	
+	if (auction1_item_shop && auction2_item_shop)
+	{
+		return FloatCompare(float(Shop_GetItemPrice(Struct1.item.shop_item_id)), float(Shop_GetItemPrice(Struct2.item.shop_item_id)));
+	}
+	
+	if (auction1_item_shop && !auction2_item_shop)
+	{
+		return -1;
+	}
+	
+	if (!auction1_item_shop && auction2_item_shop)
+	{
+		return 1;
+	}
+	
+	// Second preference is the rune's star
+	if (Struct1.item.rune_star != Struct2.item.rune_star)
+	{
+		return (Struct1.item.rune_star > Struct2.item.rune_star) ? -1 : 1;
+	}
+	
+	// Third preference is the rune's level
+	if (Struct1.item.rune_level != Struct2.item.rune_level)
+	{
+		return (Struct1.item.rune_level > Struct2.item.rune_level) ? -1 : 1;
+	}
+	
+	// Third preference is the rune's level
+	if (Struct1.value != Struct2.value)
+	{
+		return (Struct1.value > Struct2.value) ? -1 : 1;
+	}
+	
+	return 0;
+}
+
+char[] GetRuneBenefitDisplay(char[] identifier, int star, int level)
+{
+	char benefit_display[32], benefit_value[16];
+	
+	int rune_idx;
+	
+	if ((rune_idx = JB_FindRune(identifier)) == -1)
+	{
+		ThrowError("[GetRuneBenefitDisplay] Cannot find rune id (identifier: %s)", identifier);
+	}
+	
+	Rune rune_data;
+	JB_GetRuneData(rune_idx, rune_data);
+	strcopy(benefit_display, sizeof(benefit_display), rune_data.szRuneBenefitText);
+	
+	if (StrContains(benefit_display, "{int}") != -1)
+	{
+		IntToString(JB_GetRuneBenefitStats(rune_idx, star, level), benefit_value, sizeof(benefit_value));
+		ReplaceString(benefit_display, sizeof(benefit_display), "{int}", benefit_value);
+	}
+	else if (StrContains(benefit_display, "{float}") != -1)
+	{
+		Format(benefit_value, sizeof(benefit_value), "%.2f", JB_GetRuneBenefitStats(rune_idx, star, level));
+		ReplaceString(benefit_display, sizeof(benefit_display), "{float}", benefit_value);
+	}
+	
+	return benefit_display;
 }
 
 //================================================================//
