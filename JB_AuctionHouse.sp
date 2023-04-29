@@ -862,7 +862,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				int previous_bidder = GetClientOfAccountId(bid.bidder_account_id);
 				if (previous_bidder)
 				{
-					PrintToChat(previous_bidder, "%s \x07%N\x01 has placed a bid of \x03%s\x01 that is higher than yours on \x0E%s\x01 auction.", PREFIX, client, JB_AddCommas(value), item_name);
+					PrintToChat(previous_bidder, "%s \x07%N\x01 outbid you by \x03%s\x01 credit for \x0E%s\x01 auction.", PREFIX, client, JB_AddCommas(value - bid.value), item_name);
 				}
 			}
 			
@@ -1753,15 +1753,26 @@ void SQL_FetchAuctionBids(int row_id)
 {
 	char query[64];
 	g_Database.Format(query, sizeof(query), "SELECT * FROM `jb_auctions_bids` WHERE `auction_id` = %d", row_id);
-	g_Database.Query(SQL_FetchAuctionBids_CB, query);
+	g_Database.Query(SQL_FetchAuctionBids_CB, query, row_id);
 }
 
-void SQL_FetchAuctionBids_CB(Database db, DBResultSet results, const char[] error, any data)
+void SQL_FetchAuctionBids_CB(Database db, DBResultSet results, const char[] error, int auction_id)
 {
 	if (!db || !results || error[0])
 	{
 		ThrowError("[SQL_FetchAuctionBids_CB] %s", error);
 	}
+	
+	Auction auction;
+	int idx;
+	
+	if (!auction.FindByRowID(auction_id, idx))
+	{
+		ThrowError("[SQL_FetchAuctionBids_CB] Failed to find auction. (auction_id: %d)", auction_id);
+		return;
+	}
+	
+	auction.bids_array.Clear();
 	
 	while (results.FetchRow())
 	{
@@ -1769,25 +1780,13 @@ void SQL_FetchAuctionBids_CB(Database db, DBResultSet results, const char[] erro
 		
 		new_auction_bid.row_id = results.FetchInt(0);
 		
-		int auction_id = results.FetchInt(1);
-		
 		new_auction_bid.bidder_account_id = results.FetchInt(2);
 		results.FetchString(3, new_auction_bid.bidder_name, sizeof(AuctionBid::bidder_name));
 		new_auction_bid.value = results.FetchInt(4);
 		new_auction_bid.bid_time = results.FetchInt(5);
 		new_auction_bid.return_bid = results.FetchInt(6) == 1;
 		
-		int idx;
-		Auction auction;
-		
-		if (!auction.FindByRowID(auction_id, idx))
-		{
-			ThrowError("[SQL_FetchAuctionBids_CB] Failed to find auction. (auction_id: %d)", auction_id);
-			return;
-		}
-		
 		auction.bids_array.PushArray(new_auction_bid);
-		g_Auctions.SetArray(idx, auction);
 	}
 }
 
