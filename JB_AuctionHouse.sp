@@ -584,7 +584,7 @@ enum struct Auction
 			
 			Shop_GiveClientCredits(owner, bid.value, CREDITS_BY_BUY_OR_SELL);
 			
-			PrintToChat(owner, "%s \x0E%s\x01 placed the highest bid on your auction item \x03%s\x01.", PREFIX, bid.bidder_name, item_name);
+			PrintToChat(owner, "%s \x0E%s\x01 placed the top bid on your auction item \x03%s\x01.", PREFIX, bid.bidder_name, item_name);
 			PrintToChat(owner, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
 		} else {
 			char steamid2[MAX_AUTHID_LENGTH];
@@ -616,7 +616,7 @@ enum struct Auction
 			char item_name[64];
 			this.item.GetName(item_name, sizeof(item_name));
 			
-			PrintToChat(bidder, "%s You bid of \x06%s\x01 credits in \x0E%s\x01 auction on item \x03%s\x01 was the highest.", PREFIX, JB_AddCommas(bid.value), this.owner_name, item_name);
+			PrintToChat(bidder, "%s You bid of \x06%s\x01 credits in \x0E%s\x01 auction on item \x03%s\x01 was the top bid.", PREFIX, JB_AddCommas(bid.value), this.owner_name, item_name);
 			return;
 		}
 		
@@ -802,7 +802,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				int overbid;
 				if ((overbid = highest_bid.GetOverBidValue()) >= value)
 				{
-					PrintToChat(client, "%s Your bid must be larger than the highest bid, \x06%s\x01.", PREFIX_ERROR, JB_AddCommas(overbid));
+					PrintToChat(client, "%s Your bid must be larger than the top bid, \x06%s\x01.", PREFIX_ERROR, JB_AddCommas(overbid));
 					return Plugin_Handled;
 				}
 			} else {
@@ -1022,7 +1022,7 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n◾ %s: %s\n◾ Auction Type: %s\n ", 
 		PREFIX_MENU, 
 		item_name, 
-		auction.type == AuctionType_Regular ? "":has_highest_bid ? "Highest bid is ":"Starting bid is ", 
+		auction.type == AuctionType_Regular ? "":has_highest_bid ? "Top bid is ":"Starting bid is ", 
 		!has_highest_bid ? JB_AddCommas(auction.value):JB_AddCommas(bid.value), 
 		auction.owner_name, 
 		remaining_time, 
@@ -1159,10 +1159,10 @@ void DisplayAuctionBidListMenu(int client, Auction auction, int first_item)
 	AuctionBid bid;
 	bool found_highest_bid = auction.FindHighestBid(bid);
 	
-	menu.SetTitle("%s Auction House - Auction Bid List:\n \n╭%s\n╰┄%s bid is %s credits\n ", 
+	menu.SetTitle("%s Auction Bid List:\n \n╭%s\n╰┄%s bid is %s credits\n ", 
 		PREFIX_MENU, 
 		item_name, 
-		found_highest_bid ? "Highest" : "Starting", 
+		found_highest_bid ? "Top" : "Starting", 
 		found_highest_bid ? JB_AddCommas(bid.value) : JB_AddCommas(auction.value)
 		);
 	
@@ -1662,7 +1662,7 @@ Action Timer_EndAuction(Handle timer, int row_id)
 				
 				Shop_GiveClientCredits(bidder, bid.value, CREDITS_BY_BUY_OR_SELL);
 				
-				PrintToChat(bidder, "%s Your bid in \x0E%s\x01 auction on item \x03%s\x01 wasn't the highest.", PREFIX, auction.owner_name, item_name);
+				PrintToChat(bidder, "%s Your bid in \x0E%s\x01 auction on item \x03%s\x01 wasn't the top bid.", PREFIX, auction.owner_name, item_name);
 				PrintToChat(bidder, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
 			} else {
 				char steamid2[MAX_AUTHID_LENGTH];
