@@ -40,6 +40,8 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	LoadTranslations("common.phrases");
+	
 	// Guard & Admin Commands
 	RegConsoleCmd("sm_glow", Command_Glow, "Access the glow management menu.");
 	
