@@ -140,6 +140,11 @@ public void OnClientDisconnect(int client)
 
 public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
+	if (dontBroadcast)
+	{
+		return Plugin_Continue;
+	}
+	
 	int userid = event.GetInt("userid");
 	int iVictimIndex = GetClientOfUserId(userid);
 	
@@ -165,7 +170,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 			newEvent.SetInt("userid", GetClientUserId(iVictimIndex));
 			newEvent.SetInt("attacker", GetClientUserId(iWinnerIndex == -1 ? iVictimIndex : iWinnerIndex));
 			newEvent.SetString("weapon", g_szLrWeapon);
-			newEvent.Fire();
+			newEvent.Fire(true);
 			
 			if (!g_bContinueGame)
 			{
@@ -794,20 +799,26 @@ int Handler_GiveLastRequest(Menu menu, MenuAction action, int client, int itemNu
 	{
 		char szItem[32];
 		menu.GetItem(itemNum, szItem, sizeof(szItem));
-		int iTargetIndex = StringToInt(szItem);
+		int iTargetIndex = GetClientOfUserId(StringToInt(szItem));
+		if (iTargetIndex == -1)
+		{
+			PrintToChat(client, "%s This player is no longer online! Please choose another.", PREFIX_ERROR);
+			showGiveLrMenu(client);
+			return 0;
+		}
 		
 		if (GetOnlineTeamCount(CS_TEAM_T) > 1 || GetOnlineTeamCount(CS_TEAM_CT) < 1) {
 			PrintToChat(client, "%s Giving Last Request allowed only when there is \x041\x01 prisoner alive and atleast \x041\x01 guard alive.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		if (g_bIsLrRunning) {
 			PrintToChat(client, "%s You are in a middle of another Last Request game!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		if (g_bLastRequestGiven) {
 			PrintToChat(client, "%s Last request already given, wait for the next game!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		CS_RespawnPlayer(iTargetIndex);
