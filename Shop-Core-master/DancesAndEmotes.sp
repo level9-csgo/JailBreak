@@ -551,6 +551,9 @@ void StopEmote(int client)
 		SetVariantString(emoteEntName);
 		
 		AcceptEntityInput(client, "ClearParent", iEmoteEnt, iEmoteEnt);
+		
+		CreateTimer(1.0, Timer_RemoveEmoteEntity, g_ClientsData[client].entities.emote_ent_ref);
+		
 		DispatchKeyValue(iEmoteEnt, "OnUser1", "!self,Kill,,1.0,-1");
 		AcceptEntityInput(iEmoteEnt, "FireUser1");
 		
@@ -595,6 +598,17 @@ void StopEmote(int client)
 	AcceptEntityInput(stuck_entity, "Open");
 	
 	CreateTimer(0.1, Timer_RestoreMovetype, GetClientUserId(client), TIMER_REPEAT);
+}
+
+Action Timer_RemoveEmoteEntity(Handle timer, int ent_ref)
+{
+	int entity = EntRefToEntIndex(ent_ref);
+	if (entity && entity != -1 && IsValidEntity(entity))
+	{
+		RemoveEntity(entity);
+	}
+	
+	return Plugin_Continue;
 }
 
 Action Timer_RestoreMovetype(Handle timer, int userid)
