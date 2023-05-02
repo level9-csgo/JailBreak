@@ -168,6 +168,8 @@ ConVar jb_ah_fee_percent;
 ConVar jb_ah_over_bid_percent;
 ConVar jb_ah_default_value;
 
+Database g_Database;
+
 enum struct AuctionBid
 {
 	// Database unique row id. Used as an identifier to this specific auction bid.
@@ -198,11 +200,31 @@ enum struct AuctionBid
 	{
 		return this.value + (this.value * jb_ah_over_bid_percent.IntValue) / 100;
 	}
+	
+	bool ReturnClientBid(Auction auction, int &bidder)
+	{
+		if (!this.return_bid)
+		{
+			return false;
+		}
+		
+		if ((bidder = GetClientOfAccountId(this.bidder_account_id)))
+		{
+			Shop_GiveClientCredits(bidder, this.value, CREDITS_BY_BUY_OR_SELL);
+		} else {
+			char steamid2[MAX_AUTHID_LENGTH];
+			AccountIDToSteam2(this.bidder_account_id, steamid2);
+			
+			char query[128];
+			g_Database.Format(query, sizeof(query), "UPDATE `shop_players` SET `money` = `money` + %d WHERE `auth` = '%s'", this.value, steamid2);
+			g_Database.Query(SQL_CheckForErrors, query);
+		}
+		
+		return true;
+	}
 }
 
 ArrayList g_Auctions;
-
-Database g_Database;
 
 // Different durations for auction items.
 int g_AuctionDurations[] = 
@@ -490,22 +512,14 @@ enum struct Auction
 	}
 	
 	// Returns the item back to its owner.
-	void ReturnItemToOwner()
+	void ReturnItemToOwner(int &owner)
 	{
 		// Online case:
-		int owner = GetClientOfAccountId(this.owner_account_id);
-		if (owner)
+		if ((owner = GetClientOfAccountId(this.owner_account_id)))
 		{
-			if (this.item.AddClientItem(owner))
+			if (!this.item.AddClientItem(owner))
 			{
-				char item_name[64];
-				this.item.GetName(item_name, sizeof(item_name));
-				
-				PrintToChat(owner, "%s Returned item (\x03%s\x01) because your auction has been ended.", PREFIX, item_name);
-			}
-			else
-			{
-				JB_WriteLogLine("Failed returning item (shop_item_id: %d, rune_identifier: %s, star: %d, level: %d) to account id: %d", 
+				ThrowError("Failed returning item (shop_item_id: %d, rune_identifier: %s, star: %d, level: %d) to account id: %d", 
 					this.item.shop_item_id, 
 					this.item.rune_identifier, 
 					this.item.rune_star, 
@@ -584,7 +598,7 @@ enum struct Auction
 			
 			Shop_GiveClientCredits(owner, bid.value, CREDITS_BY_BUY_OR_SELL);
 			
-			PrintToChat(owner, "%s \x0E%s\x01 placed the highest bid on your auction item \x03%s\x01.", PREFIX, bid.bidder_name, item_name);
+			PrintToChat(owner, "%s \x0E%s\x01 placed the top bid on your auction item \x03%s\x01.", PREFIX, bid.bidder_name, item_name);
 			PrintToChat(owner, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
 		} else {
 			char steamid2[MAX_AUTHID_LENGTH];
@@ -616,7 +630,7 @@ enum struct Auction
 			char item_name[64];
 			this.item.GetName(item_name, sizeof(item_name));
 			
-			PrintToChat(bidder, "%s You bid of \x06%s\x01 credits in \x0E%s\x01 auction on item \x03%s\x01 was the highest.", PREFIX, JB_AddCommas(bid.value), this.owner_name, item_name);
+			PrintToChat(bidder, "%s You bid of \x06%s\x01 credits in \x0E%s\x01 auction on item \x03%s\x01 was the top bid.", PREFIX, JB_AddCommas(bid.value), this.owner_name, item_name);
 			return;
 		}
 		
@@ -686,6 +700,13 @@ enum struct Player
 }
 
 Player g_Players[MAXPLAYERS + 1];
+
+// Stores the steam account id of authorized clients for spceial commands
+int g_AuthorizedClients[] = 
+{
+	912414245,  // KoNLiG 
+	928490446 // Ravid
+};
 
 public Plugin myinfo = 
 {
@@ -802,7 +823,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				int overbid;
 				if ((overbid = highest_bid.GetOverBidValue()) >= value)
 				{
-					PrintToChat(client, "%s Your bid must be larger than the highest bid, \x06%s\x01.", PREFIX_ERROR, JB_AddCommas(overbid));
+					PrintToChat(client, "%s Your bid must be larger than the top bid, \x06%s\x01.", PREFIX_ERROR, JB_AddCommas(overbid));
 					return Plugin_Handled;
 				}
 			} else {
@@ -862,8 +883,14 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				int previous_bidder = GetClientOfAccountId(bid.bidder_account_id);
 				if (previous_bidder)
 				{
-					PrintToChat(previous_bidder, "%s \x07%N\x01 outbid you by \x03%s\x01 credit for \x0E%s\x01 auction.", PREFIX, client, JB_AddCommas(value - bid.value), item_name);
+					PrintToChat(previous_bidder, "%s \x07%N\x01 outbid you by \x03%s\x01 credits for \x0E%s\x01 auction.", PREFIX, client, JB_AddCommas(value - bid.value), item_name);
 				}
+			}
+			
+			int owner = GetClientOfAccountId(auction.owner_account_id);
+			if (owner)
+			{
+				PrintToChat(owner, "%s \x06%N\x01 bid \x10%s credits\x01 on \x03%s\x01.", PREFIX, client, JB_AddCommas(value), item_name);
 			}
 			
 			AuctionBid new_auction_bid;
@@ -1022,7 +1049,7 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n◾ %s: %s\n◾ Auction Type: %s\n ", 
 		PREFIX_MENU, 
 		item_name, 
-		auction.type == AuctionType_Regular ? "":has_highest_bid ? "Highest bid is ":"Starting bid is ", 
+		auction.type == AuctionType_Regular ? "":has_highest_bid ? "Top bid is ":"Starting bid is ", 
 		!has_highest_bid ? JB_AddCommas(auction.value):JB_AddCommas(bid.value), 
 		auction.owner_name, 
 		remaining_time, 
@@ -1038,6 +1065,7 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 	} else {
 		menu.AddItem(item_info, "Place a bid", g_Players[client].account_id != auction.owner_account_id ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 		menu.AddItem(menu_selection, "View bid list", auction.bids_array.Length ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+		menu.AddItem(menu_selection, "Cancel (ADMIN)", IsClientAuthorizedEx(client) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
 	}
 	
 	menu.ExitBackButton = true;
@@ -1122,6 +1150,44 @@ int Handler_AuctionOverview(Menu menu, MenuAction action, int param1, int param2
 					
 					PrintToChat(client, "%s Successfully \x06canceled\x01 the auction!", PREFIX);
 				}
+				//Cancel (ADMIN)
+				case 2:
+				{
+					if (!IsClientAuthorizedEx(client))
+					{
+						PrintToChat(client, "%s You are not authorized to cancel the auction", PREFIX_ERROR);
+						return 0;
+					}
+					
+					
+					int owner;
+					
+					auction.ReturnItemToOwner(owner);
+					if (owner)
+					{
+						char item_name[64];
+						auction.item.GetName(item_name, sizeof(item_name));
+						PrintToChat(owner, "%s An admin canceled your auction of \x07%s\x01!", PREFIX, item_name);
+					}
+					
+					AuctionBid bid;
+					for (int current_bid = 0, bidder; current_bid < auction.bids_array.Length; current_bid++)
+					{
+						auction.bids_array.GetArray(current_bid, bid);
+						
+						if (bid.ReturnClientBid(auction, bidder) && bidder)
+						{
+							PrintToChat(bidder, "%s The auction you placed a bid on was canceled.", PREFIX);
+							PrintToChat(bidder, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
+						}
+					}
+					
+					PrintToChat(client, "%s Successfully \x06canceled\x01 the auction!", PREFIX);
+					
+					auction.DeleteData();
+					auction.Close();
+					g_Auctions.Erase(idx);
+				}
 			}
 		}
 		case MenuAction_Cancel:
@@ -1159,10 +1225,10 @@ void DisplayAuctionBidListMenu(int client, Auction auction, int first_item)
 	AuctionBid bid;
 	bool found_highest_bid = auction.FindHighestBid(bid);
 	
-	menu.SetTitle("%s Auction House - Auction Bid List:\n \n╭%s\n╰┄%s bid is %s credits\n ", 
+	menu.SetTitle("%s Auction Bid List:\n \n╭%s\n╰┄%s bid is %s credits\n ", 
 		PREFIX_MENU, 
 		item_name, 
-		found_highest_bid ? "Highest" : "Starting", 
+		found_highest_bid ? "Top" : "Starting", 
 		found_highest_bid ? JB_AddCommas(bid.value) : JB_AddCommas(auction.value)
 		);
 	
@@ -1182,7 +1248,7 @@ void DisplayAuctionBidListMenu(int client, Auction auction, int first_item)
 	}
 	
 	menu.ExitBackButton = true;
-	JB_FixMenuGap(menu);
+	JB_FixMenuGap(menu, 2);
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -1634,6 +1700,9 @@ Action Timer_EndAuction(Handle timer, int row_id)
 		return Plugin_Continue;
 	}
 	
+	char item_name[64];
+	auction.item.GetName(item_name, sizeof(item_name));
+	
 	if (auction.type == AuctionType_Bids && auction.bids_array.Length)
 	{
 		AuctionBid bid;
@@ -1643,40 +1712,27 @@ Action Timer_EndAuction(Handle timer, int row_id)
 		auction.AddItemToBidWinner(bid);
 		
 		// Transfer
-		
+		int bidder;
 		for (int current_bid = 1; current_bid < auction.bids_array.Length; current_bid++)
 		{
 			auction.bids_array.GetArray(current_bid, bid);
 			
-			// Don't return because the client overbid himself
-			if (!bid.return_bid)
+			if (bid.ReturnClientBid(auction, bidder) && bidder)
 			{
-				continue;
-			}
-			
-			int bidder = GetClientOfAccountId(bid.bidder_account_id);
-			if (bidder)
-			{
-				char item_name[64];
-				auction.item.GetName(item_name, sizeof(item_name));
-				
-				Shop_GiveClientCredits(bidder, bid.value, CREDITS_BY_BUY_OR_SELL);
-				
-				PrintToChat(bidder, "%s Your bid in \x0E%s\x01 auction on item \x03%s\x01 wasn't the highest.", PREFIX, auction.owner_name, item_name);
+				PrintToChat(bidder, "%s Your bid in \x0E%s\x01 auction on item \x03%s\x01 wasn't the top bid.", PREFIX, auction.owner_name, item_name);
 				PrintToChat(bidder, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
-			} else {
-				char steamid2[MAX_AUTHID_LENGTH];
-				AccountIDToSteam2(bid.bidder_account_id, steamid2);
-				
-				char query[128];
-				g_Database.Format(query, sizeof(query), "UPDATE `shop_players` SET `money` = `money` + %d WHERE `auth` = '%s'", bid.value, steamid2);
-				g_Database.Query(SQL_CheckForErrors, query);
 			}
 		}
 	}
 	else
 	{
-		auction.ReturnItemToOwner();
+		int owner;
+		auction.ReturnItemToOwner(owner);
+		
+		if (owner)
+		{
+			PrintToChat(owner, "%s Returned item (\x03%s\x01) because your auction has been ended.", PREFIX, item_name);
+		}
 	}
 	
 	auction.DeleteData();
@@ -2190,6 +2246,27 @@ char[] GetRuneBenefitDisplay(char[] identifier, int star, int level)
 	}
 	
 	return benefit_display;
+}
+
+/**
+ * Return true if the client's steam account id matched one of specified authorized clients.
+ * See g_AuthorizedClients
+ */
+bool IsClientAuthorizedEx(int client)
+{
+	int account_id = GetSteamAccountID(client);
+	
+	for (int current_account_id; current_account_id < sizeof(g_AuthorizedClients); current_account_id++)
+	{
+		// Check for a match.
+		if (account_id == g_AuthorizedClients[current_account_id])
+		{
+			return true;
+		}
+	}
+	
+	// No match has found.
+	return false;
 }
 
 //================================================================//
