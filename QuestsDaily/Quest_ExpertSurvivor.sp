@@ -34,12 +34,13 @@ public void OnLibraryAdded(const char[] name)
 
 void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(event.GetInt("attacker"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	
 	char weapon_name[32];
 	event.GetString("weapon", weapon_name, sizeof(weapon_name));
 	
-	if ((1 <= client <= MaxClients) && StrEqual(weapon_name, "awp") && event.GetInt("health"))
+	if ((1 <= attacker <= MaxClients) && (1 <= client <= MaxClients) && StrEqual(weapon_name, "awp") && event.GetInt("health"))
 	{
 		// Add quest progress points for the victim
 		JB_AddQuestProgress(client, g_QuestIndex);

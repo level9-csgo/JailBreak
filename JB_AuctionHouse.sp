@@ -1719,6 +1719,20 @@ Action Timer_EndAuction(Handle timer, int row_id)
 			
 			if (bid.ReturnClientBid(auction, bidder) && bidder)
 			{
+<<<<<<< HEAD
+=======
+				continue;
+			}
+			
+			int bidder = GetClientOfAccountId(bid.bidder_account_id);
+			if (bidder)
+			{
+				char item_name[64];
+				auction.item.GetName(item_name, sizeof(item_name));
+				
+				Shop_GiveClientCredits(bidder, bid.value, CREDITS_BY_BUY_OR_SELL);
+				
+>>>>>>> ea0ca1632cba51023d13e422aa25cef99bf19409
 				PrintToChat(bidder, "%s Your bid in \x0E%s\x01 auction on item \x03%s\x01 wasn't the top bid.", PREFIX, auction.owner_name, item_name);
 				PrintToChat(bidder, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
 			}
