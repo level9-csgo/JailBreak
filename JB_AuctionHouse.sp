@@ -1046,7 +1046,7 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 	}
 	
 	RTLify(auction.owner_name, sizeof(Auction::owner_name), auction.owner_name);
-	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n◾ %s: %s\n◾ Auction Type: %s\n ", 
+	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Seller: %s\n◾ Ending in: %s\n◾ %s: %s\n ", 
 		PREFIX_MENU, 
 		item_name, 
 		auction.type == AuctionType_Regular ? "":has_highest_bid ? "Top bid is ":"Starting bid is ", 
@@ -1054,9 +1054,10 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 		auction.owner_name, 
 		remaining_time, 
 		is_shop_item ? "Category":"Benefit", 
-		item_display, 
-		auction.type == AuctionType_Bids ? "Bids":"Buy It Now!"
+		item_display
 		);
+	
+	bool is_client_authorized = IsClientAuthorizedEx(client);
 	
 	if (auction.type == AuctionType_Regular)
 	{
@@ -1065,11 +1066,11 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 	} else {
 		menu.AddItem(item_info, "Place a bid", g_Players[client].account_id != auction.owner_account_id ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 		menu.AddItem(menu_selection, "View bid list", auction.bids_array.Length ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
-		menu.AddItem(menu_selection, "Cancel (ADMIN)", IsClientAuthorizedEx(client) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
+		menu.AddItem(menu_selection, "Cancel (ADMIN)", is_client_authorized ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
 	}
 	
 	menu.ExitBackButton = true;
-	JB_FixMenuGap(menu);
+	JB_FixMenuGap(menu, auction.type == AuctionType_Regular || is_client_authorized ? 0 : 1);
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -1719,20 +1720,6 @@ Action Timer_EndAuction(Handle timer, int row_id)
 			
 			if (bid.ReturnClientBid(auction, bidder) && bidder)
 			{
-<<<<<<< HEAD
-=======
-				continue;
-			}
-			
-			int bidder = GetClientOfAccountId(bid.bidder_account_id);
-			if (bidder)
-			{
-				char item_name[64];
-				auction.item.GetName(item_name, sizeof(item_name));
-				
-				Shop_GiveClientCredits(bidder, bid.value, CREDITS_BY_BUY_OR_SELL);
-				
->>>>>>> ea0ca1632cba51023d13e422aa25cef99bf19409
 				PrintToChat(bidder, "%s Your bid in \x0E%s\x01 auction on item \x03%s\x01 wasn't the top bid.", PREFIX, auction.owner_name, item_name);
 				PrintToChat(bidder, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
 			}
@@ -1971,22 +1958,22 @@ void FormatMinutes(int minutes, char[] buffer, int length)
 	
 	if (totalWeeks > 0)
 	{
-		Format(buffer, length, "%d Week%s", totalWeeks, totalWeeks != 1 ? "s" : "");
+		Format(buffer, length, "%dw", totalWeeks, totalWeeks != 1 ? "s" : "");
 	}
 	
 	if (totalDays > 0)
 	{
-		Format(buffer, length, "%s%s%d Day%s", buffer, buffer[0] ? ", " : "", totalDays, totalDays != 1 ? "s" : "");
+		Format(buffer, length, "%s%s%dd", buffer, buffer[0] ? ", " : "", totalDays);
 	}
 	
 	if (totalHours > 0)
 	{
-		Format(buffer, length, "%s%s%d Hour%s", buffer, buffer[0] ? ", " : "", totalHours, totalHours != 1 ? "s" : "");
+		Format(buffer, length, "%s%s%dh", buffer, buffer[0] ? ", " : "", totalHours);
 	}
 	
 	if (totalMinutes > 0)
 	{
-		Format(buffer, length, "%s%s%d Minute%s", buffer, buffer[0] ? ", " : "", totalMinutes, totalMinutes != 1 ? "s" : "");
+		Format(buffer, length, "%s%s%dm", buffer, buffer[0] ? ", " : "", totalMinutes);
 	}
 	
 	if (!buffer[0])
