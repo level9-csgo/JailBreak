@@ -211,10 +211,15 @@ public Action Command_Settings(int client, int args)
 		showSettingsMainMenu(iTargetIndex);
 	}
 	else {
-		showSettingsMainMenu(client);
+		RequestFrame(RF_ShowMenu, client);
 	}
 	
 	return Plugin_Handled;
+}
+
+void RF_ShowMenu(int client)
+{
+	showSettingsMainMenu(client);
 }
 
 //================================[ Natives & Forwards ]================================//
@@ -293,7 +298,7 @@ public int Native_CreateSetting(Handle plugin, int numParams)
 	{
 		for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
 		{
-			if (IsClientInGame(iCurrentClient)) 
+			if (IsClientInGame(iCurrentClient))
 			{
 				SettingData.cCookie.Get(iCurrentClient, szSettingValue, sizeof(szSettingValue));
 				
