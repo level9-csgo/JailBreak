@@ -13,12 +13,12 @@ enum
 
 char g_WishAwards[][][] = 
 {
-	{ "1", "7", "%d Premium Days", "0.2" }, 
+	{ "1", "7", "%d Premium Days", "0.3" }, 
 	{ "3", "4", "%d✰ Rune", "8.0" }, 
 	{ "45000", "60000", "%d Credits", "10.8" }, 
-	{ "", "", "6✰ Rune", "0.8" }, 
+	{ "", "", "6✰ Rune", "0.5" }, 
 	{ "5000", "20000", "%d Credits", "20.0" }, 
-	{ "", "", "Guaranteed Rune Upgrade", "0.05" }, 
+	{ "", "", "Guaranteed Rune Upgrade", "0.25" }, 
 	{ "30000", "45000", "%d Credits", "13.0" }, 
 	{ "", "", "Rewish", "15.0" }, 
 	{ "55000", "70000", "%d Credits", "7.15" }, 
@@ -96,7 +96,7 @@ forward void Shop_OnWishAnimationEnd(int client, int wishesLeft, int award_index
  *
  *	@return					Formatted wish award string.
 */
-stock char GetFormattedWishAward(int index, int &award)
+stock char[] GetFormattedWishAward(int index, int &award)
 {
 	char str[32];
 	strcopy(str, sizeof(str), g_WishAwards[index][Award_Context]);

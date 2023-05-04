@@ -37,14 +37,14 @@ ConVar g_cvDefaultRunesCapacity;
 
 // [1000] = 100%
 // 
-// 953 = 95.3%
-// 46  = 4.6%
-// 1   = 0.1%
+// 958 = 95.8%
+// 40  = 4.0%
+// 2   = 0.2%
 enum
 {
-	SpawnChance_Star1To3 = 959, 
-	SpawnChance_Star4To5 = 40, 
-	SpawnChance_Star6 = 1
+	SpawnChance_Star1To3 = 958,
+	SpawnChance_Star4To5 = 40,
+	SpawnChance_Star6 = 2
 }
 
 enum struct GarbageCollector
