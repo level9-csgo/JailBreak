@@ -2,9 +2,10 @@
 #pragma newdecls required
 
 #include <sourcemod>
+#include <cstrike>
 #include <JailBreak>
 #include <JB_SpecialDays>
-#include <fpvm_interface>
+#include <customweapons>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
@@ -88,22 +89,13 @@ enum struct Client
 	}
 }
 
-enum struct PrecachedWeapon
-{
-	int view_index;
-	int world_index;
-}
-
 Client g_ClientsData[MAXPLAYERS + 1];
 
 ArrayList g_SmokesData;
-ArrayList g_PrecachedData;
 
 Handle g_WeaponSelectionTimer = INVALID_HANDLE;
 
 Menu g_SetupMenu;
-
-ConVar weapon_sound_falloff_multiplier;
 
 char g_CustomWeapons[][][] = 
 {
@@ -130,7 +122,6 @@ int g_iBlockingUseActionInProgress;
 int g_TakeDmgTime;
 
 int m_vecOriginOffset;
-int m_hActiveWeaponOffset;
 
 public Plugin myinfo = 
 {
@@ -143,19 +134,14 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	g_PrecachedData = new ArrayList(sizeof(PrecachedWeapon));
-	
 	g_flSimulationTime = FindSendPropInfo("CBaseEntity", "m_flSimulationTime");
 	g_flProgressBarStartTime = FindSendPropInfo("CCSPlayer", "m_flProgressBarStartTime");
 	g_iProgressBarDuration = FindSendPropInfo("CCSPlayer", "m_iProgressBarDuration");
 	g_iBlockingUseActionInProgress = FindSendPropInfo("CCSPlayer", "m_iBlockingUseActionInProgress");
 	
 	m_vecOriginOffset = FindSendPropInfo("CSmokeGrenadeProjectile", "m_vecOrigin");
-	m_hActiveWeaponOffset = FindSendPropInfo("CCSPlayer", "m_hActiveWeapon");
 	
 	g_TakeDmgTime = RoundToFloor(1.0 / GetTickInterval() * TAKE_DAMAGE_TIME);
-	
-	weapon_sound_falloff_multiplier = FindConVar("weapon_sound_falloff_multiplier");
 }
 
 public void OnPluginEnd()
@@ -180,16 +166,10 @@ public void OnMapStart()
 {
 	PrecacheGeneric(COLORED_SMOKE_PARTICLE, true);
 	
-	PrecachedWeapon PrecachedWeaponData;
-	
-	g_PrecachedData.Clear();
-	
 	for (int current_weapon = 0; current_weapon < sizeof(g_CustomWeapons); current_weapon++)
 	{
-		PrecachedWeaponData.view_index = PrecacheModel(g_CustomWeapons[current_weapon][Item_ViewModelPath]);
-		PrecachedWeaponData.world_index = PrecacheModel(g_CustomWeapons[current_weapon][Item_WorldModelPath]);
-		
-		g_PrecachedData.PushArray(PrecachedWeaponData);
+		PrecacheModel(g_CustomWeapons[current_weapon][Item_ViewModelPath]);
+		PrecacheModel(g_CustomWeapons[current_weapon][Item_WorldModelPath]);
 	}
 }
 
@@ -242,8 +222,6 @@ public void JB_OnClientSetupSpecialDay(int client, int specialDayId)
 	GiveClientCustomWeapon(client, g_ClientsData[client].chosen_weapon);
 	
 	GivePlayerItem(client, UTILITY_WEAPON_TAG);
-	
-	weapon_sound_falloff_multiplier.ReplicateToClient(client, "0");
 }
 
 public void JB_OnSpecialDayStart(int specialDayId)
@@ -254,8 +232,6 @@ public void JB_OnSpecialDayStart(int specialDayId)
 		
 		HookEvent("weapon_fire", Event_WeaponFire, EventHookMode_Post);
 		HookEvent("smokegrenade_detonate", Event_SmokeDetonate, EventHookMode_Post);
-		
-		AddTempEntHook("Shotgun Shot", Hook_SilenceShot);
 		
 		char current_class_name[32];
 		for (int current_entity = MaxClients + 1; current_entity < GetMaxEntities(); current_entity++)
@@ -281,10 +257,7 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 			{
 				if (IsClientInGame(current_client))
 				{
-					for (int current_weapon = 0; current_weapon < sizeof(g_CustomWeapons); current_weapon++)
-					{
-						FPVMI_SetClientModel(current_client, g_CustomWeapons[current_weapon][Item_TagName]);
-					}
+					ResetClientCustomWeapons(current_client);
 					
 					DisarmPlayer(current_client);
 					GivePlayerItem(current_client, "weapon_deagle");
@@ -292,8 +265,6 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 					GivePlayerItem(current_client, "weapon_knife");
 					
 					ResetProgressBar(current_client);
-					
-					weapon_sound_falloff_multiplier.ReplicateToClient(current_client, "1");
 				}
 			}
 			
@@ -303,8 +274,6 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 				
 				UnhookEvent("weapon_fire", Event_WeaponFire, EventHookMode_Post);
 				UnhookEvent("smokegrenade_detonate", Event_SmokeDetonate, EventHookMode_Post);
-				
-				RemoveTempEntHook("Shotgun Shot", Hook_SilenceShot);
 			}
 		}
 		else
@@ -404,32 +373,6 @@ public void Event_SmokeDetonate(Event event, const char[] name, bool dontBroadca
 			AcceptEntityInput(index, "Kill");
 		}
 	}
-}
-
-Action Hook_SilenceShot(const char[] teName, const int[] players, int numClients, float delay)
-{
-	int client = TE_ReadNum("m_iPlayer") + 1;
-	
-	// Make sure the client index is in-game and valid
-	if (!(1 <= client <= MaxClients) || !IsClientInGame(client))
-	{
-		return Plugin_Continue;
-	}
-	
-	char weapon_name[32];
-	
-	// Initialzie the client's weapon index and name, and validate it by the special day weapon define
-	int active_weapon = GetEntDataEnt2(client, m_hActiveWeaponOffset), custom_weapon_index;
-	if (active_weapon == -1 || !IsValidEntity(active_weapon) || !GetEntityClassname(active_weapon, weapon_name, sizeof(weapon_name)) || (custom_weapon_index = GetCustomWeaponByClassName(weapon_name)) == -1)
-	{
-		return Plugin_Continue;
-	}
-	
-	// Emit the weapon fire sound effect
-	EmitSoundToAll(g_CustomWeapons[custom_weapon_index][Item_FireSoundPath][6], client, .volume = StringToFloat(g_CustomWeapons[custom_weapon_index][Item_FireSoundVolume]));
-	
-	// Block the original sound
-	return Plugin_Stop;
 }
 
 //================================[ Menus ]================================//
@@ -573,7 +516,7 @@ Action Timer_SmokeExpire(Handle timer, DataPack dPack)
 {
 	if (!g_SmokesData)
 	{
-		return;
+		return Plugin_Continue;
 	}
 	
 	float position[3];
@@ -586,6 +529,8 @@ Action Timer_SmokeExpire(Handle timer, DataPack dPack)
 	{
 		g_SmokesData.Erase(smoke_index);
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//
@@ -614,27 +559,66 @@ int GetSmokeByPosition(float pos[3])
 	return -1;
 }
 
-int GetCustomWeaponByClassName(const char[] classname)
-{
-	for (int current_weapon = 0; current_weapon < sizeof(g_CustomWeapons); current_weapon++)
-	{
-		if (StrEqual(g_CustomWeapons[current_weapon][Item_TagName], classname))
-		{
-			return current_weapon;
-		}
-	}
-	
-	return -1;
-}
-
 void GiveClientCustomWeapon(int client, int weapon_index)
 {
-	GivePlayerItem(client, g_CustomWeapons[weapon_index][Item_TagName]);
+	int weapon = GivePlayerItem(client, g_CustomWeapons[weapon_index][Item_TagName]);
+	if (weapon == -1)
+	{
+		return;
+	}
 	
-	PrecachedWeapon PrecachedWeaponData;
-	g_PrecachedData.GetArray(weapon_index, PrecachedWeaponData);
+	CustomWeapon custom_weapon = CustomWeapon(weapon);
+	if (!custom_weapon)
+	{
+		return;
+	}
 	
-	FPVMI_SetClientModel(client, g_CustomWeapons[weapon_index][Item_TagName], PrecachedWeaponData.view_index, PrecachedWeaponData.world_index, g_CustomWeapons[weapon_index][Item_DroppedModelPath]);
+	char path[PLATFORM_MAX_PATH];
+	
+	strcopy(path, sizeof(path), g_CustomWeapons[weapon_index][Item_ViewModelPath]);
+	custom_weapon.SetModel(CustomWeaponModel_View, path);
+	
+	strcopy(path, sizeof(path), g_CustomWeapons[weapon_index][Item_WorldModelPath]);
+	custom_weapon.SetModel(CustomWeaponModel_World, path);
+	
+	strcopy(path, sizeof(path), g_CustomWeapons[weapon_index][Item_DroppedModelPath]);
+	custom_weapon.SetModel(CustomWeaponModel_Dropped, path);
+	
+	strcopy(path, sizeof(path), g_CustomWeapons[weapon_index][Item_FireSoundPath][6]);
+	custom_weapon.SetShotSound(path);
+}
+
+void ResetClientCustomWeapons(int client, int weapon = -1)
+{
+	if (weapon != -1)
+	{
+		CustomWeapon custom_weapon = CustomWeapon(weapon);
+		if (custom_weapon)
+		{
+			custom_weapon.SetModel(CustomWeaponModel_View, "");
+			custom_weapon.SetModel(CustomWeaponModel_World, "");
+			custom_weapon.SetModel(CustomWeaponModel_Dropped, "");
+			
+			custom_weapon.SetShotSound("");
+		}
+		
+		return;
+	}
+	
+	if ((weapon = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY)) != -1)
+	{
+		ResetClientCustomWeapons(client, weapon);
+	}
+	
+	if ((weapon = GetPlayerWeaponSlot(client, CS_SLOT_SECONDARY)) != -1)
+	{
+		ResetClientCustomWeapons(client, weapon);
+	}
+	
+	if ((weapon = GetPlayerWeaponSlot(client, CS_SLOT_KNIFE)) != -1)
+	{
+		ResetClientCustomWeapons(client, weapon);
+	}
 }
 
 int GetDefaultPrimaryIndex()
@@ -771,7 +755,7 @@ void HSV2RGB(float h, float s, float v, float &r, float &g, float &b)
 	}
 }
 
-char GetProgressBar(int value, int all)
+char[] GetProgressBar(int value, int all)
 {
 	char szProgress[PROGRESS_BAR_LENGTH * 6];
 	int iLength = PROGRESS_BAR_LENGTH;
