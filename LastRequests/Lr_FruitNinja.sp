@@ -64,6 +64,10 @@ int g_iPrepareTime;
 int g_iPrisonerCounter;
 int g_iGuardCounter;
 
+ArrayList g_Fruits[MAXPLAYERS + 1];
+
+int g_PendingLoserID = 0;
+
 public Plugin myinfo = 
 {
 	name = "[CS:GO] JailBreak - "...LR_NAME..." Lr", 
@@ -73,6 +77,11 @@ public Plugin myinfo =
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
+public void OnPluginStart()
+{
+	HookEvent("player_spawn", Event_PlayerSpawn);
+}
+
 public void OnPluginEnd()
 {
 	if (g_bIsLrActivated) {
@@ -81,6 +90,22 @@ public void OnPluginEnd()
 }
 
 /* Events */
+
+void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if (!client || !g_PendingLoserID)
+	{
+		return;
+	}
+	
+	if (client == GetClientOfUserId(g_PendingLoserID))
+	{
+		RequestFrame(Frame_RemoveCustomWeapon, g_PendingLoserID);
+		
+		g_PendingLoserID = 0;
+	}
+}
 
 public void OnLibraryAdded(const char[] name)
 {
@@ -121,18 +146,41 @@ public void JB_OnLrEnd(int currentLr, const char[] lrName, int winner, int loser
 			{
 				SDKUnhook(iCurrentClient, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
 				
-				int lr_weapon = GetPlayerWeaponSlot(iCurrentClient, CS_SLOT_KNIFE);
-				if (lr_weapon != -1)
-				{
-					RemovePlayerItem(iCurrentClient, lr_weapon);
-					EquipPlayerWeapon(iCurrentClient, lr_weapon);
-				}
+				RequestFrame(Frame_RemoveCustomWeapon, GetClientUserId(iCurrentClient));
+				
+				delete g_Fruits[iCurrentClient];
 			}
 		}
+		
+		g_PendingLoserID = GetClientUserId(loser);
 		
 		DeleteAllTimers();
 		g_bIsLrActivated = false;
 	}
+}
+
+void Frame_RemoveCustomWeapon(int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if (!client)
+	{
+		return;
+	}
+	
+	int lr_weapon = GetPlayerWeaponSlot(client, CS_SLOT_KNIFE);
+	if (lr_weapon == -1)
+	{
+		return;
+	}
+	
+	CustomWeapon custom_weapon = CustomWeapon(lr_weapon);
+	if (!custom_weapon)
+	{
+		return;
+	}
+	
+	custom_weapon.SetModel(CustomWeaponModel_View, "");
+	
 }
 
 public void JB_OnShowLrInfoMenu(Panel panel, int currentLr)
@@ -226,7 +274,7 @@ public Action Hook_OnTakeDamage(int entity, int &attacker, int &inflictor, float
 			ForcePlayerSuicide(g_esSetupData.iPrisoner);
 		}
 		
-		AcceptEntityInput(entity, "Kill");
+		RemoveClientFruits(attacker);
 		PrintCenterTextAll("<font color='#8AC7DB'> %N</font> Counter: <font color='#CC0000'>%d</font> \n<font color='#8AC7DB'>%N</font> Counter: <font color='#CC0000'>%d</font>", g_esSetupData.iPrisoner, g_iPrisonerCounter, g_esSetupData.iAgainst, g_iGuardCounter);
 	}
 	
@@ -394,6 +442,8 @@ void SetupPlayer(int client)
 		return;
 	}
 	
+	g_Fruits[client] = new ArrayList();
+	
 	DisarmPlayer(client);
 	SetEntityHealth(client, DEFAULT_HEALTH);
 	int sword = GivePlayerItem(client, LR_WEAPON);
@@ -463,6 +513,13 @@ void SpawnFruit(int client)
 		fRandomPos[1] = GetRandomFloat(-30.0, 30.0);
 		fRandomPos[2] = GetRandomFloat(150.0, 250.0);
 		
+		SetEntProp(iEntity, Prop_Send, "m_usSolidFlags", 0x98);
+		
+		g_Fruits[client].Push(EntIndexToEntRef(iEntity));
+		
+		SetEntityCollisionGroup(iEntity, 11);
+		EntityCollisionRulesChanged(iEntity);
+		
 		if (iBombPercent != 5) {
 			DispatchKeyValue(iEntity, "model", g_szFruitsModels[GetRandomInt(0, 3)]);
 			SetEntPropString(iEntity, Prop_Data, "m_iName", client == g_esSetupData.iPrisoner ? "PrisonerFruit":"GuardFruit");
@@ -482,6 +539,25 @@ void SpawnFruit(int client)
 		fFruitSpawnOrigin[0] -= fRandomPos[0];
 		fFruitSpawnOrigin[1] -= fRandomPos[1];
 		fFruitSpawnOrigin[2] -= fRandomPos[2];
+	}
+}
+
+void RemoveClientFruits(int client)
+{
+	if (!g_Fruits[client])
+	{
+		return;
+	}
+	
+	int entity;
+	while (g_Fruits[client].Length)
+	{
+		if ((entity = EntRefToEntIndex(g_Fruits[client].Get(0))) != -1)
+		{
+			RemoveEntity(entity);
+		}
+		
+		g_Fruits[client].Erase(0);
 	}
 }
 
