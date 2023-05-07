@@ -170,6 +170,7 @@ public void OnMapStart()
 	{
 		PrecacheModel(g_CustomWeapons[current_weapon][Item_ViewModelPath]);
 		PrecacheModel(g_CustomWeapons[current_weapon][Item_WorldModelPath]);
+		PrecacheModel(g_CustomWeapons[current_weapon][Item_DroppedModelPath]);
 	}
 }
 
