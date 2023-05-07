@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <shop>
+#include <JB_GuardsSystem>
 
 #undef REQUIRE_PLUGIN
 #include <JB_SettingsSystem>
@@ -1139,6 +1140,11 @@ ItemId GetToggledItem(int client, int category_type)
 
 void ToggleClientFreeze(int client, bool mode)
 {
+	if (JB_IsInvitePeriodRunning() && JB_GetClientGuardRank(client) != Guard_NotGuard && !mode)
+	{
+		return;
+	}
+	
 	SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mode ? 0.0 : 1.0);
 }
 
