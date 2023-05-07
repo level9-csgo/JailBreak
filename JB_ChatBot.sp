@@ -87,12 +87,30 @@ ConVar g_cvCreditsRequestCooldown;
 ConVar g_cvMinCreditsRequest;
 ConVar g_cvMaxCreditsRequest;
 ConVar g_cvChatSilenceMsgTime;
+ConVar jb_bot_tip_interval;
 
 // Stores the steam account id of authorized clients for commands
 int g_AuthorizedClients[] = 
 {
-	912414245, // KoNLiG 
-	928490446  // Ravid
+	912414245,  // KoNLiG 
+	928490446 // Ravid
+};
+
+char g_Tips[][] = 
+{
+	" \x07אל תשכח!\x01 - לכתוב \x04/gc\x01 כל סיבוב מחדש כדי שתרדו לי מהגב", 
+	" \x07הידעת?\x01 - אם שוטר הורג אותך ללא סיבה מוצדקת, רשום \x02/fk\x01 והאדמין ידאג לך", 
+	" \x07באמא שלי כל השרת הזה מכור להימורים\x01 - \x04'/gamble'\x01 ו \x04'/xgamble'\x01!", 
+	"!\x04/gang\x01 באמא שלי למי שאין גאנג לא ישרוד פה יומיים, כתבו", 
+	" \x07אל תשכח!\x01 - לכתוב \x04/wish\x01 כל יום, מי יודע אולי תזכה ברון 6 כוכבים?", 
+	" \x07הידעת?\x01 - רוצה לכבות את השירים בדיי לתמיד? כתוב \x04/settings\x01.", 
+	"החבר לתא יותר חתיך? כתוב \x04/shop\x01!", 
+	"מרגיש שהגאמבל שבור? עזוב אותך ותעבור ל \x04/cf\x01.", 
+	"הסיטי חונק? תנסה \x04/rps, /pong, /snake\x01", 
+	" \x07הידעת?\x01 - שלח לחבר שלך הודעה פרטית עם \x04/pm\x01 ותפסיק לזיין את המוח בשרת.", 
+	" \x07הידעת?\x01 - חבר שלך חופר לך בפרטי? דפוק לו בלוק! \x02/blockpm\x01", 
+	" אין לך מזל עם רונים? קנה ב \x04/ah\x01!", 
+	" באמא שלי המשימות שיצאו לי ב \x04/quests\x01 לא הגיוניות.", 
 };
 
 public Plugin myinfo = 
@@ -113,6 +131,7 @@ public void OnPluginStart()
 	g_cvMinCreditsRequest = CreateConVar("jb_bot_min_credits_request", "599", "Mimimum possible cash amount that client can get from the bot.");
 	g_cvMaxCreditsRequest = CreateConVar("jb_bot_max_credits_request", "999", "Maximum possible cash amount that client can get from the bot.");
 	g_cvChatSilenceMsgTime = CreateConVar("jb_bot_chat_silence_msg_time", "60", "Time (in seconds) for any player to send a message in chat, for the bot to send a message about it.");
+	jb_bot_tip_interval = CreateConVar("jb_bot_tip_interval", "300", "Time in seconds between tip chat messages.");
 	
 	AutoExecConfig(true, "ChatBot", "JailBreak");
 	
@@ -127,6 +146,8 @@ public void OnPluginStart()
 	strcopy(szDirPath, sizeof(szDirPath), CONFIG_PATH);
 	BuildPath(Path_SM, szDirPath, sizeof(szDirPath), szDirPath[17]);
 	delete OpenFile(szDirPath, "a+");
+	
+	CreateTimer(jb_bot_tip_interval.FloatValue, Timer_SendTipMessage, .flags = TIMER_REPEAT);
 }
 
 //================================[ Events ]================================//
@@ -896,6 +917,12 @@ void KV_DeleteBotSentence(int client, int sentence_index)
 }
 
 //================================[ Timers ]================================//
+
+Action Timer_SendTipMessage(Handle timer)
+{
+	PrintBotMessage(g_Tips[GetURandomInt() % sizeof(g_Tips)]);
+	return Plugin_Continue;
+}
 
 public Action Timer_PrintBotMessage(Handle timer, DataPack dp)
 {
