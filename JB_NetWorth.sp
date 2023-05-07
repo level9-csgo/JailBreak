@@ -14,7 +14,6 @@
 
 Database g_Database;
 Regex g_Steamid2;
-Function g_CalculateFunc;
 
 int g_Userid[MAXPLAYERS + 1];
 
@@ -44,8 +43,6 @@ public void OnPluginStart()
 	
 	// Compile a steam id2 regex expression.
 	g_Steamid2 = new Regex("^STEAM_[0-5]:[0-1]:[0-9]+$");
-	
-	g_CalculateFunc = GetFunctionByName(null, "OnPlayerNetWorthCalculated");
 	
 	// Register commands.
 	RegConsoleCmd("sm_networth", Command_NetWorth, "Displays the calculated net worth of a certain player, offline or online.");
@@ -170,20 +167,6 @@ any Native_GetPlayerNetWorth(Handle plugin, int numParams)
 	CalculatePlayerNetWorth(account_id, 0, success_callback, failure_callback, plugin, data);
 	
 	return 0;
-}
-
-void Call_OnPlayerNetWorthCalculated(int account_id, int client, const char[] target_name, int credits, int shop_items_value, int runes_value, float response_time)
-{
-	Call_StartFunction(null, g_CalculateFunc);
-	Call_PushCell(account_id);
-	Call_PushCell(client);
-	Call_PushString(target_name);
-	Call_PushCell(credits + shop_items_value + runes_value);
-	Call_PushCell(credits);
-	Call_PushCell(shop_items_value);
-	Call_PushCell(runes_value);
-	Call_PushFloat(response_time);
-	Call_Finish();
 }
 
 void Call_OnPlayerNetWorthSuccess(Function func, Handle plugin, int account_id, const char[] target_name, any data, int total_net_worth, int credits, int shop_items_value, int runes_value, float response_time)
@@ -320,7 +303,7 @@ void OnPlayerNetWorthCalculatedSuccess(Database db, DataPack dp, int numQueries,
 	
 	if (success_callback == INVALID_FUNCTION)
 	{
-		Call_OnPlayerNetWorthCalculated(account_id, client, target_name, credits, shop_items_value, runes_value, GetGameTime() - start_time);
+		OnPlayerNetWorthCalculated(account_id, target_name, client, credits + shop_items_value + runes_value, credits, shop_items_value, runes_value, GetGameTime() - start_time);
 	}
 	else
 	{
