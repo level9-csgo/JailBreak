@@ -555,9 +555,6 @@ void StopEmote(int client)
 		
 		CreateTimer(1.0, Timer_RemoveEmoteEntity, g_ClientsData[client].entities.emote_ent_ref);
 		
-		DispatchKeyValue(iEmoteEnt, "OnUser1", "!self,Kill,,1.0,-1");
-		AcceptEntityInput(iEmoteEnt, "FireUser1");
-		
 		ToggleClientViewAngle(client, false);
 		ToggleClientWeaponBlock(client, false);
 		
