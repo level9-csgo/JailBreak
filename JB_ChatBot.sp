@@ -98,20 +98,20 @@ int g_AuthorizedClients[] =
 
 char g_Tips[][] = 
 {
-    ".כל סיבוב מחדש כדי שתרדו לי מהגב \x04/gc\x01 \x07לא לשכוח!\x01 לכתוב", 
-    ".והאדמין ידאג לך \x02/fk\x01 אם שוטר הורג אותך ללא סיבה מוצדקת, רשום", 
-    " \x04'/gamble' ו '/xgamble'\x01 - \x07באמא שלי כל השרת הזה מכור להימורים\x01", 
-    " \x04/gang\x01 באמא שלי למי שאין גאנג לא ישרוד פה יומיים. כתבו", 
-    "!כל יום, ומי יודע אולי תזכה ברון 6 כוכבים \x04/wish\x01 \x07לא לשכוח!\x01 לכתוב", 
-    " \x04/settings\x01 רוצה לכבות את השירים בדיי לתמיד? כתוב", 
-    " \x04/shop\x01 החבר לתא יותר חתיך? כתוב", 
-    " \x04/cf\x01 מרגיש שהגאמבל שבור? עזוב אותך ותעבור ל", 
-    " \x04/rps, /pong, /snake\x01 הסיטי חונק? תנסה", 
-    ".ותפסיק לזיין את המוח בשרת \x04/pm\x01 שלח לחבר שלך הודעה פרטית עם", 
-    " \x02/blockpm\x01 !חבר שלך חופר לך בפרטי? דפוק לו בלוק", 
-    " \x04/ah\x01 אין לך מזל עם רונים? קנה ב", 
-    " .לא הגיוניות \x04/quests\x01 באמא שלי המשימות שיצאו לי ב",
-    " \x04/nw\x01 ?רוצה לדעת אם מישהו יותר סוס ממך",
+	".כל סיבוב מחדש כדי שתרדו לי מהגב \x04/gc\x01 \x07לא לשכוח!\x01 לכתוב", 
+	".והאדמין ידאג לך \x02/fk\x01 אם שוטר הורג אותך ללא סיבה מוצדקת, רשום", 
+	" \x04'/gamble' ו '/xgamble'\x01 - \x07באמא שלי כל השרת הזה מכור להימורים\x01", 
+	" \x04/gang\x01 באמא שלי למי שאין גאנג לא ישרוד פה יומיים. כתבו", 
+	"!כל יום, ומי יודע אולי תזכה ברון 6 כוכבים \x04/wish\x01 \x07לא לשכוח!\x01 לכתוב", 
+	" \x04/settings\x01 רוצה לכבות את השירים בדיי לתמיד? כתוב", 
+	" \x04/shop\x01 החבר לתא יותר חתיך? כתוב", 
+	" \x04/cf\x01 מרגיש שהגאמבל שבור? עזוב אותך ותעבור ל", 
+	" \x04/rps, /pong, /snake\x01 הסיטי חונק? תנסה", 
+	".ותפסיק לזיין את המוח בשרת \x04/pm\x01 שלח לחבר שלך הודעה פרטית עם", 
+	" \x02/blockpm\x01 !חבר שלך חופר לך בפרטי? דפוק לו בלוק", 
+	" \x04/ah\x01 אין לך מזל עם רונים? קנה ב", 
+	" .לא הגיוניות \x04/quests\x01 באמא שלי המשימות שיצאו לי ב", 
+	" \x04/nw\x01 ?רוצה לדעת אם מישהו יותר סוס ממך", 
 };
 
 public Plugin myinfo = 
@@ -749,19 +749,19 @@ void BotAnswerRandom()
 
 void BotAnswerChatSilence()
 {
-	char szResponde[6][128];
+	char szResponde[7][128];
 	
 	Format(szResponde[0], sizeof(szResponde[]), "?הלו? אפשר קצת יחס");
 	Format(szResponde[1], sizeof(szResponde[]), "אדמין אני פה אל תקיק");
 	Format(szResponde[2], sizeof(szResponde[]), "וואו שקט פה רצח");
 	Format(szResponde[3], sizeof(szResponde[]), "D: אם יש לי חברים אז למה אף אחד לא מדבר איתי");
 	Format(szResponde[4], sizeof(szResponde[]), "קיצר מה אומרים");
-	Format(szResponde[4], sizeof(szResponde[]), "למה ה rtv ברוסית?");
+	Format(szResponde[5], sizeof(szResponde[]), "למה ה rtv ברוסית?");
 	
 	int random_client = GetRandomClient();
 	if (random_client != -1)
 	{
-		Format(szResponde[5], sizeof(szResponde[]), "סתום תפה %N", random_client);
+		Format(szResponde[6], sizeof(szResponde[]), "סתום תפה %N", random_client);
 	}
 	
 	PrintBotMessage(szResponde[GetRandomInt(0, sizeof(szResponde) - 1)]);
