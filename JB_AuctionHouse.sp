@@ -1712,24 +1712,12 @@ Action Timer_EndAuction(Handle timer, int row_id)
 		auction.AddItemToBidWinner(bid);
 		
 		// Transfer
-		int bidder;
-		for (int current_bid = 1; current_bid < auction.bids_array.Length; current_bid++)
+		for (int current_bid = 1, bidder; current_bid < auction.bids_array.Length; current_bid++)
 		{
 			auction.bids_array.GetArray(current_bid, bid);
 			
 			if (bid.ReturnClientBid(auction, bidder) && bidder)
 			{
-				continue;
-			}
-			
-			int bidder = GetClientOfAccountId(bid.bidder_account_id);
-			if (bidder)
-			{
-				char item_name[64];
-				auction.item.GetName(item_name, sizeof(item_name));
-				
-				Shop_GiveClientCredits(bidder, bid.value, CREDITS_BY_BUY_OR_SELL);
-				
 				PrintToChat(bidder, "%s Your bid in \x0E%s\x01 auction on item \x03%s\x01 wasn't the top bid.", PREFIX, auction.owner_name, item_name);
 				PrintToChat(bidder, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
 			}
