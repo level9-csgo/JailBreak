@@ -519,7 +519,7 @@ enum struct Auction
 		{
 			if (!this.item.AddClientItem(owner))
 			{
-				ThrowError("Failed returning item (shop_item_id: %d, rune_identifier: %s, star: %d, level: %d) to account id: %d", 
+				LogError("Failed returning item (shop_item_id: %d, rune_identifier: %s, star: %d, level: %d) to account id: %d", 
 					this.item.shop_item_id, 
 					this.item.rune_identifier, 
 					this.item.rune_star, 
@@ -1719,8 +1719,6 @@ Action Timer_EndAuction(Handle timer, int row_id)
 			
 			if (bid.ReturnClientBid(auction, bidder) && bidder)
 			{
-<<<<<<< HEAD
-=======
 				continue;
 			}
 			
@@ -1732,7 +1730,6 @@ Action Timer_EndAuction(Handle timer, int row_id)
 				
 				Shop_GiveClientCredits(bidder, bid.value, CREDITS_BY_BUY_OR_SELL);
 				
->>>>>>> ea0ca1632cba51023d13e422aa25cef99bf19409
 				PrintToChat(bidder, "%s Your bid in \x0E%s\x01 auction on item \x03%s\x01 wasn't the top bid.", PREFIX, auction.owner_name, item_name);
 				PrintToChat(bidder, "%s You have recieved \x04%s\x01 credits.", PREFIX, JB_AddCommas(bid.value));
 			}
