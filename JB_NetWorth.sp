@@ -1,5 +1,6 @@
 #include <sourcemod>
 #include <regex>
+#include <ripext>
 #include <profiler>
 #include <JailBreak>
 #include <JB_NetWorth>
@@ -111,7 +112,7 @@ void CalculatePlayerNetWorth(int account_id, Function success_callback, Function
 	dp.WriteCell(data);
 	
 	char query[64];
-	g_Database.Format(query, sizeof(query), "CALL GetPlayerNetWorth(%d)", account_id);
+	g_Database.Format(query, sizeof(query), "SELECT GetPlayerNetWorth(%d)", account_id);
 	
 	Profiler profiler = new Profiler();
 	profiler.Start();
@@ -162,12 +163,21 @@ void OnPlayerNetWorthCalculatedSuccess(Database db, DBResultSet results, const c
 		return;
 	}
 	
-	char target_name[MAX_NAME_LENGTH];
-	results.FetchString(1, target_name, sizeof(target_name));
+	char json_str[256];
+	results.FetchString(0, json_str, sizeof(json_str));
 	
-	int credits = results.FetchInt(2);
-	int shop_items_value = results.FetchInt(3);
-	int runes_value = results.FetchInt(4);
+	LogMessage(json_str);
+	
+	JSONObject jsonObject = JSONObject.FromString(json_str);
+	
+	char target_name[MAX_NAME_LENGTH];
+	jsonObject.GetString("player_name", target_name, sizeof(target_name));
+	
+	int credits = jsonObject.GetInt("credits");
+	int shop_items_value = jsonObject.GetInt("items");
+	int runes_value = jsonObject.GetInt("runes_value");
+	
+	delete jsonObject;
 	
 	if (success_callback != INVALID_FUNCTION)
 	{
