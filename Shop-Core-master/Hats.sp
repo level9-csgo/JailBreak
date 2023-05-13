@@ -13,29 +13,29 @@ enum struct Player
 	// This player userid.
 	int userid;
 	
-	// ItemId of the currently equipped face mask.
-	ItemId equipped_facemask;
+	// ItemId of the currently equipped hat.
+	ItemId equipped_hat;
 	
-	// Entity reference of the player face mask entity.
-	int facemask_entity_reference;
+	// Entity reference of the player hat entity.
+	int hat_entity_reference;
 	//================================//
 	void Init(int client)
 	{
 		this.index = client;
 		this.userid = GetClientUserId(client);
-		this.facemask_entity_reference = INVALID_ENT_REFERENCE;
+		this.hat_entity_reference = INVALID_ENT_REFERENCE;
 	}
 	
 	void Close()
 	{
 		this.userid = 0;
-		this.equipped_facemask = INVALID_ITEM;
-		this.facemask_entity_reference = 0;
+		this.equipped_hat = INVALID_ITEM;
+		this.hat_entity_reference = 0;
 	}
 	
-	void SpawnFacemaskEntity()
+	void SpawnHatEntity()
 	{
-		this.RemoveFacemaskEntity();
+		this.RemoveHatEntity();
 		
 		int prop_dynamic_override = CreateEntityByName("prop_dynamic_override");
 		if (prop_dynamic_override == -1)
@@ -43,9 +43,9 @@ enum struct Player
 			return;
 		}
 		
-		// Retrieve the face mask model via the equipped face mask data.
+		// Retrieve the hat model via the equipped hat data.
 		char model[PLATFORM_MAX_PATH];
-		Shop_GetItemCustomInfoString(this.equipped_facemask, "model_path", model, sizeof(model));
+		Shop_GetItemCustomInfoString(this.equipped_hat, "model_path", model, sizeof(model));
 		
 		DispatchKeyValue(prop_dynamic_override, "model", model);
 		DispatchKeyValue(prop_dynamic_override, "solid", "0");
@@ -58,15 +58,27 @@ enum struct Player
 		SetVariantString("facemask");
 		AcceptEntityInput(prop_dynamic_override, "SetParentAttachment");
 		
+		float origin_alignment[3];
+		origin_alignment[0] = Shop_GetItemCustomInfoFloat(this.equipped_hat, "origin_alignment_x");
+		origin_alignment[1] = Shop_GetItemCustomInfoFloat(this.equipped_hat, "origin_alignment_y");
+		origin_alignment[2] = Shop_GetItemCustomInfoFloat(this.equipped_hat, "origin_alignment_z");
+		
+		float angles_alignment[3];
+		angles_alignment[0] = Shop_GetItemCustomInfoFloat(this.equipped_hat, "angles_alignment_x");
+		angles_alignment[1] = Shop_GetItemCustomInfoFloat(this.equipped_hat, "angles_alignment_y");
+		angles_alignment[2] = Shop_GetItemCustomInfoFloat(this.equipped_hat, "angles_alignment_z");
+		
+		TeleportEntity(prop_dynamic_override, origin_alignment, angles_alignment);
+		
 		TransmitManager_AddEntityHooks(prop_dynamic_override);
 		TransmitManager_SetEntityState(prop_dynamic_override, this.index, false);
 		
-		this.facemask_entity_reference = EntIndexToEntRef(prop_dynamic_override);
+		this.hat_entity_reference = EntIndexToEntRef(prop_dynamic_override);
 	}
 	
-	void RemoveFacemaskEntity()
+	void RemoveHatEntity()
 	{
-		int entity = this.GetFacemaskEntity();
+		int entity = this.GetHatEntity();
 		if (entity != -1)
 		{
 			RemoveEntity(entity);
@@ -74,9 +86,9 @@ enum struct Player
 	}
 	
 	// -1 for invalid.
-	int GetFacemaskEntity()
+	int GetHatEntity()
 	{
-		return EntRefToEntIndex(this.facemask_entity_reference);
+		return EntRefToEntIndex(this.hat_entity_reference);
 	}
 }
 
@@ -84,21 +96,21 @@ Player g_Players[MAXPLAYERS + 1];
 
 CategoryId g_ShopCategoryID;
 
-// Stores all the facemasks models to precache them later.
-ArrayList g_FacemaskModels;
+// Stores all the hats models to precache them later.
+ArrayList g_HatModels;
 
 public Plugin myinfo = 
 {
-	name = "[Shop Integrated] Face Masks", 
+	name = "[Shop Integrated] Hats", 
 	author = "KoNLiG", 
-	description = "Provides face masks as a feature in the shop system.", 
+	description = "Provides hats as a feature in the shop system.", 
 	version = "1.0.0", 
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
 public void OnPluginStart()
 {
-	g_FacemaskModels = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
+	g_HatModels = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
 	
 	if (Shop_IsStarted())
 	{
@@ -114,6 +126,25 @@ public void OnPluginStart()
 	AddCommandListener(Listener_OnSpectateChange, "spec_mode");
 	
 	Lateload();
+	
+	RegConsoleCmd("sm_kovaim", Command_Kovaim);
+}
+
+Action Command_Kovaim(int client, int argc)
+{
+	if (!client)
+	{
+		return Plugin_Handled;
+	}
+	
+	if (!IsPlayerAlive(client))
+	{
+		FakeClientCommand(client, "say \"%s\"", "אני הומו");
+	}
+	
+	SlapPlayer(client, .sound = false);
+	
+	return Plugin_Handled;
 }
 
 public void OnPluginEnd()
@@ -124,7 +155,7 @@ public void OnPluginEnd()
 	{
 		if (IsClientInGame(current_client))
 		{
-			g_Players[current_client].RemoveFacemaskEntity();
+			g_Players[current_client].RemoveHatEntity();
 		}
 	}
 }
@@ -133,9 +164,9 @@ public void OnPluginEnd()
 
 public void Shop_Started()
 {
-	g_ShopCategoryID = Shop_RegisterCategory("facemasks", "Face Masks", "Unique holiday face masks to show off to your friends!");
+	g_ShopCategoryID = Shop_RegisterCategory("hats", "Hats", "Get yourself a hat and get hotter!");
 	
-	LoadFacemasks();
+	LoadHats();
 }
 
 public void OnClientPutInServer(int client)
@@ -153,12 +184,32 @@ public void OnClientDisconnect(int client)
 
 public void OnMapStart()
 {
-	PrecacheFacemasksModels();
+	AddDirectoryToDownloadsTable("models/gmod_tower");
+	AddDirectoryToDownloadsTable("models/heavy");
+	AddDirectoryToDownloadsTable("models/mudhatk");
+	AddDirectoryToDownloadsTable("models/pedobear");
+	AddDirectoryToDownloadsTable("models/pikahat");
+	AddDirectoryToDownloadsTable("models/player");
+	AddDirectoryToDownloadsTable("models/sentry_hat");
+	AddDirectoryToDownloadsTable("models/spartahelm");
+	AddDirectoryToDownloadsTable("models/store");
+	AddDirectoryToDownloadsTable("models/vikinghelmet");
+	AddDirectoryToDownloadsTable("materials/models/gmod_tower");
+	AddDirectoryToDownloadsTable("materials/models/mudhatk");
+	AddDirectoryToDownloadsTable("materials/models/pedobear");
+	AddDirectoryToDownloadsTable("materials/models/pikahat");
+	AddDirectoryToDownloadsTable("materials/models/player");
+	AddDirectoryToDownloadsTable("materials/models/sentry_hat");
+	AddDirectoryToDownloadsTable("materials/models/spartahelm");
+	AddDirectoryToDownloadsTable("materials/models/store");
+	AddDirectoryToDownloadsTable("materials/models/vikinghelmet");
+	
+	PrecacheHatsModels();
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	RequestFrame(Frame_ApplyClientFacemask, event.GetInt("userid"));
+	RequestFrame(Frame_ApplyClientHat, event.GetInt("userid"));
 }
 
 void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
@@ -166,27 +217,27 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if (client)
 	{
-		g_Players[client].RemoveFacemaskEntity();
+		g_Players[client].RemoveHatEntity();
 	}
 }
 
-void Frame_ApplyClientFacemask(int userid)
+void Frame_ApplyClientHat(int userid)
 {
 	int client = GetClientOfUserId(userid);
-	if (client && g_Players[client].equipped_facemask)
+	if (client && g_Players[client].equipped_hat)
 	{
-		g_Players[client].SpawnFacemaskEntity();
+		g_Players[client].SpawnHatEntity();
 	}
 }
 
 public void Shop_OnClientEmotePost(int client)
 {
-	if (!g_Players[client].equipped_facemask)
+	if (!g_Players[client].equipped_hat)
 	{
 		return;
 	}
 	
-	int entity = g_Players[client].GetFacemaskEntity();
+	int entity = g_Players[client].GetHatEntity();
 	if (entity == -1)
 	{
 		return;
@@ -205,12 +256,12 @@ public void Shop_OnClientEmotePost(int client)
 
 public void Shop_OnClientEmoteStop(int client)
 {
-	if (!g_Players[client].equipped_facemask)
+	if (!g_Players[client].equipped_hat)
 	{
 		return;
 	}
 	
-	int entity = g_Players[client].GetFacemaskEntity();
+	int entity = g_Players[client].GetHatEntity();
 	if (entity == -1)
 	{
 		return;
@@ -261,9 +312,9 @@ void Frame_SpectateChangePost(DataPack dp)
 	}
 	
 	int prev_target = GetClientOfUserId(prev_target_userid);
-	if (prev_target && g_Players[prev_target].equipped_facemask)
+	if (prev_target && g_Players[prev_target].equipped_hat)
 	{
-		int entity = g_Players[prev_target].GetFacemaskEntity();
+		int entity = g_Players[prev_target].GetHatEntity();
 		if (entity != -1)
 		{
 			TransmitManager_SetEntityState(entity, client, true);
@@ -271,9 +322,9 @@ void Frame_SpectateChangePost(DataPack dp)
 	}
 	
 	int target = GetObservingTarget(client);
-	if (target != -1 && g_Players[target].equipped_facemask)
+	if (target != -1 && g_Players[target].equipped_hat)
 	{
-		int entity = g_Players[target].GetFacemaskEntity();
+		int entity = g_Players[target].GetHatEntity();
 		if (entity != -1)
 		{
 			TransmitManager_SetEntityState(entity, client, !(GetObserverMode(client) == OBS_MODE_IN_EYE));
@@ -288,11 +339,11 @@ ShopAction OnEquipItem(int client, CategoryId category_id, const char[] category
 	// If already equiped, just unequip.
 	if (isOn)
 	{
-		g_Players[client].equipped_facemask = INVALID_ITEM;
+		g_Players[client].equipped_hat = INVALID_ITEM;
 		
 		if (IsPlayerAlive(client))
 		{
-			g_Players[client].RemoveFacemaskEntity();
+			g_Players[client].RemoveHatEntity();
 		}
 		
 		return Shop_UseOff;
@@ -301,11 +352,11 @@ ShopAction OnEquipItem(int client, CategoryId category_id, const char[] category
 	// Toggle off all other items off.
 	Shop_ToggleClientCategoryOff(client, category_id);
 	
-	g_Players[client].equipped_facemask = item_id;
+	g_Players[client].equipped_hat = item_id;
 	
 	if (IsPlayerAlive(client))
 	{
-		g_Players[client].SpawnFacemaskEntity();
+		g_Players[client].SpawnHatEntity();
 	}
 	
 	// Player
@@ -325,18 +376,18 @@ void Lateload()
 	}
 }
 
-void LoadFacemasks()
+void LoadHats()
 {
-	g_FacemaskModels.Clear();
+	g_HatModels.Clear();
 	
 	// Load KeyValues Config
-	KeyValues kv = CreateKeyValues("Facemasks");
+	KeyValues kv = CreateKeyValues("Hats");
 	
 	// Find the Config
 	static char file_path[PLATFORM_MAX_PATH];
 	if (!file_path[0])
 	{
-		BuildPath(Path_SM, file_path, sizeof(file_path), "configs/shop/facemasks.cfg");
+		BuildPath(Path_SM, file_path, sizeof(file_path), "configs/shop/hats.cfg");
 	}
 	
 	// Open file and go directly to the settings, if something doesn't work don't continue.
@@ -346,8 +397,9 @@ void LoadFacemasks()
 	}
 	
 	char name[64], description[64], model_path[PLATFORM_MAX_PATH];
+	float origin_alignment[3], angles_alignment[3];
 	
-	// Parse face masks one by one.
+	// Parse hats one by one.
 	do
 	{
 		// Get name
@@ -359,6 +411,14 @@ void LoadFacemasks()
 		// Get model path
 		kv.GetString("model_path", model_path, sizeof(model_path));
 		
+		kv.GetVector("origin_alignment", origin_alignment);
+		kv.GetVector("angles_alignment", angles_alignment);
+		
+		if (!model_path[0])
+		{
+			continue;
+		}
+		
 		if (Shop_StartItem(g_ShopCategoryID, name))
 		{
 			Shop_SetInfo(name, description, kv.GetNum("price"), kv.GetNum("sell_price"), Item_Togglable, 0, kv.GetNum("price_gold"), kv.GetNum("sell_price_gold"));
@@ -366,9 +426,17 @@ void LoadFacemasks()
 			
 			Shop_SetCustomInfoString("model_path", model_path);
 			
+			Shop_SetCustomInfoFloat("origin_alignment_x", origin_alignment[0]);
+			Shop_SetCustomInfoFloat("origin_alignment_y", origin_alignment[1]);
+			Shop_SetCustomInfoFloat("origin_alignment_z", origin_alignment[2]);
+			
+			Shop_SetCustomInfoFloat("angles_alignment_x", angles_alignment[0]);
+			Shop_SetCustomInfoFloat("angles_alignment_y", angles_alignment[1]);
+			Shop_SetCustomInfoFloat("angles_alignment_z", angles_alignment[2]);
+			
 			Shop_EndItem();
 			
-			g_FacemaskModels.PushString(model_path);
+			g_HatModels.PushString(model_path);
 		}
 	} while (kv.GotoNextKey());
 	
@@ -376,12 +444,12 @@ void LoadFacemasks()
 	kv.Close();
 }
 
-void PrecacheFacemasksModels()
+void PrecacheHatsModels()
 {
 	char model[PLATFORM_MAX_PATH];
-	for (int current_model; current_model < g_FacemaskModels.Length; current_model++)
+	for (int current_model; current_model < g_HatModels.Length; current_model++)
 	{
-		g_FacemaskModels.GetString(current_model, model, sizeof(model));
+		g_HatModels.GetString(current_model, model, sizeof(model));
 		
 		PrecacheModel(model);
 	}
@@ -395,6 +463,43 @@ int GetObservingTarget(int client)
 int GetObserverMode(int client)
 {
 	return GetEntProp(client, Prop_Send, "m_iObserverMode");
+}
+
+void AddDirectoryToDownloadsTable(const char[] directory)
+{
+	// Open directory
+	DirectoryListing directory_listing = OpenDirectory(directory);
+	if (!directory_listing)
+	{
+		return;
+	}
+	
+	char entry[PLATFORM_MAX_PATH], full_entry_path[PLATFORM_MAX_PATH];
+	FileType file_type;
+	
+	// loop through all files
+	while (directory_listing.GetNext(entry, sizeof(entry), file_type))
+	{
+		FormatEx(full_entry_path, sizeof(full_entry_path), "%s/%s", directory, entry);
+		switch (file_type)
+		{
+			case FileType_File:
+			{
+				AddFileToDownloadsTable(full_entry_path);
+			}
+			
+			case FileType_Directory:
+			{
+				// this / back / hidden folders are not allowed
+				if (entry[0] != '.')
+				{
+					AddDirectoryToDownloadsTable(full_entry_path);
+				}
+			}
+		}
+	}
+	
+	delete directory_listing;
 }
 
 ArrayList GetClientSpectators(int client)
