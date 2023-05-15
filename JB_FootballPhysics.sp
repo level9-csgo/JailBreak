@@ -58,7 +58,7 @@ public Action Hook_OnTraceAttack(int entity, int &attacker, int &inflictor, floa
 	GetAngleVectors(client_angles, fwd, NULL_VECTOR, NULL_VECTOR);
 	
 	// Scale up the velocity vector to make a knockback effect
-	ScaleVector(fwd, IsEntityWeapon ? 1250.0 : 500.0);
+	ScaleVector(fwd, 500.0);
 	
 	// Apply the velocity change on the entity
 	TeleportEntity(entity, NULL_VECTOR, NULL_VECTOR, fwd);

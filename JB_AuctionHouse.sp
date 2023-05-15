@@ -519,7 +519,7 @@ enum struct Auction
 		{
 			if (!this.item.AddClientItem(owner))
 			{
-				ThrowError("Failed returning item (shop_item_id: %d, rune_identifier: %s, star: %d, level: %d) to account id: %d", 
+				LogError("Failed returning item (shop_item_id: %d, rune_identifier: %s, star: %d, level: %d) to account id: %d", 
 					this.item.shop_item_id, 
 					this.item.rune_identifier, 
 					this.item.rune_star, 
@@ -1713,8 +1713,7 @@ Action Timer_EndAuction(Handle timer, int row_id)
 		auction.AddItemToBidWinner(bid);
 		
 		// Transfer
-		int bidder;
-		for (int current_bid = 1; current_bid < auction.bids_array.Length; current_bid++)
+		for (int current_bid = 1, bidder; current_bid < auction.bids_array.Length; current_bid++)
 		{
 			auction.bids_array.GetArray(current_bid, bid);
 			

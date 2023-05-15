@@ -37,14 +37,14 @@ ConVar g_cvDefaultRunesCapacity;
 
 // [1000] = 100%
 // 
-// 953 = 95.3%
-// 46  = 4.6%
-// 1   = 0.1%
+// 956 = 95.6%
+// 40  = 4.0%
+// 4   = 0.4%
 enum
 {
-	SpawnChance_Star1To3 = 959, 
+	SpawnChance_Star1To3 = 956, 
 	SpawnChance_Star4To5 = 40, 
-	SpawnChance_Star6 = 1
+	SpawnChance_Star6 = 4
 }
 
 enum struct GarbageCollector
@@ -2792,7 +2792,7 @@ int CreateRuneBox(float pos[3], int runeId, int star, int level = RuneLevel_1, b
 int GenerateRuneStar()
 {
 	// Generate a randomize percent number
-	int random_percent = GetRandomInt(0, 1000);
+	int random_percent = GetURandomInt() % 1000;
 	
 	// Return the generated rune star by the default stars percentage
 	return (random_percent <= SpawnChance_Star1To3 ? GetRandomInt(RuneStar_1, RuneStar_3) : random_percent <= SpawnChance_Star4To5 + SpawnChance_Star1To3 ? GetRandomInt(RuneStar_4, RuneStar_5) : RuneStar_6);

@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <shop>
+#include <JB_GuardsSystem>
 
 #undef REQUIRE_PLUGIN
 #include <JB_SettingsSystem>
@@ -79,6 +80,7 @@ CategoryId g_ShopCategoryID[Shop_Max];
 
 GlobalForward g_OnClientEmote;
 GlobalForward g_OnClientEmotePost;
+GlobalForward g_OnClientEmoteStop;
 
 ConVar g_ActionCooldown;
 
@@ -433,6 +435,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	
 	g_OnClientEmote = new GlobalForward("Shop_OnClientEmote", ET_Event, Param_Cell, Param_String);
 	g_OnClientEmotePost = new GlobalForward("Shop_OnClientEmotePost", ET_Ignore, Param_Cell);
+	g_OnClientEmoteStop = new GlobalForward("Shop_OnClientEmoteStop", ET_Ignore, Param_Cell);
 	
 	RegPluginLibrary("Shop_DancesAndEmotes");
 	
@@ -531,6 +534,27 @@ void ExecuteEmote(int client, char[] anim1, char[] anim2, char[] sound_name, boo
 		g_ClientsData[client].next_emote = game_time + g_ActionCooldown.FloatValue;
 	}
 	
+	ArrayList spectators = GetClientSpectators(client);
+	for (int current_spectator, spectator; current_spectator < spectators.Length; current_spectator++)
+	{
+		spectator = spectators.Get(current_spectator);
+		
+		// mode 4 - first person [1 iteration]
+		// mode 5 - third person [0 iterations]
+		// mode 6 - free look [2 iterations]
+		int iterations[3] = { 1, 0, 2 };
+		int mode = GetEntProp(spectator, Prop_Send, "m_iObserverMode");
+		if (mode - 4 >= 0)
+		{
+			for (int i; i < iterations[mode - 4]; i++)
+			{
+				FakeClientCommand(spectator, "spec_mode");
+			}
+		}
+	}
+	
+	delete spectators;
+	
 	Call_StartForward(g_OnClientEmotePost);
 	Call_PushCell(client);
 	Call_Finish();
@@ -552,10 +576,7 @@ void StopEmote(int client)
 		
 		AcceptEntityInput(client, "ClearParent", iEmoteEnt, iEmoteEnt);
 		
-		CreateTimer(1.0, Timer_RemoveEmoteEntity, g_ClientsData[client].entities.emote_ent_ref);
-		
-		DispatchKeyValue(iEmoteEnt, "OnUser1", "!self,Kill,,1.0,-1");
-		AcceptEntityInput(iEmoteEnt, "FireUser1");
+		RequestFrame(Frame_RemoveEmoteEntity, g_ClientsData[client].entities.emote_ent_ref);
 		
 		ToggleClientViewAngle(client, false);
 		ToggleClientWeaponBlock(client, false);
@@ -574,6 +595,31 @@ void StopEmote(int client)
 			AcceptEntityInput(iEmoteSoundEnt, "Kill");
 		}
 	}
+	
+	ArrayList spectators = GetClientSpectators(client);
+	for (int current_spectator, spectator; current_spectator < spectators.Length; current_spectator++)
+	{
+		spectator = spectators.Get(current_spectator);
+		
+		// mode 4 - first person [0 iteration]
+		// mode 5 - third person [2 iterations]
+		// mode 6 - free look [1 iterations]
+		int iterations[3] = { 0, 2, 1 };
+		int mode = GetEntProp(spectator, Prop_Send, "m_iObserverMode");
+		if (mode - 4 >= 0)
+		{
+			for (int i; i < iterations[mode - 4]; i++)
+			{
+				FakeClientCommand(spectator, "spec_mode");
+			}
+		}
+	}
+	
+	delete spectators;
+	
+	Call_StartForward(g_OnClientEmoteStop);
+	Call_PushCell(client);
+	Call_Finish();
 	
 	if (!IsValidEntity(client))
 	{
@@ -600,15 +646,13 @@ void StopEmote(int client)
 	CreateTimer(0.1, Timer_RestoreMovetype, GetClientUserId(client), TIMER_REPEAT);
 }
 
-Action Timer_RemoveEmoteEntity(Handle timer, int ent_ref)
+void Frame_RemoveEmoteEntity(int ent_ref)
 {
 	int entity = EntRefToEntIndex(ent_ref);
 	if (entity && entity != -1 && IsValidEntity(entity))
 	{
 		RemoveEntity(entity);
 	}
-	
-	return Plugin_Continue;
 }
 
 Action Timer_RestoreMovetype(Handle timer, int userid)
@@ -1139,6 +1183,11 @@ ItemId GetToggledItem(int client, int category_type)
 
 void ToggleClientFreeze(int client, bool mode)
 {
+	if (JB_IsInvitePeriodRunning() && JB_GetClientGuardRank(client) != Guard_NotGuard && !mode)
+	{
+		return;
+	}
+	
 	SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", mode ? 0.0 : 1.0);
 }
 
@@ -1214,6 +1263,21 @@ int GetStuckEntity(int entity)
 bool Filter_OnlyPlayers(int entity, int contentsMask, int other)
 {
 	return entity > MaxClients && entity != EntRefToEntIndex(g_ClientsData[other].entities.emote_ent_ref);
+}
+
+ArrayList GetClientSpectators(int client)
+{
+	ArrayList spectators = new ArrayList();
+	
+	for (int current_client = 1; current_client <= MaxClients; current_client++)
+	{
+		if (IsClientInGame(current_client) && !IsPlayerAlive(current_client) && GetEntPropEnt(current_client, Prop_Send, "m_hObserverTarget") == client)
+		{
+			spectators.Push(current_client);
+		}
+	}
+	
+	return spectators;
 }
 
 //================================================================//

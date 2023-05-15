@@ -7,7 +7,7 @@
 #include <JailBreak>
 #include <JB_GuardsSystem>
 #include <JB_LrSystem>
-#include <fpvm_interface>
+#include <customweapons>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
@@ -90,11 +90,6 @@ char g_ChickenSounds[][] =
 bool g_bIsLrActivated;
 
 int g_iLrId = -1;
-
-int g_iCrossbowViewId = -1;
-int g_iCrossbowWorldId = -1;
-
-int g_iBeamSprite = -1;
 int g_iExplosionSprite = -1;
 
 public Plugin myinfo = 
@@ -156,10 +151,18 @@ public void JB_OnLrEnd(int currentLr, const char[] lrName, int winner, int loser
 			{
 				SDKUnhook(iCurrentClient, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
 				
-				FPVMI_RemoveViewModelToClient(iCurrentClient, LR_WEAPON);
-				FPVMI_RemoveWorldModelToClient(iCurrentClient, LR_WEAPON);
-				
 				delete g_ClientsData[iCurrentClient].OwnedEntities;
+				
+				int weapon = GetPlayerWeaponSlot(iCurrentClient, CS_SLOT_PRIMARY);
+				if (weapon != -1)
+				{
+					CustomWeapon custom_weapon = CustomWeapon(weapon);
+					if (custom_weapon)
+					{
+						custom_weapon.SetModel(CustomWeaponModel_View, "");
+						custom_weapon.SetModel(CustomWeaponModel_World, "");
+					}
+				}
 			}
 		}
 		
@@ -231,10 +234,9 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 
 public void OnMapStart()
 {
-	g_iCrossbowViewId = PrecacheModel(CROSSBOW_VIEW_MODEL);
-	g_iCrossbowWorldId = PrecacheModel(CROSSBOW_WORLD_MODEL);
+	PrecacheModel(CROSSBOW_VIEW_MODEL);
+	PrecacheModel(CROSSBOW_WORLD_MODEL);
 	
-	g_iBeamSprite = PrecacheModel("materials/sprites/laserbeam.vmt");
 	g_iExplosionSprite = PrecacheModel("sprites/sprite_fire01.vmt");
 }
 
@@ -369,6 +371,8 @@ public Action Hook_OnStartTouch(int entity, int other)
 		
 		AcceptEntityInput(entity, "Kill");
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Menus ]================================//
@@ -406,7 +410,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -444,6 +448,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//
@@ -496,11 +502,23 @@ void SetupPlayer(int client)
 	
 	DisarmPlayer(client);
 	SetEntityHealth(client, g_esSetupData.iHealth);
-	EquipPlayerWeapon(client, GivePlayerItem(client, LR_WEAPON));
-	FPVMI_AddViewModelToClient(client, LR_WEAPON, g_iCrossbowViewId);
-	FPVMI_AddWorldModelToClient(client, LR_WEAPON, g_iCrossbowWorldId);
 	
 	g_ClientsData[client].OwnedEntities = new ArrayList();
+	
+	int weapon = GivePlayerItem(client, LR_WEAPON);
+	if (weapon == -1)
+	{
+		return;
+	}
+	
+	CustomWeapon custom_weapon = CustomWeapon(weapon);
+	if (!custom_weapon)
+	{
+		return;
+	}
+	
+	custom_weapon.SetModel(CustomWeaponModel_View, CROSSBOW_VIEW_MODEL);
+	custom_weapon.SetModel(CustomWeaponModel_World, CROSSBOW_WORLD_MODEL);
 }
 
 void InitRandomSettings()
@@ -591,7 +609,7 @@ int ShootChicken(int client)
 	SetEntProp(iEntity, Prop_Send, "m_usSolidFlags", 152);
 	SetEntityCollisionGroup(iEntity, 11);
 	EntityCollisionRulesChanged(iEntity);
-
+	
 	SetEntPropFloat(iEntity, Prop_Send, "m_flElasticity", 0.0);
 	
 	SDKHook(iEntity, SDKHook_StartTouch, Hook_OnStartTouch);

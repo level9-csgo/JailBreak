@@ -52,26 +52,10 @@ enum struct Client
 	
 	ArrayList QuestsStatsData;
 	
-	void Reset()
-	{
-		this.account_id = 0;
-		
-		for (int current_quest_type = 0; current_quest_type < QuestType_Max; current_quest_type++)
-		{
-			this.completed_quests[current_quest_type] = 0;
-			this.skips_amount[current_quest_type] = 0;
-			this.is_final_reward_collected[current_quest_type] = false;
-		}
-		
-		this.Close();
-	}
-	
 	void Init(ArrayList quests_data)
 	{
-		// Avoid memory leaks
-		this.Close();
-		
 		// Create the arraylist which will store the quests stats data
+		delete this.QuestsStatsData;
 		this.QuestsStatsData = new ArrayList(sizeof(QuestStats));
 		
 		QuestStats QuestStatsData;
@@ -83,6 +67,15 @@ enum struct Client
 	
 	void Close()
 	{
+		this.account_id = 0;
+		
+		for (int current_quest_type = 0; current_quest_type < QuestType_Max; current_quest_type++)
+		{
+			this.completed_quests[current_quest_type] = 0;
+			this.skips_amount[current_quest_type] = 0;
+			this.is_final_reward_collected[current_quest_type] = false;
+		}
+		
 		delete this.QuestsStatsData;
 	}
 	
@@ -174,10 +167,29 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_quests", Command_Quests, "Access the quests list menu.");
 	RegConsoleCmd("sm_q", Command_Quests, "Access the quests list menu. (An alias)");
 	
+	RegAdminCmd("sm_debugqhandles", debugqhandles, ADMFLAG_ROOT);
+	
 	char file_path[PLATFORM_MAX_PATH];
 	strcopy(file_path, sizeof(file_path), CONFIG_PATH);
 	BuildPath(Path_SM, file_path, sizeof(file_path), file_path[17]);
 	delete OpenFile(file_path, "a+");
+	
+	// 'OnClientAuthorized'/'OnClientDisconnect' replacements.
+	HookEvent("player_connect", Event_PlayerConnect);
+	HookEvent("player_disconnect", Event_PlayerDisconnect);
+}
+
+Action debugqhandles(int client, int argc)
+{
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i))
+		{
+			PrintToConsole(client, "[debugqhandles] handle: %X, %d(%N) %d", g_ClientsData[i].QuestsStatsData, i, i, g_ClientsData[i].account_id);
+		}
+	}
+	
+	return Plugin_Handled;
 }
 
 public void OnPluginEnd()
@@ -186,7 +198,7 @@ public void OnPluginEnd()
 	{
 		if (IsClientInGame(current_client) && !IsFakeClient(current_client))
 		{
-			OnClientDisconnect(current_client);
+			OnPlayerDisconnect(current_client);
 		}
 	}
 }
@@ -224,13 +236,19 @@ void CheckForQuestsSwitch()
 	}
 }
 
-public void OnClientAuthorized(int client, const char[] auth)
+void Event_PlayerConnect(Event event, const char[] name, bool dontBroadcast)
 {
-	// If the authorized client is fake or we couldn't get the client steam account id, don't continue
-	if (IsFakeClient(client) || !(g_ClientsData[client].account_id = GetSteamAccountID(client)))
-	{
-		return;
-	}
+	char networkid[MAX_AUTHID_LENGTH];
+	event.GetString("networkid", networkid, sizeof(networkid));
+	
+	int client = event.GetInt("index") + 1;
+	
+	OnPlayerConnect(client, GetAccountIdFromSteam2(networkid));
+}
+
+void OnPlayerConnect(int client, int account_id)
+{
+	g_ClientsData[client].account_id = account_id;
 	
 	g_ClientsData[client].Init(g_Quests);
 	
@@ -238,16 +256,20 @@ public void OnClientAuthorized(int client, const char[] auth)
 	SQL_FetchClient(client);
 }
 
-public void OnClientDisconnect(int client)
+void Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
 {
-	// Validate the client steam account id, which means the client isn't a bot and his data has been loaded
-	if (!g_ClientsData[client].account_id)
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if (client)
 	{
-		return;
+		OnPlayerDisconnect(client);
 	}
-	
-	// Update the client data inside the database
+}
+
+void OnPlayerDisconnect(int client)
+{
 	SQL_UpdateClient(client);
+	
+	g_ClientsData[client].Close();
 }
 
 //================================[ Commands ]================================//
@@ -1047,7 +1069,7 @@ public void JB_OnDatabaseConnected(Database db)
 void SQL_FetchClient(int client)
 {
 	// Get the client user id, and parse it through the queries data
-	int client_userid = GetClientUserId(client);
+	int client_account_id = g_ClientsData[client].account_id;
 	
 	// Daily.
 	char query[4096] = "SELECT * FROM `quests_clients_progress` WHERE (`unique`=";
@@ -1068,8 +1090,8 @@ void SQL_FetchClient(int client)
 	
 	delete quests_list;
 	
-	Format(query, sizeof(query), "%s) AND `account_id` = %d", query, g_ClientsData[client].account_id);
-	g_Database.Query(SQL_FetchClientDailyProgress_CB, query, client_userid, DBPrio_High);
+	Format(query, sizeof(query), "%s) AND `account_id` = %d", query, client_account_id);
+	g_Database.Query(SQL_FetchClientDailyProgress_CB, query, client_account_id, DBPrio_High);
 	
 	// Weekly.
 	query = "SELECT * FROM `quests_clients_progress` WHERE (`unique`=";
@@ -1087,17 +1109,17 @@ void SQL_FetchClient(int client)
 		Format(query, sizeof(query), "%s'%s'%s", query, quest.unique, current_quest < quests_list.Length - 1 ? " OR `unique`=" : "");
 	}
 	
-	Format(query, sizeof(query), "%s) AND `account_id` = %d", query, g_ClientsData[client].account_id);
-	g_Database.Query(SQL_FetchClientWeeklyProgress_CB, query, client_userid, DBPrio_High);
+	Format(query, sizeof(query), "%s) AND `account_id` = %d", query, client_account_id);
+	g_Database.Query(SQL_FetchClientWeeklyProgress_CB, query, client_account_id, DBPrio_High);
 	
 	delete quests_list;
 	
 	// Execute the 
-	FormatEx(query, sizeof(query), "SELECT * FROM `quests_clients_data` WHERE `account_id` = %d", g_ClientsData[client].account_id);
-	g_Database.Query(SQL_FetchClientData_CB, query, client_userid);
+	FormatEx(query, sizeof(query), "SELECT * FROM `quests_clients_data` WHERE `account_id` = %d", client_account_id);
+	g_Database.Query(SQL_FetchClientData_CB, query, client_account_id);
 }
 
-void SQL_FetchClientDailyProgress_CB(Database db, DBResultSet results, const char[] error, int userid)
+void SQL_FetchClientDailyProgress_CB(Database db, DBResultSet results, const char[] error, int account_id)
 {
 	if (!db || !results || error[0])
 	{
@@ -1106,7 +1128,7 @@ void SQL_FetchClientDailyProgress_CB(Database db, DBResultSet results, const cha
 	}
 	
 	// Initialize the client index by the passed query data, and make sure it's valid
-	int client = GetClientOfUserId(userid);
+	int client = GetClientOfAccountID(account_id);
 	
 	if (!client)
 	{
@@ -1139,12 +1161,6 @@ void SQL_FetchClientDailyProgress_CB(Database db, DBResultSet results, const cha
 			stats.reward_amount = results.FetchInt(4);
 			stats.quest_progress = results.FetchInt(2);
 			stats.quest_target_progress = results.FetchInt(3);
-			
-			if (!stats.quest_target_progress)
-			{
-				LogError("[SQL_FetchClientDailyProgress_CB] Loaded 0 quest progress for client %d(%N) [%d] and quest '%s'", client, client, g_ClientsData[client].account_id, GetQuestByIndex(quest_index).unique);
-				continue;
-			}
 			
 			// Set the quest stats to the updated database data.
 			g_ClientsData[client].QuestsStatsData.SetArray(quest_index, stats);
@@ -1215,7 +1231,7 @@ void SQL_FetchClientDailyProgress_CB(Database db, DBResultSet results, const cha
 	}
 }
 
-void SQL_FetchClientWeeklyProgress_CB(Database db, DBResultSet results, const char[] error, int userid)
+void SQL_FetchClientWeeklyProgress_CB(Database db, DBResultSet results, const char[] error, int account_id)
 {
 	if (!db || !results || error[0])
 	{
@@ -1224,7 +1240,7 @@ void SQL_FetchClientWeeklyProgress_CB(Database db, DBResultSet results, const ch
 	}
 	
 	// Initialize the client index by the passed query data, and make sure it's valid
-	int client = GetClientOfUserId(userid);
+	int client = GetClientOfAccountID(account_id);
 	
 	if (!client)
 	{
@@ -1327,7 +1343,7 @@ void SQL_FetchClientWeeklyProgress_CB(Database db, DBResultSet results, const ch
 	}
 }
 
-void SQL_FetchClientData_CB(Database db, DBResultSet results, const char[] error, int userid)
+void SQL_FetchClientData_CB(Database db, DBResultSet results, const char[] error, int account_id)
 {
 	// Make sure no error was occurded
 	if (!db || !results || error[0])
@@ -1337,7 +1353,7 @@ void SQL_FetchClientData_CB(Database db, DBResultSet results, const char[] error
 	}
 	
 	// Get the client index by the parsed query data
-	int client = GetClientOfUserId(userid);
+	int client = GetClientOfAccountID(account_id);
 	
 	// Make sure the client index is valid
 	if (!client)
@@ -1378,6 +1394,12 @@ void SQL_FetchClientData_CB(Database db, DBResultSet results, const char[] error
 
 void SQL_UpdateClient(int client)
 {
+	if (!g_ClientsData[client].QuestsStatsData)
+	{
+		LogError("[SQL_UpdateClient] null handle, %d(%N) %d", client, client, g_ClientsData[client].account_id);
+		return;
+	}
+	
 	char query[256];
 	QuestStats stats;
 	
@@ -1386,13 +1408,6 @@ void SQL_UpdateClient(int client)
 	for (int current_quest = 0; current_quest < g_Quests.Length; current_quest++)
 	{
 		g_ClientsData[client].GetQuestStatsData(current_quest, stats);
-		
-		if (stats.reward_amount && !stats.quest_target_progress)
-		{
-			DebugClientData(client);
-			LogError("[SQL_UpdateClient] QUEST HAS REWARD BUT 0 TARGET PROGRESS. %d(%N) %d", client, client, g_ClientsData[client].account_id);
-			continue;
-		}
 		
 		g_Database.Format(query, sizeof(query), "UPDATE `quests_clients_progress` SET `progress` = %d, `reward_collected` = %d, `quest_skipped` = %d WHERE `account_id` = %d AND `unique` = '%s'", 
 			stats.quest_progress, 
@@ -1416,9 +1431,6 @@ void SQL_UpdateClient(int client)
 		);
 	
 	g_Database.Query(SQL_CheckForErrors, query, DBPrio_Low);
-	
-	// Make sure to reset the client data, to avoid data override
-	g_ClientsData[client].Reset();
 }
 
 void OnUpdateClientSuccess(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
@@ -1454,11 +1466,11 @@ void SQL_PostSwitchQuests(Database db, DBResultSet results, const char[] error, 
 	
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
-		if (IsClientInGame(current_client) && !IsFakeClient(current_client))
+		if (IsClientInGame(current_client) && IsClientAuthorized(current_client) && !IsFakeClient(current_client))
 		{
-			g_ClientsData[current_client].Reset();
+			g_ClientsData[current_client].Close();
 			
-			OnClientAuthorized(current_client, "");
+			OnPlayerConnect(current_client, GetSteamAccountID(current_client));
 		}
 	}
 }
@@ -1572,9 +1584,9 @@ Action Timer_LateClientsLoop(Handle timer)
 	// Loop through all the online clients, for late plugin load
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
-		if (IsClientInGame(current_client) && !IsFakeClient(current_client))
+		if (IsClientInGame(current_client) && IsClientAuthorized(current_client) && !IsFakeClient(current_client))
 		{
-			OnClientAuthorized(current_client, "");
+			OnPlayerConnect(current_client, GetSteamAccountID(current_client));
 		}
 	}
 	
@@ -1788,7 +1800,7 @@ ArrayList GetQuestsList(int quests_type)
 	return array;
 }
 
-void DebugClientData(int client)
+stock void DebugClientData(int client)
 {
 	/*enum struct QuestStats
 	{
@@ -1853,6 +1865,34 @@ void FormatMinutes(int minutes, char[] buffer, int length)
 	{
 		strcopy(buffer, length, "Couple of seconds");
 	}
+}
+
+// STEAM_1:1:23456789 to 23456789
+int GetAccountIdFromSteam2(const char[] steam_id)
+{
+	Regex exp = new Regex("^STEAM_[0-5]:[0-1]:[0-9]+$");
+	int matches = exp.Match(steam_id);
+	delete exp;
+	
+	if (matches != 1)
+	{
+		return 0;
+	}
+	
+	return StringToInt(steam_id[10]) * 2 + (steam_id[8] - 48);
+}
+
+int GetClientOfAccountID(int account_id)
+{
+	for (int current_client = 1; current_client <= MaxClients; current_client++)
+	{
+		if (g_ClientsData[current_client].account_id == account_id)
+		{
+			return current_client;
+		}
+	}
+	
+	return 0;
 }
 
 //================================================================//

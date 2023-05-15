@@ -3,10 +3,11 @@
 
 #include <sourcemod>
 #include <sdkhooks>
+#include <cstrike>
 #include <JailBreak>
 #include <JB_SpecialDays>
-#include <fpvm_interface>
 #include <JB_RunesSystem>
+#include <customweapons>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
@@ -65,11 +66,6 @@ char g_ChickenSounds[][] =
 bool g_IsDayActivated;
 
 int g_DayIndex = -1;
-
-int g_iCrossbowViewId = -1;
-int g_iCrossbowWorldId = -1;
-
-int g_iBeamSprite = -1;
 int g_iExplosionSprite = -1;
 
 public Plugin myinfo = 
@@ -103,10 +99,9 @@ public void OnLibraryAdded(const char[] name)
 public void OnMapStart()
 {
 	// Precache the required day models
-	g_iCrossbowViewId = PrecacheModel(CROSSBOW_VIEW_MODEL);
-	g_iCrossbowWorldId = PrecacheModel(CROSSBOW_WORLD_MODEL);
+	PrecacheModel(CROSSBOW_VIEW_MODEL);
+	PrecacheModel(CROSSBOW_WORLD_MODEL);
 	
-	g_iBeamSprite = PrecacheModel("materials/sprites/laserbeam.vmt");
 	g_iExplosionSprite = PrecacheModel("sprites/sprite_fire01.vmt");
 }
 
@@ -121,10 +116,11 @@ public void JB_OnClientSetupSpecialDay(int client, int specialDayId)
 	g_ClientsData[client].Reset();
 	
 	DisarmPlayer(client);
-	GivePlayerItem(client, DAY_WEAPON);
-	
-	FPVMI_AddViewModelToClient(client, DAY_WEAPON, g_iCrossbowViewId);
-	FPVMI_AddWorldModelToClient(client, DAY_WEAPON, g_iCrossbowWorldId);
+	int weapon = GivePlayerItem(client, DAY_WEAPON);
+	if (weapon != -1)
+	{
+		SetupCustomWeapon(weapon, true);
+	}
 	
 	g_ClientsData[client].OwnedEntities = new ArrayList();
 }
@@ -158,8 +154,11 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 		{
 			if (IsClientInGame(current_client))
 			{
-				FPVMI_RemoveViewModelToClient(current_client, DAY_WEAPON);
-				FPVMI_RemoveWorldModelToClient(current_client, DAY_WEAPON);
+				int weapon = GetPlayerWeaponSlot(current_client, CS_SLOT_PRIMARY);
+				if (weapon != -1)
+				{
+					SetupCustomWeapon(weapon, false);
+				}
 				
 				g_ClientsData[current_client].Reset();
 			}
@@ -293,6 +292,8 @@ public Action Hook_OnStartTouch(int entity, int other)
 		
 		AcceptEntityInput(entity, "Kill");
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Timers ]================================//
@@ -374,7 +375,7 @@ int ShootChicken(int client)
 	
 	SetEntityCollisionGroup(iEntity, 11);
 	EntityCollisionRulesChanged(iEntity);
-
+	
 	SetEntPropFloat(iEntity, Prop_Send, "m_flElasticity", 0.0);
 	
 	SDKHook(iEntity, SDKHook_StartTouch, Hook_OnStartTouch);
@@ -472,6 +473,18 @@ void UnBlockRealShooting(int weapon)
 void PlayRandomChickenSound(int client)
 {
 	EmitSoundToClient(client, g_ChickenSounds[GetRandomInt(0, sizeof(g_ChickenSounds) - 1)], .volume = 0.1);
+}
+
+void SetupCustomWeapon(int weapon, bool apply)
+{
+	CustomWeapon custom_weapon = CustomWeapon(weapon);
+	if (!custom_weapon)
+	{
+		return;
+	}
+	
+	custom_weapon.SetModel(CustomWeaponModel_View, apply ? CROSSBOW_VIEW_MODEL : "");
+	custom_weapon.SetModel(CustomWeaponModel_World, apply ? CROSSBOW_WORLD_MODEL : "");
 }
 
 //================================================================//

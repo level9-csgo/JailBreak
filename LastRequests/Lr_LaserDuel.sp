@@ -8,7 +8,7 @@
 #include <JB_GuardsSystem>
 #include <JB_LrSystem>
 #include <JB_GangsSystem>
-#include <fpvm_interface>
+#include <customweapons>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
@@ -71,14 +71,10 @@ Setup g_SetupData;
 Player g_Players[MAXPLAYERS + 1];
 
 ConVar g_cvInfiniteAmmo;
-ConVar weapon_sound_falloff_multiplier;
 
 bool g_IsLrActivated;
 
 int g_LrIndex = -1;
-
-int g_iLaserGunViewId = -1;
-int g_iLaserGunWorldId = -1;
 
 int g_iShotSprite = -1;
 int g_iBombSprite = -1;
@@ -107,7 +103,6 @@ public void OnPluginStart()
 	g_iBlockingUseActionInProgress = FindSendPropInfo("CCSPlayer", "m_iBlockingUseActionInProgress");
 	
 	g_cvInfiniteAmmo = FindConVar("sv_infinite_ammo");
-	weapon_sound_falloff_multiplier = FindConVar("weapon_sound_falloff_multiplier");
 }
 
 public void OnPluginEnd()
@@ -171,27 +166,26 @@ public void JB_OnLrEnd(int currentLr, const char[] lrName, int winner, int loser
 			
 			SDKUnhook(current_client, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
 			
-			FPVMI_RemoveViewModelToClient(current_client, LR_WEAPON);
-			FPVMI_RemoveWorldModelToClient(current_client, LR_WEAPON);
-			
-			weapon_sound_falloff_multiplier.ReplicateToClient(current_client, "1");
+			if (IsPlayerAlive(current_client))
+			{
+				int weapon = GetPlayerWeaponSlot(current_client, CS_SLOT_PRIMARY);
+				if (weapon != -1)
+				{
+					CustomWeapon custom_weapon = CustomWeapon(weapon);
+					if (custom_weapon)
+					{
+						custom_weapon.SetModel(CustomWeaponModel_View, "");
+						custom_weapon.SetModel(CustomWeaponModel_World, "");
+						
+						custom_weapon.SetShotSound("");
+					}
+				}
+			}
 		}
 	}
 	
-	int iPrimary = GetPlayerWeaponSlot(g_SetupData.iPrisoner, CS_SLOT_PRIMARY);
-	if (iPrimary != -1)
-	{
-		RemovePlayerItem(g_SetupData.iPrisoner, iPrimary);
-	}
-	
-	if ((iPrimary = GetPlayerWeaponSlot(g_SetupData.iAgainst, CS_SLOT_PRIMARY)) != -1)
-	{
-		RemovePlayerItem(g_SetupData.iAgainst, iPrimary);
-	}
 	
 	UnhookEvent("bullet_impact", Event_BulletImpact, EventHookMode_Post);
-	
-	RemoveTempEntHook("Shotgun Shot", Hook_SilenceShot);
 	
 	g_cvInfiniteAmmo.SetInt(0);
 	
@@ -258,8 +252,8 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 
 public void OnMapStart()
 {
-	g_iLaserGunViewId = PrecacheModel(LASER_GUN_VIEW_MODEL);
-	g_iLaserGunWorldId = PrecacheModel(LASER_GUN_WORLD_MODEL);
+	PrecacheModel(LASER_GUN_VIEW_MODEL);
+	PrecacheModel(LASER_GUN_WORLD_MODEL);
 	
 	g_iShotSprite = PrecacheModel("materials/supporter_tracers/phys_beam.vmt");
 	g_iBombSprite = PrecacheModel("materials/supporter_tracers/squiggly_beam.vmt");
@@ -390,33 +384,6 @@ public void Event_BulletImpact(Event event, const char[] name, bool dontBroadcas
 	TE_SendToAll();
 }
 
-Action Hook_SilenceShot(const char[] teName, const int[] players, int numClients, float delay)
-{
-	int client = TE_ReadNum("m_iPlayer") + 1;
-	
-	// Make sure the client index is in-game and valid
-	if (!(1 <= client <= MaxClients) || !IsClientInGame(client))
-	{
-		return Plugin_Continue;
-	}
-	
-	char weapon_name[32];
-	
-	// Initialzie the client's weapon index and name, and validate it by the special day weapon define
-	int active_weapon = GetEntPropEnt(client, Prop_Data, "m_hActiveWeapon");
-	
-	if (active_weapon == -1 || !IsValidEntity(active_weapon) || !GetEntityClassname(active_weapon, weapon_name, sizeof(weapon_name)) || !StrEqual(weapon_name, LR_WEAPON))
-	{
-		return Plugin_Continue;
-	}
-	
-	// Emit the weapon fire sound effect
-	EmitSoundToAll(LASER_GUN_SHOOT_SOUND, client, .volume = 0.2);
-	
-	// Block the original sound
-	return Plugin_Stop;
-}
-
 //================================[ SDK Hooks ]================================//
 
 public Action Hook_OnTakeDamage(int client, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int HitGroup)
@@ -472,7 +439,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -518,6 +485,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//
@@ -532,6 +501,8 @@ public Action Timer_ResetProgressBar(Handle timer, int serial)
 		// Reset the progress bar panel
 		ResetProgressBar(client);
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//
@@ -556,8 +527,6 @@ void StartLr()
 	
 	HookEvent("bullet_impact", Event_BulletImpact, EventHookMode_Post);
 	
-	AddTempEntHook("Shotgun Shot", Hook_SilenceShot);
-	
 	g_cvInfiniteAmmo.SetInt(2);
 	
 	g_IsLrActivated = true;
@@ -573,14 +542,25 @@ void SetupPlayer(int client)
 	
 	g_Players[client].Reset();
 	
-	weapon_sound_falloff_multiplier.ReplicateToClient(client, "0");
-	
 	DisarmPlayer(client);
 	SetEntityHealth(client, g_SetupData.iHealth);
-	EquipPlayerWeapon(client, GivePlayerItem(client, LR_WEAPON));
 	
-	FPVMI_AddViewModelToClient(client, LR_WEAPON, g_iLaserGunViewId);
-	FPVMI_AddWorldModelToClient(client, LR_WEAPON, g_iLaserGunWorldId);
+	int weapon = GivePlayerItem(client, LR_WEAPON);
+	if (weapon == -1)
+	{
+		return;
+	}
+	
+	CustomWeapon custom_weapon = CustomWeapon(weapon);
+	if (!custom_weapon)
+	{
+		return;
+	}
+	
+	custom_weapon.SetModel(CustomWeaponModel_View, LASER_GUN_VIEW_MODEL);
+	custom_weapon.SetModel(CustomWeaponModel_World, LASER_GUN_WORLD_MODEL);
+	
+	custom_weapon.SetShotSound(LASER_GUN_SHOOT_SOUND);
 }
 
 void InitRandomSettings()

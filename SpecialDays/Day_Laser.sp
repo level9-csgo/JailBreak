@@ -8,7 +8,7 @@
 #include <JB_SpecialDays>
 #include <JB_RunesSystem>
 #include <JB_GangsSystem>
-#include <fpvm_interface>
+#include <customweapons>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
@@ -45,14 +45,10 @@ enum struct Client
 Client g_ClientsData[MAXPLAYERS + 1];
 
 ConVar g_cvInfiniteAmmo;
-ConVar weapon_sound_falloff_multiplier;
 
 bool g_IsDayActivated;
 
 int g_DayIndex = -1;
-
-int g_iLaserGunViewId = -1;
-int g_iLaserGunWorldId = -1;
 
 int g_iShotSprite = -1;
 int g_iBombSprite = -1;
@@ -85,7 +81,6 @@ public void OnPluginStart()
 	m_hActiveWeaponOffset = FindSendPropInfo("CCSPlayer", "m_hActiveWeapon");
 	
 	g_cvInfiniteAmmo = FindConVar("sv_infinite_ammo");
-	weapon_sound_falloff_multiplier = FindConVar("weapon_sound_falloff_multiplier");
 }
 
 public void OnPluginEnd()
@@ -120,12 +115,12 @@ public void JB_OnClientSetupSpecialDay(int client, int specialDayId)
 	
 	DisarmPlayer(client);
 	SetEntityHealth(client, DAY_HEALTH);
-	GivePlayerItem(client, DAY_WEAPON);
 	
-	FPVMI_AddViewModelToClient(client, DAY_WEAPON, g_iLaserGunViewId);
-	FPVMI_AddWorldModelToClient(client, DAY_WEAPON, g_iLaserGunWorldId);
-	
-	weapon_sound_falloff_multiplier.ReplicateToClient(client, "0");
+	int weapon = GivePlayerItem(client, DAY_WEAPON);
+	if (weapon != -1)
+	{
+		SetupCustomWeapon(weapon, true);
+	}
 }
 
 public void JB_OnSpecialDayStart(int specialDayId)
@@ -166,10 +161,11 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 			{
 				ResetProgressBar(current_client);
 				
-				FPVMI_RemoveViewModelToClient(current_client, DAY_WEAPON);
-				FPVMI_RemoveWorldModelToClient(current_client, DAY_WEAPON);
-				
-				weapon_sound_falloff_multiplier.ReplicateToClient(current_client, "1");
+				int weapon = GetPlayerWeaponSlot(current_client, CS_SLOT_PRIMARY);
+				if (weapon != -1)
+				{
+					SetupCustomWeapon(weapon, false);
+				}
 			}
 		}
 		
@@ -189,9 +185,6 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 
 public void OnMapStart()
 {
-	g_iLaserGunViewId = PrecacheModel(LASER_GUN_VIEW_MODEL);
-	g_iLaserGunWorldId = PrecacheModel(LASER_GUN_WORLD_MODEL);
-	
 	g_iShotSprite = PrecacheModel("materials/supporter_tracers/phys_beam.vmt");
 	g_iBombSprite = PrecacheModel("materials/supporter_tracers/squiggly_beam.vmt");
 	
@@ -300,32 +293,6 @@ void Event_BulletImpact(Event event, const char[] name, bool dontBroadcast)
 	TE_SendToAll();
 }
 
-Action Hook_SilenceShot(const char[] teName, const int[] players, int numClients, float delay)
-{
-	int client = TE_ReadNum("m_iPlayer") + 1;
-	
-	// Make sure the client index is in-game and valid
-	if (!(1 <= client <= MaxClients) || !IsClientInGame(client))
-	{
-		return Plugin_Continue;
-	}
-	
-	char weapon_name[32];
-	
-	// Initialzie the client's weapon index and name, and validate it by the special day weapon define
-	int active_weapon = GetEntDataEnt2(client, m_hActiveWeaponOffset);
-	if (active_weapon == -1 || !IsValidEntity(active_weapon) || !GetEntityClassname(active_weapon, weapon_name, sizeof(weapon_name)) || !StrEqual(weapon_name, DAY_WEAPON))
-	{
-		return Plugin_Continue;
-	}
-	
-	// Emit the weapon fire sound effect
-	EmitSoundToAll(LASER_GUN_SHOOT_SOUND, client, .volume = 0.2);
-	
-	// Block the original sound
-	return Plugin_Stop;
-}
-
 //================================[ Timers ]================================//
 
 Action Timer_ResetProgressBar(Handle timer, int serial)
@@ -338,6 +305,8 @@ Action Timer_ResetProgressBar(Handle timer, int serial)
 		// Reset the progress bar panel
 		ResetProgressBar(client);
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//
@@ -441,6 +410,19 @@ void ToggleRunesState(bool state)
 int KeepInRange(int value, int min, int max)
 {
 	return value < min ? min : value > max ? max : value;
+}
+
+void SetupCustomWeapon(int weapon, bool apply)
+{
+	CustomWeapon custom_weapon = CustomWeapon(weapon);
+	if (!custom_weapon)
+	{
+		return;
+	}
+	
+	custom_weapon.SetModel(CustomWeaponModel_View, apply ? LASER_GUN_VIEW_MODEL : "");
+	custom_weapon.SetModel(CustomWeaponModel_World, apply ? LASER_GUN_WORLD_MODEL : "");
+	custom_weapon.SetShotSound(apply ? LASER_GUN_SHOOT_SOUND : "");
 }
 
 //================================================================//

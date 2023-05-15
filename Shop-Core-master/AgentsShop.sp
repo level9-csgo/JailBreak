@@ -2,40 +2,88 @@
 #include <cstrike>
 #include <sdktools>
 #include <shop>
-#include <PTaH>
+#include <EconAPI>
 
-#define MAX_TEAMS 2
+#pragma semicolon 1
+#pragma newdecls required
 
-#define DEFAULT_PRISONER_SKIN "models/player/custom_player/legacy/tm_phoenix.mdl"
-#define DEFAULT_GUARD_SKIN "models/player/custom_player/legacy/ctm_st6.mdl"
+// Default agents model file paths.
+#define DEFAULT_TERRORIST_SKIN "models/player/custom_player/legacy/tm_phoenix.mdl"
+#define DEFAULT_COUNTER_TERRORIST_SKIN "models/player/custom_player/legacy/ctm_st6.mdl"
+
+enum struct Agent
+{
+	// Display name after token modification.
+	char base_name[64];
+	
+	// Description after token modification.
+	char description[256];
+	
+	// Econ image path. Required for previewing the agent.
+	char econ_image[PLATFORM_MAX_PATH];
+	
+	// Agent entity model.
+	char entity_model[PLATFORM_MAX_PATH];
+	
+	// Team index the agent is associated to.
+	int associated_team;
+	
+	// Purchase price.
+	int price;
+}
+
+ArrayList g_Agents;
+ArrayList g_Models;
 
 enum
 {
 	Agent_Prisoner, 
-	Agent_Guard
+	Agent_Guard, 
+	
+	// Enum size.
+	Agent_Max
 }
 
-CategoryId g_ShopCategoryID[MAX_TEAMS];
+CategoryId g_ShopCategoryID[Agent_Max];
 
-char g_ClientAgent[MAXPLAYERS + 1][MAX_TEAMS][PLATFORM_MAX_PATH];
+char g_ClientAgent[MAXPLAYERS + 1][Agent_Max][PLATFORM_MAX_PATH];
+
+int g_RarityValue[] = 
+{
+	0, 
+	100000, 
+	250000, 
+	400000, 
+	650000, 
+	850000, 
+	1250000
+};
 
 public Plugin myinfo = 
 {
 	name = "[Shop Integrated] Agents", 
-	author = "LuqS", 
-	description = "", 
+	author = "KoNLiG", 
+	description = "Implemention of EconAPI to shop.", 
 	version = "1.0.0", 
-	url = "https://github.com/Natanel-Shitrit || https://steamcommunity.com/id/luqsgood || Discord: LuqS#6505"
+	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
 public void OnPluginStart()
 {
+	g_Agents = new ArrayList(sizeof(Agent));
+	g_Models = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
+	
+	LoadTranslations("localization.phrases");
+	
+	CacheAgents();
+	
+	// Late load.
 	if (Shop_IsStarted())
 	{
 		Shop_Started();
 	}
 	
-	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
+	HookEvent("player_spawn", Event_PlayerSpawn);
 }
 
 public void OnPluginEnd()
@@ -43,110 +91,53 @@ public void OnPluginEnd()
 	Shop_UnregisterMe();
 }
 
+public void OnMapStart()
+{
+	PrecacheModel(DEFAULT_TERRORIST_SKIN);
+	PrecacheModel(DEFAULT_COUNTER_TERRORIST_SKIN);
+	
+	PrecacheAgentModels();
+}
+
 public void Shop_Started()
 {
 	g_ShopCategoryID[Agent_Prisoner] = Shop_RegisterCategory("prisoners_agents", "Prisoners Agents", "The agent that will appear when you play as a prisoner");
 	g_ShopCategoryID[Agent_Guard] = Shop_RegisterCategory("guards_agents", "Guards Agents", "The agent that will appear when you play as a guard");
 	
-	// Load KeyValues Config
-	KeyValues kv = CreateKeyValues("Agents");
-	
-	// Find the Config
-	char sFilePath[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, sFilePath, sizeof(sFilePath), "configs/shop/agents.cfg");
-	
-	// Open file and go directly to the settings, if something doesn't work don't continue.
-	if (!kv.ImportFromFile(sFilePath) || !kv.GotoFirstSubKey())
+	Agent agent;
+	for (int current_agent; current_agent < g_Agents.Length; current_agent++)
 	{
-		SetFailState("Couldn't load plugin config.");
-	}
-	
-	char name[64], description[64], model_path[PLATFORM_MAX_PATH];
-	int team;
-	
-	// Parse agents one by one.
-	do
-	{
-		// Get team team
-		team = kv.GetNum("team");
+		g_Agents.GetArray(current_agent, agent);
 		
-		// Get name
-		kv.GetString("name", name, sizeof(name));
-		
-		// Get description
-		kv.GetString("description", description, sizeof(description));
-		
-		// Get model path
-		kv.GetString("model_path", model_path, sizeof(model_path));
-		
-		if (Shop_StartItem(g_ShopCategoryID[team - MAX_TEAMS], name))
+		// Store the new agent object.
+		if (Shop_StartItem(g_ShopCategoryID[agent.associated_team - Agent_Max], agent.base_name))
 		{
-			Shop_SetInfo(name, description, kv.GetNum("price"), kv.GetNum("sell_price"), Item_Togglable, 0, kv.GetNum("price_gold"), kv.GetNum("sell_price_gold"));
+			Shop_SetInfo(agent.base_name, agent.description, agent.price, agent.price / 2, Item_Togglable, 0, -1, -1);
 			Shop_SetCallbacks(.use_toggle = OnEquipItem, .preview = OnItemPreview);
 			
-			Shop_SetCustomInfo("definition_index", kv.GetNum("definition_index"));
-			Shop_SetCustomInfoString("model_path", model_path);
+			Shop_SetCustomInfoString("econ_image", agent.econ_image);
+			Shop_SetCustomInfoString("entity_model", agent.entity_model);
 			
 			Shop_EndItem();
 		}
-	} while (kv.GotoNextKey());
-	
-	// Don't leak handles
-	kv.Close();
-}
-
-public void OnMapStart()
-{
-	// Load KeyValues Config
-	KeyValues kv = CreateKeyValues("Agents");
-	
-	// Find the Config
-	char file_path[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, file_path, sizeof(file_path), "configs/shop/agents.cfg");
-	
-	// Open file and go directly to the settings, if something doesn't work don't continue.
-	if (!kv.ImportFromFile(file_path) || !kv.GotoFirstSubKey())
-	{
-		SetFailState("Couldn't load plugin config.");
 	}
-	
-	char model_path[PLATFORM_MAX_PATH];
-	
-	// Precache agents one by one
-	do
-	{
-		// Get model path
-		kv.GetString("model_path", model_path, sizeof(model_path));
-		
-		// Precache the model
-		PrecacheModel(model_path);
-	} while (kv.GotoNextKey());
-	
-	// Don't leak handles
-	kv.Close();
-	
-	// Precache the default agents
-	PrecacheModel(DEFAULT_PRISONER_SKIN);
-	PrecacheModel(DEFAULT_GUARD_SKIN);
 }
 
-public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	RequestFrame(RF_SetClientAgent, GetClientSerial(GetClientOfUserId(event.GetInt("userid"))));
+	RequestFrame(Frame_SetClientAgent, event.GetInt("userid"));
 }
 
-void RF_SetClientAgent(int serial)
+void Frame_SetClientAgent(int userid)
 {
-	int client = GetClientFromSerial(serial)
-	
-	// Make sure the client index is in-game and valid
+	int client = GetClientOfUserId(userid);
 	if (client)
 	{
 		SetClientAgent(client);
 	}
 }
 
-public ShopAction OnEquipItem(int client, CategoryId category_id, const char[] category, ItemId item_id, const char[] item, bool isOn, bool elapsed)
+ShopAction OnEquipItem(int client, CategoryId category_id, const char[] category, ItemId item_id, const char[] item, bool isOn, bool elapsed)
 {
 	int model_index = (category_id == g_ShopCategoryID[Agent_Prisoner] ? Agent_Prisoner : Agent_Guard);
 	
@@ -166,66 +157,50 @@ public ShopAction OnEquipItem(int client, CategoryId category_id, const char[] c
 	// Toggle off all other items off.
 	Shop_ToggleClientCategoryOff(client, category_id);
 	
-	Shop_GetItemCustomInfoString(item_id, "model_path", g_ClientAgent[client][model_index], sizeof(g_ClientAgent[][]));
+	Shop_GetItemCustomInfoString(item_id, "entity_model", g_ClientAgent[client][model_index], sizeof(g_ClientAgent[][]));
 	
 	if (IsPlayerAlive(client))
 	{
 		SetClientAgent(client);
 	}
 	
-	// Player
 	return Shop_UseOn;
 }
 
-public void OnItemPreview(int client, CategoryId category_id, const char[] category, ItemId item_id, const char[] item)
+void OnItemPreview(int client, CategoryId category_id, const char[] category, ItemId item_id, const char[] item)
 {
-	int definition_index = Shop_GetItemCustomInfo(item_id, "definition_index", -1);
+	char econ_image[PLATFORM_MAX_PATH];
+	Shop_GetItemCustomInfoString(item_id, "econ_image", econ_image, sizeof(econ_image));
 	
-	if (definition_index != -1)
-	{
-		PreviewAgent(client, PTaH_GetItemDefinitionByDefIndex(definition_index));
-	}
+	PreviewEconImage(client, econ_image);
 }
 
-public void OnClientPostAdminCheck(int client)
+// Reset client data.
+public void OnClientDisconnect(int client)
 {
-	// Reset local variable
-	g_ClientAgent[client][Agent_Prisoner] = DEFAULT_PRISONER_SKIN;
-	g_ClientAgent[client][Agent_Guard] = DEFAULT_GUARD_SKIN;
+	g_ClientAgent[client][Agent_Prisoner][0] = '\0';
+	g_ClientAgent[client][Agent_Guard][0] = '\0';
 }
 
 void SetClientAgent(int client)
 {
 	int client_team = GetClientTeam(client);
-	
-	if (client_team < 2)
+	if (client_team <= CS_TEAM_SPECTATOR)
 	{
 		return;
 	}
 	
-	char model_path[PLATFORM_MAX_PATH]; model_path = g_ClientAgent[client][client_team - MAX_TEAMS];
+	char model_path[PLATFORM_MAX_PATH]; model_path = g_ClientAgent[client][client_team - Agent_Max];
 	
-	if (!model_path[0])
-	{
-		return;
-	}
-	
-	SetEntityModel(client, model_path[0] ? model_path : GetClientTeam(client) == CS_TEAM_T ? DEFAULT_PRISONER_SKIN : DEFAULT_GUARD_SKIN);
+	SetEntityModel(client, model_path[0] ? model_path : client_team == CS_TEAM_T ? DEFAULT_TERRORIST_SKIN : DEFAULT_COUNTER_TERRORIST_SKIN);
 }
 
-void PreviewAgent(int client, CEconItemDefinition item_definition, bool firstRun = true)
+void PreviewEconImage(int client, char[] econ_image, bool first_run = true)
 {
-	if (!item_definition)
-	{
-		return;
-	}
-	
 	char buffer[PLATFORM_MAX_PATH];
+	Format(buffer, sizeof(buffer), "</font><img src='file://{images_econ}/%s.png'/><script>", econ_image);
 	
 	Protobuf msg = view_as<Protobuf>(StartMessageOne("TextMsg", client));
-	
-	item_definition.GetEconImage(buffer, sizeof(buffer));
-	Format(buffer, sizeof(buffer), "</font><img src='file://{images_econ}/%s.png'/><script>", buffer);
 	
 	msg.SetInt("msg_dst", 4);
 	msg.AddString("params", "#SFUI_ContractKillStart");
@@ -237,27 +212,143 @@ void PreviewAgent(int client, CEconItemDefinition item_definition, bool firstRun
 	
 	EndMessage();
 	
-	// show again so it won't be a small icon!
-	if (firstRun)
+	// Show again so it won't be a small icon!
+	if (first_run)
 	{
 		DataPack dp;
 		CreateDataTimer(0.1, Timer_PrintHintEconRepeat, dp);
-		dp.WriteCell(item_definition);
-		dp.WriteCell(GetClientSerial(client));
+		dp.WriteCell(GetClientUserId(client));
+		dp.WriteString(econ_image);
 		dp.Reset();
 	}
 }
 
 Action Timer_PrintHintEconRepeat(Handle timer, DataPack dp)
 {
-	CEconItemDefinition itemDef = dp.ReadCell();
-	
-	int client = GetClientFromSerial(dp.ReadCell());
-	
+	int client = GetClientOfUserId(dp.ReadCell());
 	if (!client)
 	{
-		return;
+		return Plugin_Continue;
 	}
 	
-	PreviewAgent(client, itemDef, false);
+	char econ_image[PLATFORM_MAX_PATH];
+	dp.ReadString(econ_image, sizeof(econ_image));
+	
+	PreviewEconImage(client, econ_image, false);
+	return Plugin_Continue;
+}
+
+void CacheAgents()
+{
+	// Clear old data.
+	g_Agents.Clear();
+	g_Models.Clear();
+	
+	// Prepare variables for the loop.
+	CEconItemDefinition item_defenition;
+	char type_name[32];
+	Agent new_agent;
+	
+	for (int i = CEconItemDefinition.Count() - 1; i >= 0; i--)
+	{
+		if (!(item_defenition = CEconItemDefinition.Get(i)))
+		{
+			continue;
+		}
+		
+		// Skip on non-agents item defenitions.
+		item_defenition.GetTypeName(type_name, sizeof(type_name));
+		if (!StrEqual(type_name, "#Type_CustomPlayer"))
+		{
+			continue;
+		}
+		
+		// Retrieve and precache the agent model.
+		item_defenition.GetModel(ViewModel, new_agent.entity_model, sizeof(Agent::entity_model));
+		g_Models.PushString(new_agent.entity_model);
+		
+		// Don't parse default agents.
+		if (StrEqual(new_agent.entity_model, DEFAULT_TERRORIST_SKIN) || StrEqual(new_agent.entity_model, DEFAULT_COUNTER_TERRORIST_SKIN))
+		{
+			continue;
+		}
+		
+		// Parse basic data.
+		item_defenition.GetBaseName(new_agent.base_name, sizeof(Agent::base_name));
+		StringToLower(new_agent.base_name);
+		if (TranslationPhraseExists(new_agent.base_name[1]))
+		{
+			Format(new_agent.base_name, sizeof(Agent::base_name), "%t", new_agent.base_name[1]);
+		}
+		else
+		{
+			continue;
+		}
+		
+		item_defenition.GetDescription(new_agent.description, sizeof(Agent::description));
+		StringToLower(new_agent.description);
+		if (TranslationPhraseExists(new_agent.description[1]))
+		{
+			Format(new_agent.description, sizeof(Agent::description), "%t", new_agent.description[1]);
+		}
+		else
+		{
+			continue;
+		}
+		
+		item_defenition.GetInventoryImage(new_agent.econ_image, sizeof(Agent::econ_image));
+		
+		new_agent.associated_team = item_defenition.UsedByTeam;
+		
+		// Calculate price by rarity.
+		new_agent.price = g_RarityValue[item_defenition.ItemRarity.DBValue];
+		
+		g_Agents.PushArray(new_agent);
+	}
+	
+	g_Agents.SortCustom(SortByValue);
+}
+
+void PrecacheAgentModels()
+{
+	char model[PLATFORM_MAX_PATH];
+	for (int current_model; current_model < g_Models.Length; current_model++)
+	{
+		g_Models.GetString(current_model, model, sizeof(model));
+		
+		PrecacheModel(model);
+	}
+	
+	g_Models.Clear();
+}
+
+/**
+ * Sort comparison function for ADT Array elements. Function provides you with
+ * indexes currently being sorted, use ADT Array functions to retrieve the
+ * index values and compare.
+ *
+ * @param index1        First index to compare.
+ * @param index2        Second index to compare.
+ * @param array         Array that is being sorted (order is undefined).
+ * @param hndl          Handle optionally passed in while sorting.
+ * @return              -1 if first should go before second
+ *                      0 if first is equal to second
+ *                      1 if first should go after second
+ */
+int SortByValue(int index1, int index2, Handle array, Handle hndl)
+{
+	ArrayList arr = view_as<ArrayList>(array);
+	
+	Agent agent1; arr.GetArray(index1, agent1);
+	Agent agent2; arr.GetArray(index2, agent2);
+	
+	return FloatCompare(float(agent2.price), float(agent1.price));
+}
+
+void StringToLower(char[] str)
+{
+	for (int i; str[i]; i++)
+	{
+		str[i] = CharToLower(str[i]);
+	}
 } 

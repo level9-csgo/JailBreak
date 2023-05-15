@@ -51,6 +51,12 @@ enum struct ClientData
 	
 	void AddMessage(int client, int currency_new_amount, int currency_change_amount)
 	{
+		// We haven't initialized this player. (yet)
+		if (!this.update_messages)
+		{
+			return;
+		}
+		
 		if (g_IsSettingsLoaded)
 		{
 			char setting_value[4];

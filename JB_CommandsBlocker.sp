@@ -2,7 +2,6 @@
 #pragma newdecls required
 
 #include <sourcemod>
-#include <JailBreak>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
@@ -11,7 +10,7 @@ public Plugin myinfo =
 	name = "[CS:GO] JailBreak - Commands Blocker", 
 	author = PLUGIN_AUTHOR, 
 	description = "Blockes client console commands like +left/+right, +strafe, etc...", 
-	version = JAILBREAK_VERSION, 
+	version = "1.0.0", 
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
@@ -35,6 +34,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		vel[0] = 0.0;
 		vel[1] = 0.0;
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Timers ]================================//
@@ -50,6 +51,8 @@ Action Timer_UnFreezeScreen(Handle timer, int userid)
 		int client_flags = GetEntityFlags(client);
 		SetEntityFlags(client, (client_flags &= ~FL_FROZEN));
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================================================//

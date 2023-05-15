@@ -23,7 +23,7 @@ public void OnLibraryAdded(const char[] name)
 {
 	if (StrEqual(name, "JB_QuestsSystem"))
 	{
-		g_QuestIndex = JB_CreateQuest("calculated", "Calculated", "Upgrade {progress} rune(s).", QuestType_Daily, 15000, 4, 8);
+		g_QuestIndex = JB_CreateQuest("calculated", "Calculated", "Kill {progress} prisoners with a mine plant as a guard.", QuestType_Daily, 15000, 4, 8);
 	}
 }
 

@@ -114,6 +114,7 @@ public void OnPluginStart()
 	
 	// Admin Commands
 	RegAdminCmd("sm_rewish", Command_Rewish, ADMFLAG_ROOT, "Awards a certain group of clients in a wish.");
+	RegAdminCmd("sm_rewishoffline", Command_RewishOffline, ADMFLAG_ROOT, "Awards everyone with a rewish.");
 	
 	// Client Commands
 	RegConsoleCmd("sm_wish", Command_Wish, "Allows client to claim a wish.");
@@ -234,6 +235,18 @@ Action Command_Rewish(int client, int args)
 	// Write a log line
 	WriteLogLine("Admin \"%L\" has awarded %s in a rewish.", client, target_name);
 	
+	return Plugin_Handled;
+}
+
+Action Command_RewishOffline(int client, int argc)
+{
+	if (g_ClientsData[client].account_id != g_AuthorizedClients[0])
+	{
+		PrintToChat(client, "%s You do not have access to this command.", PREFIX_ERROR);
+		return Plugin_Handled;
+	}
+	
+	Timer_Rewish(null);
 	return Plugin_Handled;
 }
 

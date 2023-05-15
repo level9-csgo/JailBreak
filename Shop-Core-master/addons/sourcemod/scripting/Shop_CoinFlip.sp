@@ -95,6 +95,8 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	LoadTranslations("common.phrases");
+	
 	// Create the coin flips lobbies arraylist
 	g_LobbiesData = new ArrayList(sizeof(Lobby));
 	
@@ -175,7 +177,7 @@ Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast
 	
 	if (!IsClientInGame(client))
 	{
-		return;
+		return Plugin_Continue;
 	}
 	
 	// Loop throgh all the coin flip lobbies, and if the disconnected client 
@@ -223,6 +225,8 @@ Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast
 			g_LobbiesData.Erase(current_lobby--);
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
@@ -349,7 +353,7 @@ public int Handler_CoinflipMain(Menu menu, MenuAction action, int param1, int pa
 					// Display the menu again
 					ShowCoinflipMainMenu(client);
 					
-					return;
+					return 0;
 				}
 				
 				ShowCoinflipLobbiesMenu(client);
@@ -365,6 +369,8 @@ public int Handler_CoinflipMain(Menu menu, MenuAction action, int param1, int pa
 		// Delete the menu to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowCoinflipLobbiesMenu(int client)
@@ -423,7 +429,7 @@ public int Handler_CoinflipLobbies(Menu menu, MenuAction action, int param1, int
 			
 			ShowCoinflipLobbiesMenu(client);
 			
-			return;
+			return 0;
 		}
 		
 		if (GetClientOfUserId(GetLobbyByIndex(lobby_index).client_userid) == client)
@@ -450,6 +456,8 @@ public int Handler_CoinflipLobbies(Menu menu, MenuAction action, int param1, int
 		// Delete the menu to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowCancelCoinflipMenu(int client, int lobby_index)
@@ -483,7 +491,7 @@ public int Handler_CancelCoinflip(Menu menu, MenuAction action, int client, int 
 			
 			ShowCoinflipLobbiesMenu(client);
 			
-			return;
+			return 0;
 		}
 		
 		Lobby LobbyData; LobbyData = GetLobbyByIndex(lobby_index);
@@ -491,7 +499,7 @@ public int Handler_CancelCoinflip(Menu menu, MenuAction action, int client, int 
 		if (LobbyData.IsLobbyRolling())
 		{
 			PrintToChat(client, "%s You can't \x07cancel\x01 a rolling coinflip lobby!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -519,6 +527,8 @@ public int Handler_CancelCoinflip(Menu menu, MenuAction action, int client, int 
 		// Delete the menu to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowConfirmCoinflipMenu(int client, int lobby_index)
@@ -549,7 +559,7 @@ public int Handler_ConfirmCoinflip(Menu menu, MenuAction action, int client, int
 		if (lobby_index == -1)
 		{
 			PrintToChat(client, "%s The selected lobby is \x02corrupt\x01, sent back to the lobbies menu.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		Lobby LobbyData; LobbyData = GetLobbyByIndex(lobby_index);
@@ -557,7 +567,7 @@ public int Handler_ConfirmCoinflip(Menu menu, MenuAction action, int client, int
 		if (LobbyData.IsLobbyRolling())
 		{
 			PrintToChat(client, "%s You can't \x06join\x01 a rolling coinflip lobby!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -568,7 +578,7 @@ public int Handler_ConfirmCoinflip(Menu menu, MenuAction action, int client, int
 				if (Shop_GetClientCredits(client) < LobbyData.held_credits)
 				{
 					PrintToChat(client, "%s You don't have enough credits to coinflip on!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				int lobby_initiator = GetClientOfUserId(LobbyData.client_userid);
@@ -594,6 +604,8 @@ public int Handler_ConfirmCoinflip(Menu menu, MenuAction action, int client, int
 		// Delete the menu to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//
@@ -724,7 +736,7 @@ int GetClientOwnedLobbies(int client)
 	return lobbies_counter;
 }
 
-char GetRandomString(int length = 8, char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234556789")
+char[] GetRandomString(int length = 8, char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234556789")
 {
 	char szString[32];
 	

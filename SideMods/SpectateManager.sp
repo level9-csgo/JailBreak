@@ -73,7 +73,7 @@ public Action Listener_SpecPrev(int client, const char[] command, int argc)
 	
 	if (IsFakeClient(client) || IsPlayerAlive(client))
 	{
-		return Plugin_Handled;
+		return Plugin_Stop;
 	}
 	
 	int target_index = FindNextPlayer(GetObservingTarget(client), true, GetClientTeam(client));
@@ -84,7 +84,7 @@ public Action Listener_SpecPrev(int client, const char[] command, int argc)
 	}
 	
 	ChangeObserverTarget(client, target_index);
-	return Plugin_Handled;
+	return Plugin_Stop;
 }
 
 public Action Listener_SpecNext(int client, const char[] command, int argc)
@@ -94,9 +94,9 @@ public Action Listener_SpecNext(int client, const char[] command, int argc)
 		return Plugin_Continue;
 	}
 	
-	if (!IsClientInGame(client) && IsFakeClient(client) || IsPlayerAlive(client))
+	if (!IsClientInGame(client) || IsFakeClient(client) || IsPlayerAlive(client))
 	{
-		return Plugin_Handled;
+		return Plugin_Stop;
 	}
 	
 	int target_index = FindNextPlayer(GetObservingTarget(client), false, GetClientTeam(client));
@@ -107,7 +107,7 @@ public Action Listener_SpecNext(int client, const char[] command, int argc)
 	}
 	
 	ChangeObserverTarget(client, target_index);
-	return Plugin_Handled;
+	return Plugin_Stop;
 }
 
 public Action Listener_SpecPlayer(int client, const char[] command, int argc)
@@ -119,7 +119,7 @@ public Action Listener_SpecPlayer(int client, const char[] command, int argc)
 	
 	if (IsFakeClient(client) || IsPlayerAlive(client))
 	{
-		return Plugin_Handled;
+		return Plugin_Stop;
 	}
 	
 	char arg[4];
@@ -139,7 +139,7 @@ public Action Listener_SpecPlayer(int client, const char[] command, int argc)
 	}
 	
 	ChangeObserverTarget(client, target_index);
-	return Plugin_Handled;
+	return Plugin_Stop;
 }
 
 public Action Listener_SpecMode(int client, const char[] command, int argc)
@@ -151,7 +151,7 @@ public Action Listener_SpecMode(int client, const char[] command, int argc)
 	
 	if (IsFakeClient(client) || IsPlayerAlive(client))
 	{
-		return Plugin_Handled;
+		return Plugin_Stop;
 	}
 	
 	int iTarget = -1;
@@ -171,7 +171,7 @@ public Action Listener_SpecMode(int client, const char[] command, int argc)
 			}
 		}
 		
-		return Plugin_Handled;
+		return Plugin_Stop;
 	}
 	return Plugin_Continue;
 }
