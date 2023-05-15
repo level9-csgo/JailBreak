@@ -870,7 +870,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 			char item_name[64];
 			auction.item.GetName(item_name, sizeof(item_name));
 			
-			for (int current_bid = 1; current_bid < auction.bids_array.Length; current_bid++)
+			for (int current_bid = 0; current_bid < auction.bids_array.Length; current_bid++)
 			{
 				auction.bids_array.GetArray(current_bid, bid);
 				
