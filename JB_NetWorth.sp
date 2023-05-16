@@ -166,7 +166,18 @@ void OnPlayerNetWorthCalculatedSuccess(Database db, DBResultSet results, const c
 	char json_str[256];
 	results.FetchString(0, json_str, sizeof(json_str));
 	
-	LogMessage(json_str);
+	// No data for 'account_id'.
+	if (!json_str[0])
+	{
+		if (failure_callback != INVALID_FUNCTION)
+		{
+			Call_OnPlayerNetWorthFailure(failure_callback, plugin, account_id, data, response_time);
+		}
+		
+		return;
+	}
+	
+	EscapeBackslashes(json_str, sizeof(json_str));
 	
 	JSONObject jsonObject = JSONObject.FromString(json_str);
 	
@@ -182,6 +193,24 @@ void OnPlayerNetWorthCalculatedSuccess(Database db, DBResultSet results, const c
 	if (success_callback != INVALID_FUNCTION)
 	{
 		Call_OnPlayerNetWorthSuccess(success_callback, plugin, account_id, target_name, data, credits + shop_items_value + runes_value, credits, shop_items_value, runes_value, response_time);
+	}
+}
+
+void EscapeBackslashes(char[] str, int size)
+{
+	char[] truncted_str = new char[size];
+	
+	for (int i; str[i]; i++)
+	{
+		if (str[i] == '\\')
+		{
+			strcopy(truncted_str, size, str);
+			ReplaceString(truncted_str, size, str[i], "");
+			
+			Format(str, size, "%s\\%s", truncted_str, str[i]);
+			
+			i++;
+		}
 	}
 }
 
