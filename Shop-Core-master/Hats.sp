@@ -5,6 +5,8 @@
 
 #define OBS_MODE_IN_EYE 4
 
+#define HATS_PREVIEW_FILES_PATH "hat_previews"
+
 enum struct Player
 {
 	// This player slot index.
@@ -204,6 +206,9 @@ public void OnMapStart()
 	AddDirectoryToDownloadsTable("materials/models/store");
 	AddDirectoryToDownloadsTable("materials/models/vikinghelmet");
 	
+	// Add all preview images to download table.
+	AddDirectoryToDownloadsTable("materials/hat_previews");
+	
 	PrecacheHatsModels();
 }
 
@@ -363,6 +368,23 @@ ShopAction OnEquipItem(int client, CategoryId category_id, const char[] category
 	return Shop_UseOn;
 }
 
+void OnItemPreview(int client, CategoryId category_id, const char[] category, ItemId item_id, const char[] item)
+{
+	char model_path[PLATFORM_MAX_PATH];
+	Shop_GetItemCustomInfoString(item_id, "model_path", model_path, sizeof(model_path));
+	
+	int backslash_idx = FindCharInString(model_path, '/', true);
+	if (backslash_idx == -1)
+	{
+		// Invalid model file path?
+		return;
+	}
+	
+	ReplaceString(model_path, sizeof(model_path), ".mdl", "");
+	
+	PreviewHat(client, model_path[backslash_idx]);
+}
+
 //================================[ Utils ]================================//
 
 void Lateload()
@@ -422,7 +444,7 @@ void LoadHats()
 		if (Shop_StartItem(g_ShopCategoryID, name))
 		{
 			Shop_SetInfo(name, description, kv.GetNum("price"), kv.GetNum("sell_price"), Item_Togglable, 0, kv.GetNum("price_gold"), kv.GetNum("sell_price_gold"));
-			Shop_SetCallbacks(.use_toggle = OnEquipItem);
+			Shop_SetCallbacks(.use_toggle = OnEquipItem, .preview = OnItemPreview);
 			
 			Shop_SetCustomInfoString("model_path", model_path);
 			
@@ -515,6 +537,50 @@ ArrayList GetClientSpectators(int client)
 	}
 	
 	return spectators;
+}
+
+void PreviewHat(int client, char[] identifier, bool isFirstRun = true)
+{
+	static char sMessage[PLATFORM_MAX_PATH];
+	
+	Protobuf hMessage = view_as<Protobuf>(StartMessageOne("TextMsg", client));
+	
+	Format(sMessage, sizeof(sMessage), "</font><img src='file://{images}/../../%s/%s.png'/><script>", HATS_PREVIEW_FILES_PATH, identifier);
+	
+	hMessage.SetInt("msg_dst", 4);
+	hMessage.AddString("params", "#SFUI_ContractKillStart");
+	hMessage.AddString("params", sMessage);
+	hMessage.AddString("params", NULL_STRING);
+	hMessage.AddString("params", NULL_STRING);
+	hMessage.AddString("params", NULL_STRING);
+	hMessage.AddString("params", NULL_STRING);
+	
+	EndMessage();
+	
+	// show again so it won't be a small icon!
+	if (isFirstRun)
+	{
+		DataPack dp = new DataPack();
+		CreateDataTimer(0.1, Timer_PreviewIconRepeat, dp);
+		dp.WriteCell(GetClientUserId(client));
+		dp.WriteString(identifier);
+		dp.Reset();
+	}
+}
+
+Action Timer_PreviewIconRepeat(Handle timer, DataPack dp)
+{
+	int client = GetClientOfUserId(dp.ReadCell());
+	if (!client)
+	{
+		return Plugin_Continue;
+	}
+	
+	char identifier[64];
+	dp.ReadString(identifier, sizeof(identifier));
+	
+	PreviewHat(client, identifier, false);
+	return Plugin_Continue;
 }
 
 //================================================================//
