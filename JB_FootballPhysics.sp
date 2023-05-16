@@ -2,8 +2,8 @@
 #pragma newdecls required
 
 #include <sourcemod>
+#include <sdktools>
 #include <sdkhooks>
-#include <JailBreak>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
@@ -12,7 +12,7 @@ public Plugin myinfo =
 	name = "[CS:GO] JailBreak - Physics Manager", 
 	author = PLUGIN_AUTHOR, 
 	description = "Controls the map entities physics state.", 
-	version = JAILBREAK_VERSION, 
+	version = "1.0.0", 
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
