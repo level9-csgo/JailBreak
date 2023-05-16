@@ -870,7 +870,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 			char item_name[64];
 			auction.item.GetName(item_name, sizeof(item_name));
 			
-			for (int current_bid = 1; current_bid < auction.bids_array.Length; current_bid++)
+			for (int current_bid = 0; current_bid < auction.bids_array.Length; current_bid++)
 			{
 				auction.bids_array.GetArray(current_bid, bid);
 				
@@ -1956,22 +1956,22 @@ void FormatMinutes(int minutes, char[] buffer, int length)
 	
 	if (totalWeeks > 0)
 	{
-		Format(buffer, length, "%d Week%s", totalWeeks, totalWeeks != 1 ? "s" : "");
+		Format(buffer, length, "%dw", totalWeeks, totalWeeks != 1 ? "s" : "");
 	}
 	
 	if (totalDays > 0)
 	{
-		Format(buffer, length, "%s%s%d Day%s", buffer, buffer[0] ? ", " : "", totalDays, totalDays != 1 ? "s" : "");
+		Format(buffer, length, "%s%s%dd", buffer, buffer[0] ? ", " : "", totalDays);
 	}
 	
 	if (totalHours > 0)
 	{
-		Format(buffer, length, "%s%s%d Hour%s", buffer, buffer[0] ? ", " : "", totalHours, totalHours != 1 ? "s" : "");
+		Format(buffer, length, "%s%s%dh", buffer, buffer[0] ? ", " : "", totalHours);
 	}
 	
 	if (totalMinutes > 0)
 	{
-		Format(buffer, length, "%s%s%d Minute%s", buffer, buffer[0] ? ", " : "", totalMinutes, totalMinutes != 1 ? "s" : "");
+		Format(buffer, length, "%s%s%dm", buffer, buffer[0] ? ", " : "", totalMinutes);
 	}
 	
 	if (!buffer[0])
