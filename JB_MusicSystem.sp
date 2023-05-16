@@ -12,7 +12,8 @@
 //==========[ Settings ]==========//
 
 #define CONFIG_PATH "addons/sourcemod/configs/SongsData.cfg"
-#define SONGS_PARENT_DIR "songs"
+
+#define SOUNDS_DIR "level9_jailbreak_songs"
 
 #define ABORT_SYMBOL "-1"
 
@@ -51,8 +52,6 @@ Client g_ClientsData[MAXPLAYERS + 1];
 
 ArrayList g_SongsData;
 
-ConVar g_cvDefaultMusicVolume;
-
 char g_AuthorizedGroups[][] = 
 {
 	"Programmer"
@@ -74,10 +73,6 @@ public void OnPluginStart()
 {
 	g_SongsData = new ArrayList(sizeof(Song));
 	
-	g_cvDefaultMusicVolume = CreateConVar("jb_default_music_volume", "0.3", "Default music volume to the client's settings.", _, true, 0.0, true, 1.0);
-	
-	AutoExecConfig(true, "MusicSystem", "JailBreak");
-	
 	RegConsoleCmd("sm_music", Command_Music, "Access the music system main menu.");
 	RegConsoleCmd("sm_stopmusic", Command_StopMusic, "Stops the running songs.");
 	RegConsoleCmd("sm_sm", Command_StopMusic, "Stops the running songs. (An Alias)");
@@ -96,9 +91,7 @@ public void OnLibraryAdded(const char[] name)
 	{
 		JB_CreateSettingCategory("Sound Settings", "This category is associated with sound in general, as well as music settings.");
 		
-		char szDefaultVolume[8];
-		g_cvDefaultMusicVolume.GetString(szDefaultVolume, sizeof(szDefaultVolume));
-		g_iSettingId = JB_CreateSetting("setting_music_volume", "Controls the music system songs volume. (Float setting)", "Music Volume", "Sound Settings", Setting_Float, 1.0, szDefaultVolume);
+		g_iSettingId = JB_CreateSetting("musicsys_volume", "Controls the music system volume. (Float setting)", "Music Volume", "Sound Settings", Setting_Float, 1.0, "0.1");
 	}
 }
 
@@ -674,7 +667,7 @@ void KV_DeleteSong(int client, int songId)
 
 //================================[ Timer ]================================//
 
-public Action Timer_PlaySong(Handle timer, DataPack dPack)
+Action Timer_PlaySong(Handle timer, DataPack dPack)
 {
 	int client = GetClientFromSerial(dPack.ReadCell());
 	
@@ -685,19 +678,23 @@ public Action Timer_PlaySong(Handle timer, DataPack dPack)
 	
 	Song SongData; SongData = GetSongByIndex(dPack.ReadCell());
 	
-	char szSettingValue[16], szSongPath[PLATFORM_MAX_PATH];
-	Format(szSongPath, sizeof(szSongPath), "%s/%s/%s%s", PARENT_SOUNDS_DIR, SONGS_PARENT_DIR, SongData.szSongFile, StrEqual(GetFileExt(SongData.szSongFile), "mp3") ? "" : ".mp3");
+	char szSettingValue[16];
 	
 	JB_GetClientSetting(client, g_iSettingId, szSettingValue, sizeof(szSettingValue));
 	
-	float fSettingVolume = StringToFloat(szSettingValue);
-	if (fSettingVolume != 0.0)
+	float volume = StringToFloat(szSettingValue);
+	if (volume > 0.0)
 	{
-		EmitSoundToClient(client, szSongPath, SOUND_FROM_PLAYER, .volume = (fSettingVolume == 1.0 ? 0.9 : fSettingVolume));
+		char szSongPath[PLATFORM_MAX_PATH];
+		Format(szSongPath, sizeof(szSongPath), "/%s/%s%s", SOUNDS_DIR, SongData.szSongFile, StrEqual(GetFileExt(SongData.szSongFile), "mp3") ? "" : ".mp3");
+		
+		//FakeClientCommand(client, "playvol %s %f", szSongPath, volume);
+		EmitSoundToClient(client, szSongPath, SOUND_FROM_PLAYER, SNDCHAN_REPLACE, SNDLEVEL_NONE, SND_CHANGEVOL, volume, SNDPITCH_NORMAL, -1, NULL_VECTOR, NULL_VECTOR, true);
+		//EmitSoundToClient(client, szSongPath, SOUND_FROM_PLAYER, .volume = (fSettingVolume == 1.0 ? 0.9 : fSettingVolume));
 		
 		if (dPack.ReadCell())
 		{
-			PrintToChat(client, "%s \x06♪\x01 \x04%s \x06𝄞\x01", PREFIX, SongData.szSongName);
+			PrintToChat(client, " \x06♪\x01 \x0E%s \x06𝄞\x01", SongData.szSongName);
 		}
 	}
 	
@@ -725,22 +722,17 @@ void LoadAndPrecacheSongs()
 	for (int iCurrentSong = 0; iCurrentSong < g_SongsData.Length; iCurrentSong++)
 	{
 		szFilePath = GetSongByIndex(iCurrentSong).szSongFile;
-		Format(szFilePath, sizeof(szFilePath), "sound/%s/%s/%s%s", PARENT_SOUNDS_DIR, SONGS_PARENT_DIR, szFilePath, StrEqual(GetFileExt(szFilePath), "mp3") ? "" : ".mp3");
+		
+		Format(szFilePath, sizeof(szFilePath), "sound/%s/%s%s", SOUNDS_DIR, szFilePath, StrEqual(GetFileExt(szFilePath), "mp3") ? "" : ".mp3");
 		AddFileToDownloadsTable(szFilePath);
-		PrecacheSound(szFilePath[6]);
+		
+		PrecacheSound(szFilePath[5]); // idx 5 to include the slash (/)
 	}
 }
 
 void StopMusicToClient(int client)
 {
-	char szFilePath[PLATFORM_MAX_PATH];
-	
-	for (int iCurrentSong = 0; iCurrentSong < g_SongsData.Length; iCurrentSong++)
-	{
-		szFilePath = GetSongByIndex(iCurrentSong).szSongFile;
-		Format(szFilePath, sizeof(szFilePath), "%s/%s/%s%s", PARENT_SOUNDS_DIR, SONGS_PARENT_DIR, szFilePath, StrEqual(GetFileExt(szFilePath), "mp3") ? "" : ".mp3");
-		StopSound(client, SNDCHAN_AUTO, szFilePath);
-	}
+	ClientCommand(client, "snd_playsounds Music.StopAllExceptMusic");
 }
 
 char[] GetFileExt(const char[] filePath)
