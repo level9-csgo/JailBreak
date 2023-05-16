@@ -1225,7 +1225,7 @@ public void SQL_ShowMemberDetails_CB(Database db, DBResultSet results, const cha
 		Menu menu = new Menu(Handler_MemberDetails);
 		menu.SetTitle("%s Gang Menu - Player Data\n \n%s | %s\n• Rank: %s\n• Join Date: %s\n• Cash Donations: %s Cash\n ", PREFIX_MENU, szName, szAuth, g_szRanks[iRank], szItem, AddCommas(iDonations));
 		
-		menu.AddItem("", "Promote Rank", (iRank > Rank_Manager || g_esClients[iClient].iRank <= Rank_Manager || g_esClients[iClient].iRank <= Rank_Manager || iRank >= g_esClients[iClient].iRank || iGang != g_esClients[iClient].iGang || GetClientFromAuthId(szAuth) == iClient) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+		menu.AddItem("", "Promote Rank", (iRank > Rank_Manager || iRank + 1 >= g_esClients[iClient].iRank || g_esClients[iClient].iRank <= Rank_Manager || iRank >= g_esClients[iClient].iRank || iGang != g_esClients[iClient].iGang || GetClientFromAuthId(szAuth) == iClient) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
 		
 		menu.AddItem("", "Demote Rank", (iRank == Rank_Leader || iRank == Rank_Member || g_esClients[iClient].iRank <= Rank_Manager || iRank >= g_esClients[iClient].iRank || iGang != g_esClients[iClient].iGang || GetClientFromAuthId(szAuth) == iClient) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
 		
