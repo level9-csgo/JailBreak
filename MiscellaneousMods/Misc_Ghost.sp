@@ -331,7 +331,7 @@ Action Hook_OnWeaponCanUse(int client, int weapon)
 
 Action Hook_OnSetTransmit(int entity, int other)
 {
-	if (entity == other)
+	if (entity == other || (!g_Players[other].IsClientGhost && !g_Players[entity].IsClientGhost))
 	{
 		return Plugin_Continue;
 	}
