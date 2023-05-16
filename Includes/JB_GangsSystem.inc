@@ -4,7 +4,6 @@
 #define _JB_GangsSystem_included
 
 #define NO_GANG -1
-#define MAX_GANGS 64 // Should be enough
 #define MAX_GANG_SLOTS 12
 #define DEFAULT_GANG_SLOTS 3
 
@@ -43,6 +42,8 @@ stock char g_szColors[][][] =
 	{ "128,0,255,255", "Vaiolet" }, 
 	{ "240,50,230,255", "Magenta" }
 };
+
+#define MAX_GANGS sizeof(g_szColors) // Should be enough
 
 /**
  * Gets the amount of cash a gang has.

@@ -857,7 +857,7 @@ public int Handler_PersonalRunes(Menu menu, MenuAction action, int param1, int p
 		// Display the last menu the client was in
 		if (param2 == MenuCancel_ExitBack)
 		{
-			ShowShopCategoriesMenu(param1);
+			ShowAddItemsMenu(param1);
 		}
 	}
 	else if (action == MenuAction_End)

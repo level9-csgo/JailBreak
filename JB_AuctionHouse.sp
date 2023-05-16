@@ -1046,7 +1046,7 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 	}
 	
 	RTLify(auction.owner_name, sizeof(Auction::owner_name), auction.owner_name);
-	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Auction creator: %s\n◾ Ending in: %s\n◾ %s: %s\n◾ Auction Type: %s\n ", 
+	menu.SetTitle("%s Auction House - Auction Overview:\n \n╭%s\n╰┄%s%s credits\n \n◾ Seller: %s\n◾ Ending in: %s\n◾ %s: %s\n ", 
 		PREFIX_MENU, 
 		item_name, 
 		auction.type == AuctionType_Regular ? "":has_highest_bid ? "Top bid is ":"Starting bid is ", 
@@ -1054,9 +1054,10 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 		auction.owner_name, 
 		remaining_time, 
 		is_shop_item ? "Category":"Benefit", 
-		item_display, 
-		auction.type == AuctionType_Bids ? "Bids":"Buy It Now!"
+		item_display
 		);
+	
+	bool is_client_authorized = IsClientAuthorizedEx(client);
 	
 	if (auction.type == AuctionType_Regular)
 	{
@@ -1065,11 +1066,11 @@ void DisplayAuctionOverviewMenu(int client, Auction auction, int first_item)
 	} else {
 		menu.AddItem(item_info, "Place a bid", g_Players[client].account_id != auction.owner_account_id ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 		menu.AddItem(menu_selection, "View bid list", auction.bids_array.Length ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
-		menu.AddItem(menu_selection, "Cancel (ADMIN)", IsClientAuthorizedEx(client) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
+		menu.AddItem(menu_selection, "Cancel (ADMIN)", is_client_authorized ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
 	}
 	
 	menu.ExitBackButton = true;
-	JB_FixMenuGap(menu);
+	JB_FixMenuGap(menu, auction.type == AuctionType_Regular || is_client_authorized ? 0 : 1);
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
