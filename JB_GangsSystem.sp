@@ -996,9 +996,6 @@ public int Handler_LeaveGang(Menu menu, MenuAction action, int client, int itemN
 				
 				SQL_UserLeaveGang(client);
 				g_esGangs[gangId].iMembers--;
-				char szQuery[512];
-				g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs` SET `members` = %d WHERE `name` = '%s'", g_esGangs[gangId].iMembers, g_esGangs[gangId].szName);
-				g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 			}
 			case 1:
 			{
@@ -1166,6 +1163,13 @@ public int Handler_InviteClient(Menu menu, MenuAction action, int client, int it
 		
 		if (itemNum != 0)
 			return;
+		
+		if (g_esClients[client].iGang != NO_GANG)
+		{
+			PrintToChat(client, "%s You are already in a gang.", PREFIX);
+			return;
+		}
+		
 		
 		if (g_esGangs[gangId].iSlots - g_esGangs[gangId].iMembers <= 0)
 		{
@@ -1352,8 +1356,6 @@ public int Handler_MemberDetails(Menu menu, MenuAction action, int client, int i
 				g_esGangs[g_esMemberDetails[client].iGang].iMembers--;
 				
 				char szQuery[512];
-				g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs` SET `members` = %d WHERE `name` = '%s'", g_esGangs[g_esMemberDetails[client].iGang].iMembers, g_esGangs[g_esMemberDetails[client].iGang].szName);
-				g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 				g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs_players` SET `gang` = '', `rank` = %d WHERE `steam_id` = '%s'", Rank_NoGang, g_esMemberDetails[client].szAuth);
 				g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 				HideHud(client, false);
@@ -1718,7 +1720,7 @@ public void SQL_CB_OnDatabaseConnected(Database db, const char[] error, any data
 	
 	g_dbDatabase = db;
 	
-	g_dbDatabase.Query(SQL_CheckForErrors, "CREATE TABLE IF NOT EXISTS `jb_gangs` (`name` VARCHAR(128) NOT NULL, `desc` VARCHAR(256) NOT NULL, `cash` INT NOT NULL, `members` INT NOT NULL, `slots` INT NOT NULL, `expiration` INT NOT NULL, `color` VARCHAR(64) NOT NULL, UNIQUE(`name`))");
+	g_dbDatabase.Query(SQL_CheckForErrors, "CREATE TABLE IF NOT EXISTS `jb_gangs` (`name` VARCHAR(128) NOT NULL, `desc` VARCHAR(256) NOT NULL, `cash` INT NOT NULL, `slots` INT NOT NULL, `expiration` INT NOT NULL, `color` VARCHAR(64) NOT NULL, UNIQUE(`name`))");
 	g_dbDatabase.Query(SQL_CheckForErrors, "CREATE TABLE IF NOT EXISTS `jb_gangs_players` (`steam_id` VARCHAR(128) NOT NULL, `name` VARCHAR(128) NOT NULL, `gang` VARCHAR(128) NOT NULL DEFAULT '', `rank` INT NOT NULL DEFAULT -1, `donations` INT NOT NULL DEFAULT 0, `joindate` INT NOT NULL DEFAULT 0, UNIQUE(`steam_id`))");
 	
 	SQL_AfterTableCreated();
@@ -1765,19 +1767,19 @@ public void SQL_FetchGangs_CB(Database db, DBResultSet results, const char[] err
 			results.FetchString(0, g_esGangs[g_iNumOfGangs].szName, sizeof(g_esGangs[].szName));
 			results.FetchString(1, g_esGangs[g_iNumOfGangs].szDesc, sizeof(g_esGangs[].szDesc));
 			g_esGangs[g_iNumOfGangs].iCash = results.FetchInt(2);
-			g_esGangs[g_iNumOfGangs].iMembers = results.FetchInt(3);
-			g_esGangs[g_iNumOfGangs].iSlots = results.FetchInt(4);
-			g_esGangs[g_iNumOfGangs].iExpiration = results.FetchInt(5);
-			results.FetchString(6, szColor, sizeof(szColor));
+			g_esGangs[g_iNumOfGangs].iSlots = results.FetchInt(3);
+			g_esGangs[g_iNumOfGangs].iExpiration = results.FetchInt(4);
+			results.FetchString(5, szColor, sizeof(szColor));
 			g_esGangs[g_iNumOfGangs].iColor = getColorId(szColor);
 			
 			if (g_esGangs[g_iNumOfGangs].iExpiration <= GetTime())
 			{
-				WriteLogLine("Gang %s has been closed for not paying their weekly payment (Slots [%d] | Cash [%s] | Members [%d] | Expire-Stamp [%d] | Current-Stamp [%d])", g_esGangs[g_iNumOfGangs].szName, g_esGangs[g_iNumOfGangs].iSlots, AddCommas(g_esGangs[g_iNumOfGangs].iCash), g_esGangs[g_iNumOfGangs].iMembers, g_esGangs[g_iNumOfGangs].iExpiration, GetTime());
+				WriteLogLine("Gang %s has been closed for not paying their weekly payment (Slots [%d] | Cash [%s] | Expire-Stamp [%d] | Current-Stamp [%d])", g_esGangs[g_iNumOfGangs].szName, g_esGangs[g_iNumOfGangs].iSlots, AddCommas(g_esGangs[g_iNumOfGangs].iCash), g_esGangs[g_iNumOfGangs].iExpiration, GetTime());
 				SQL_DeleteGang(g_iNumOfGangs, true);
 			}
 			else
 			{
+				SQL_FetchMembersAmount(g_iNumOfGangs);
 				g_iNumOfGangs++;
 			}
 		}
@@ -1788,6 +1790,29 @@ public void SQL_FetchGangs_CB(Database db, DBResultSet results, const char[] err
 	Call_PushCell(db);
 	Call_PushCell(g_iNumOfGangs);
 	Call_Finish();
+}
+
+void SQL_FetchMembersAmount(int gang)
+{
+	char szQuery[512];
+	g_dbDatabase.Format(szQuery, sizeof(szQuery), "SELECT COUNT(`steam_id`) FROM `jb_gangs_players` WHERE `gang` = '%s'", g_esGangs[gang].szName);
+	g_dbDatabase.Query(SQL_FetchMembersAmount_CB, szQuery, gang);
+}
+
+public void SQL_FetchMembersAmount_CB(Database db, DBResultSet results, const char[] error, any data)
+{
+	if (!StrEqual(error, ""))
+	{
+		LogError("Databse error, %s", error);
+		return;
+	}
+	
+	int gang = data;
+	
+	if (results.FetchRow())
+	{
+		g_esGangs[gang].iMembers = results.FetchInt(0);
+	}
 }
 
 void SQL_FetchUser(int client)
@@ -1852,13 +1877,14 @@ void SQL_CreateGang(int client)
 	g_esGangs[g_iNumOfGangs].iSlots = DEFAULT_GANG_SLOTS;
 	g_esGangs[g_iNumOfGangs].iExpiration = GetTime() + SECONDS_WEEK;
 	g_esGangs[g_iNumOfGangs].iColor = iColor;
+	g_esGangs[g_iNumOfGangs].iMembers = 0;
 	
 	Call_StartForward(g_fwdCreateGang);
 	Call_PushCell(g_iNumOfGangs);
 	Call_Finish();
 	
 	char szQuery[512];
-	g_dbDatabase.Format(szQuery, sizeof(szQuery), "INSERT INTO `jb_gangs` (`name`, `desc`, `members`, `slots`, `expiration`, `color`) VALUES ('%s', '%s', 1, %d, %d, '%s')", g_esGangs[g_iNumOfGangs].szName, g_esGangs[g_iNumOfGangs].szDesc, g_esGangs[g_iNumOfGangs].iSlots, g_esGangs[g_iNumOfGangs].iExpiration, g_szColors[iColor][Color_Name]);
+	g_dbDatabase.Format(szQuery, sizeof(szQuery), "INSERT INTO `jb_gangs` (`name`, `desc`, `slots`, `expiration`, `color`) VALUES ('%s', '%s', %d, %d, '%s')", g_esGangs[g_iNumOfGangs].szName, g_esGangs[g_iNumOfGangs].szDesc, g_esGangs[g_iNumOfGangs].iSlots, g_esGangs[g_iNumOfGangs].iExpiration, g_szColors[iColor][Color_Name]);
 	g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 	SQL_UserJoinGang(client, g_iNumOfGangs, true);
 	g_iNumOfGangs++;
@@ -1874,8 +1900,6 @@ void SQL_UserJoinGang(int client, int gangId, bool gangCreate)
 	g_esClients[client].iDonations = 0;
 	g_esGangs[gangId].iMembers++;
 	
-	g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs` SET `members` = %d WHERE `name` = '%s'", g_esGangs[gangId].iMembers, g_esGangs[gangId].szName);
-	g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 	g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs_players` SET `gang` = '%s', `rank` = %d, `donations` = 0, `joindate` = %d WHERE `steam_id` = '%s'", g_esGangs[gangId].szName, g_esClients[client].iRank, GetTime(), g_esClients[client].szAuth);
 	g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 }
