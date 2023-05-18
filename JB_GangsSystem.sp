@@ -2056,7 +2056,13 @@ public void SQL_CreateDBColumn_CB(Database db, DBResultSet results, const char[]
 	if (!results.FetchRow())
 	{
 		char szQuery[128];
-		g_dbDatabase.Format(szQuery, sizeof(szQuery), " DEFAULT '%s'", szDefaultValue);
+		
+		if (!StrEqual(szType, "INT"))
+		{
+			Format(szDefaultValue, sizeof(szDefaultValue), "'%s'", szDefaultValue);
+		}
+		
+		g_dbDatabase.Format(szQuery, sizeof(szQuery), " DEFAULT %s", szDefaultValue);
 		g_dbDatabase.Format(szQuery, sizeof(szQuery), "ALTER TABLE `jb_gangs` ADD COLUMN `%s` %s NOT NULL%s", szColumn, szType, szDefaultValue[0] ? szQuery:"");
 		g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 	}
