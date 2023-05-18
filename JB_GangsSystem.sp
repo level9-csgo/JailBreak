@@ -260,7 +260,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				{
 					strcopy(g_esCreateGang[client].szName, sizeof(g_esCreateGang[].szName), szArgs);
 					showCreateGang(client);
-				} else if (g_esClients[client].iRank == Rank_Manager || g_esClients[client].iRank == Rank_Leader) {
+				} else if (g_esClients[client].iRank == Rank_Deputy_Leader || g_esClients[client].iRank == Rank_Leader) {
 					PrintGangMessage(gangId, "\x04%N\x01 has changed the gang name to \x0C%s\x01 from \x0B%s\x01.", client, szArgs, g_esGangs[gangId].szName);
 					WriteLogLine("\"%L\" has changed gang \"%s\"'s name to \"%s\". (Costs: %d)", client, g_esGangs[gangId].szName, szArgs, AddCommas(g_cvNameCost.IntValue));
 					
