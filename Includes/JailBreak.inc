@@ -1,5 +1,5 @@
 #if defined _JailBreak_included
- #endinput
+#endinput
 #endif
 #define _JailBreak_included
 
@@ -20,12 +20,12 @@
 
 enum
 {
-	Day_Sunday = 0, 
-	Day_Monday, 
-	Day_Tuesday, 
-	Day_Wednesday, 
-	Day_Thursday, 
-	Day_Friday, 
+	Day_Sunday = 0,
+	Day_Monday,
+	Day_Tuesday,
+	Day_Wednesday,
+	Day_Thursday,
+	Day_Friday,
 	Day_Saturday
 }
 
@@ -67,21 +67,30 @@ forward void JB_OnDatabaseConnected(Database db);
 
 stock void JB_WriteLogLine(const char[] log, any...)
 {
-	char szLogLine[512];
-	VFormat(szLogLine, sizeof(szLogLine), log, 2);
-	
-	static char szPath[128];
-	if (strlen(szPath) < 1)
+	// Initialize the log file path dest once.
+	static char myself[64], log_file_path[PLATFORM_MAX_PATH];
+	if (!myself[0])
 	{
-		char szFileName[64];
-		GetPluginFilename(INVALID_HANDLE, szFileName, sizeof(szFileName));
-		ReplaceString(szFileName, sizeof(szFileName), ".smx", "");
-		
-		FormatTime(szPath, sizeof(szPath), "%Y%m%d", GetTime());
-		BuildPath(Path_SM, szPath, sizeof(szPath), "logs/%s_%s.log", szFileName, szPath);
+		GetPluginFilename(null, myself, sizeof(myself));
 	}
 	
-	LogToFile(szPath, szLogLine);
+	if (!log_file_path[0])
+	{
+		ReplaceString(myself, sizeof(myself), ".smx", "");
+		
+		FormatTime(log_file_path, sizeof(log_file_path), "%Y%m%d", GetTime());
+		BuildPath(Path_SM, log_file_path, sizeof(log_file_path), "logs/%s_%s.log", myself, log_file_path);
+	}
+	
+	File log_file = OpenFile(log_file_path, "a");
+	
+	char buffer[512], time[32];
+	VFormat(buffer, sizeof(buffer), log, 2);
+	FormatTime(time, sizeof(time), "%d/%m/%Y - %H:%M:%S");
+	Format(buffer, sizeof(buffer), "L %s: [%s.smx] %s", time, myself, buffer);
+	
+	log_file.WriteLine("%s", buffer);
+	log_file.Close();
 }
 
 stock char[] JB_AddCommas(int value, const char[] seperator = ",")
@@ -118,28 +127,28 @@ stock char[] JB_AddCommas(int value, const char[] seperator = ",")
 
 stock void DisarmPlayer(int client)
 {
-    static int max_weapons;
-    
-    if (!max_weapons)
-    {
-        max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
-    }
-    
-    int ent = -1;
-    
-    for (int current_index = 0; current_index < max_weapons; current_index++)
-    {
-        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", current_index)) != -1)
-        {
-            RemovePlayerItem(client, ent);
-            AcceptEntityInput(ent, "Kill");
-        }
-    }
+	static int max_weapons;
+	
+	if (!max_weapons)
+	{
+		max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+	}
+	
+	int ent = -1;
+	
+	for (int current_index = 0; current_index < max_weapons; current_index++)
+	{
+		if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", current_index)) != -1)
+		{
+			RemovePlayerItem(client, ent);
+			AcceptEntityInput(ent, "Kill");
+		}
+	}
 }
 
-stock void JB_FixMenuGap(Menu menu)
+stock void JB_FixMenuGap(Menu menu, int substruct = 0)
 {
-	int iItemCount = menu.ItemCount;
+	int iItemCount = menu.ItemCount - substruct;
 	for (int iCurrentItem = 0; iCurrentItem < (6 - iItemCount); iCurrentItem++) {
 		menu.AddItem("", "", ITEMDRAW_NOTEXT); // Fix the back button gap.
 	}
@@ -232,8 +241,8 @@ public SharedPlugin __pl_JailBreak =
 	name = "JailBreak", 
 	file = "JB_Core.smx", 
 #if defined REQUIRE_PLUGIN
-    required = 1, 
+	required = 1, 
 #else
-    required = 0, 
+	required = 0, 
 #endif
 }; 
