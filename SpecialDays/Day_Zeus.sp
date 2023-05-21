@@ -21,7 +21,7 @@
 
 //====================//
 
-Handle g_RefillTimer[MAXPLAYERS + 1] =  { INVALID_HANDLE, ... };
+Handle g_RefillTimer[MAXPLAYERS + 1] = { INVALID_HANDLE, ... };
 
 bool g_bIsDayActivated;
 
@@ -81,7 +81,7 @@ public void JB_OnSpecialDayStart(int specialDayId)
 {
 	if (g_iDayId == specialDayId)
 	{
-		HookEvent("weapon_fire", Event_WeaponFire, EventHookMode_Post);
+		HookEvent("weapon_fire", Event_WeaponFire);
 		
 		int iUpgradeIndex = JB_FindGangUpgrade("healthpoints");
 		if (iUpgradeIndex != -1) {
@@ -116,7 +116,7 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 				}
 			}
 			
-			UnhookEvent("weapon_fire", Event_WeaponFire, EventHookMode_Post);
+			UnhookEvent("weapon_fire", Event_WeaponFire);
 			
 			int iUpgradeIndex = JB_FindGangUpgrade("healthpoints");
 			if (iUpgradeIndex != -1) {
@@ -140,7 +140,7 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-public Action Event_WeaponFire(Event event, const char[] name, bool dontBroadcast)
+void Event_WeaponFire(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
@@ -163,25 +163,29 @@ public Action Event_WeaponFire(Event event, const char[] name, bool dontBroadcas
 
 //================================[ Timers ]================================//
 
-public Action Timer_RefillTaser(Handle hTimer, int serial)
+Action Timer_RefillTaser(Handle hTimer, int serial)
 {
 	int client = GetClientFromSerial(serial);
 	
 	// Make sure the client index is the index we want
-	if (client)
+	if (!client)
 	{
-		int iPrimary = GetPlayerWeaponSlot(client, CS_SLOT_KNIFE);
-		
-		if (iPrimary != -1 && IsValidEntity(iPrimary)) {
-			SetEntProp(iPrimary, Prop_Data, "m_iClip2", 0);
-			SetEntProp(iPrimary, Prop_Data, "m_iClip1", 1);
-		}
-		
-		ResetProgressBar(client);
+		return Plugin_Continue;
 	}
 	
-	// Set the timer handle as invalid, to prevent timer errors
 	g_RefillTimer[client] = INVALID_HANDLE;
+	
+	int iPrimary = GetPlayerWeaponSlot(client, CS_SLOT_KNIFE);
+	
+	if (iPrimary != -1 && IsValidEntity(iPrimary))
+	{
+		SetEntProp(iPrimary, Prop_Data, "m_iClip2", 0);
+		SetEntProp(iPrimary, Prop_Data, "m_iClip1", 1);
+	}
+	
+	ResetProgressBar(client);
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//

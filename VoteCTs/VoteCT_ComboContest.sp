@@ -54,10 +54,10 @@ bool g_bIsEventEnabled = false;
 
 int g_iVoteId = -1;
 int g_iGameTimer = 0;
-int g_iRandomButtons[BUTTONS_AMOUNT] =  { -1, ... };
+int g_iRandomButtons[BUTTONS_AMOUNT] = { -1, ... };
 
-int g_iClientButton[MAXPLAYERS + 1] =  { 0, ... };
-int g_iOldButtons[MAXPLAYERS + 1] =  { 0, ... };
+int g_iClientButton[MAXPLAYERS + 1] = { 0, ... };
+int g_iOldButtons[MAXPLAYERS + 1] = { 0, ... };
 
 public Plugin myinfo = 
 {
@@ -147,7 +147,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 				if (g_iClientButton[client] == BUTTONS_AMOUNT)
 				{
 					EndGame(client);
-					return;
+					return Plugin_Continue;
 				}
 				PrintClientButtons(client);
 			}
@@ -159,6 +159,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		}
 		g_iOldButtons[client] = buttons;
 	}
+	
+	return Plugin_Continue;
 }
 
 /*  */
@@ -184,9 +186,10 @@ void showAlertPanel(char[] szMessage, int iTime = MENU_TIME_FOREVER)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
 {
 	/* Do Nothing */
+	return 0;
 }
 
 /*  */
@@ -224,17 +227,20 @@ public Action Timer_ComboContest(Handle hTimer)
 	return Plugin_Continue;
 }
 
-public Action Timer_HintText(Handle hTimer)
+Action Timer_HintText(Handle timer)
 {
 	for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
 	{
-		if (IsClientInGame(iCurrentClient) && !JB_IsClientBannedCT(iCurrentClient)) {
+		if (IsClientInGame(iCurrentClient) && !JB_IsClientBannedCT(iCurrentClient))
+		{
 			PrintClientButtons(iCurrentClient);
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
-public Action Timer_EndGame(Handle hTimer)
+Action Timer_EndGame(Handle hTimer)
 {
 	g_bIsEventEnabled = false;
 	for (int iCurrentButton = 0; iCurrentButton < BUTTONS_AMOUNT; iCurrentButton++) {
@@ -244,11 +250,15 @@ public Action Timer_EndGame(Handle hTimer)
 	PrintCenterTextAll("");
 	JB_SetVoteCTWinner(g_iVoteId, -1);
 	
-	if (g_hGameTimer != INVALID_HANDLE) {
+	if (g_hGameTimer != INVALID_HANDLE)
+	{
 		KillTimer(g_hGameTimer);
+		g_hGameTimer = INVALID_HANDLE;
 	}
-	g_hGameTimer = INVALID_HANDLE;
+	
 	g_hEndGameTimer = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
 /*  */

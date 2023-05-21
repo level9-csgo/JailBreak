@@ -82,8 +82,8 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_close", Command_Close, "Closes all the cells on the map.");
 	
 	// Event Hooks
-	HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_Post);
-	HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_Post);
+	HookEvent("round_prestart", Event_RoundPreStart);
+	HookEvent("round_freeze_end", Event_RoundFreezeEnd);
 }
 
 public void OnPluginEnd()
@@ -131,7 +131,7 @@ public void OnMapEnd()
 	}
 }
 
-public Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	// Create the automated cells open timer
 	g_hAutoCellsOpenTimer = CreateTimer(g_cvAutoCellsOpenTime.FloatValue, Timer_AutoCellsOpen);
@@ -140,7 +140,7 @@ public Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroa
 	g_RoundStartUnixstamp = GetTime();
 }
 
-public Action Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 {
 	// Set the cells open state variable as false, a new round just started
 	g_IsCellsOpened = false;
@@ -332,7 +332,7 @@ public int Native_OpenCells(Handle plugin, int numParams)
 	// If the server isn't processing, abort the action
 	if (!IsServerProcessing())
 	{
-		return;
+		return 0;
 	}
 	
 	// Open the map cells
@@ -340,6 +340,8 @@ public int Native_OpenCells(Handle plugin, int numParams)
 	
 	// Set the cells open state to true
 	g_IsCellsOpened = true;
+	
+	return 0;
 }
 
 public int Native_CloseCells(Handle plugin, int numParams)
@@ -347,7 +349,7 @@ public int Native_CloseCells(Handle plugin, int numParams)
 	// If the server isn't processing, abort the action
 	if (!IsServerProcessing())
 	{
-		return;
+		return 0;
 	}
 	
 	// Open the map cells
@@ -355,6 +357,8 @@ public int Native_CloseCells(Handle plugin, int numParams)
 	
 	// Set the cells open state to true
 	g_IsCellsOpened = false;
+	
+	return 0;
 }
 
 public int Native_IsCellsOpened(Handle plugin, int numParams)
@@ -426,7 +430,7 @@ public int Handler_DoorsConfiguration(Menu menu, MenuAction action, int param1, 
 				{
 					PrintToChat(client, "%s \x07Failed to save, no entity was found. Please try again.\x01", PREFIX);
 					ShowDoorsConfigurationMenu(client);
-					return;
+					return 0;
 				}
 				
 				// Make sure the entity isn't configurated
@@ -436,7 +440,7 @@ public int Handler_DoorsConfiguration(Menu menu, MenuAction action, int param1, 
 				{
 					PrintToChat(client, "%s Cell door \x04#%d\x01 is already map configurated.", PREFIX, cell_index + 1);
 					ShowDoorsConfigurationMenu(client);
-					return;
+					return 0;
 				}
 				
 				// Initialize the entity's class name, and make sure it's valid
@@ -447,7 +451,7 @@ public int Handler_DoorsConfiguration(Menu menu, MenuAction action, int param1, 
 				{
 					PrintToChat(client, "%s Class name \"\x02%s\x01\" is not supported.", PREFIX, entity_class_name);
 					ShowDoorsConfigurationMenu(client);
-					return;
+					return 0;
 				}
 				
 				// Notify the client
@@ -507,6 +511,8 @@ public int Handler_DoorsConfiguration(Menu menu, MenuAction action, int param1, 
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowNotConfiguratedMapsMenu(int client)
@@ -544,6 +550,8 @@ public int Handler_NotConfiguratedMaps(Menu menu, MenuAction action, int param1,
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowCellDetailMenu(int client, int cellIndex)
@@ -608,7 +616,7 @@ public int Handler_CellDoorDetail(Menu menu, MenuAction action, int param1, int 
 					
 					// Display the cell doors configuration menu
 					ShowDoorsConfigurationMenu(client);
-					return;
+					return 0;
 				}
 				
 				// Initlaize the entity's origin, which will be the glow position
@@ -643,6 +651,8 @@ public int Handler_CellDoorDetail(Menu menu, MenuAction action, int param1, int 
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Key Values ]================================//
@@ -716,7 +726,7 @@ void KV_SetMapCellsData()
 
 //================================[ Timers ]================================//
 
-public Action Timer_AutoCellsOpen(Handle timer)
+Action Timer_AutoCellsOpen(Handle timer)
 {
 	// Open the map cells only if they are closed
 	if (!g_IsCellsOpened)
@@ -726,6 +736,8 @@ public Action Timer_AutoCellsOpen(Handle timer)
 	}
 	
 	g_hAutoCellsOpenTimer = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
 public Action Timer_FixFuncBrushExploit(Handle timer, DataPack dPack)
@@ -834,7 +846,7 @@ void DisableEntityInfo(int client)
 	}
 }
 
-char GetFileExt(const char[] filePath)
+char[] GetFileExt(const char[] filePath)
 {
 	char ext[8];
 	for (int iCurrentChar = strlen(filePath); iCurrentChar && filePath[iCurrentChar] != '.'; iCurrentChar--)
@@ -845,7 +857,7 @@ char GetFileExt(const char[] filePath)
 	return ext;
 }
 
-char GetMapConfigPath()
+char[] GetMapConfigPath()
 {
 	char file_path[PLATFORM_MAX_PATH];
 	Format(file_path, sizeof(file_path), "%s/%s.cfg", DIR_PATH, g_CurrentMapName);

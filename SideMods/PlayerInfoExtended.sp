@@ -5,7 +5,7 @@
 #include <geoip>
 #include <SteamWorks>
 
-#define PREFIX " \x04[Play-IL]\x01"
+#define PREFIX " \x04[Level9]\x01"
 
 #define STEAM_API_KEY "614ACF284426168C15F849A569A562FD" // You can get one from https://steamcommunity.com/dev/apikey
 
@@ -103,6 +103,8 @@ public int HTTPResponseBodyTime(const char[] sData, any client)
 	g_iClientTimePlayed[client] = iTimePlayedIndex != -1 ? (GetTimeFromData(sData[iTimePlayedIndex]) / 60) : -1;
 	
 	SteamWorks_SendHTTPRequest(CreateRequest_GetAccountExistingTime(client));
+	
+	return 0;
 }
 
 public Handle CreateRequest_GetAccountExistingTime(int client)

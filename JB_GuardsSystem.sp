@@ -141,12 +141,12 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_mainguard", Command_MainGuard, "Allows the client to see the name of the current main guard.");
 	RegConsoleCmd("sm_mg", Command_MainGuard, "Allows the client to see the name of the current main guard. (An Alias)");
 	
-	HookEvent("player_connect_full", Event_PlayerConnectFull, EventHookMode_Post);
+	HookEvent("player_connect_full", Event_PlayerConnectFull);
 	HookEvent("player_team", Event_PlayerTeam, EventHookMode_Pre);
 	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
 	HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_Pre);
 	HookEvent("round_start", Event_RoundStart, EventHookMode_Post);
-	HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_Post);
+	HookEvent("round_prestart", Event_RoundPreStart);
 }
 
 //================================[ Events ]================================//
@@ -244,7 +244,7 @@ public void JB_OnBanCTExecuted(int client, int admin, int length, const char[] r
 	g_esClientsData[client].iGuardRankBackUp = Guard_NotGuard;
 }
 
-public Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
+Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!g_bIsVoteDisabled && !g_bIsVoteOn && GetOnlineTeamCount(CS_TEAM_T, false) && (JB_GetDay() == Day_Sunday || !GetOnlineTeamCount(CS_TEAM_CT, false)) && !JB_IsSpecialDayVoteRunning() && !JB_IsSpecialDayRunning())
 	{
@@ -273,7 +273,7 @@ public Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroa
 		Format(szMessage, sizeof(szMessage), "%s %s been moved to the \x10prisoners\x01 team beacuse %s \x02exceeded\x01 the allowed guards amount!", szMessage, iNumOfKickedGuards == 1 ? "has":"have", iNumOfKickedGuards == 1 ? "he has":"they have");
 		PrintToChatAll(szMessage);
 		
-		ReplaceString(szMessage, sizeof(szMessage), "[Play-IL]", "");
+		ReplaceString(szMessage, sizeof(szMessage), "[Level9]", "");
 		TrimString(szMessage);
 		StripQuotes(szMessage);
 		
@@ -290,9 +290,11 @@ public Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroa
 			PrintToChatAll("%s The guard \x03%N\x01 has been moved to the \x10prisoners\x01 team beacuse he's \x07banned from being a guard\x01!", PREFIX, iCurrentClient);
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
-public Action Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
 	{
@@ -347,7 +349,7 @@ public Action Event_RoundStart(Event event, const char[] name, bool dontBroadcas
 	}
 }
 
-public Action Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 {
 	if (GetAvailableGuards() > 0 && JB_GetDay() == Day_Monday && !g_bIsInvitePeriodTimedOut) {
 		g_bIsInvitePeriodOn = true;
@@ -356,7 +358,7 @@ public Action Event_RoundPreStart(Event event, const char[] name, bool dontBroad
 	}
 }
 
-public Action Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!g_bIsVoteDisabled && !g_bIsVoteOn && GetOnlineTeamCount(CS_TEAM_T, false) >= 1 && GetOnlineTeamCount(CS_TEAM_CT, false) == 0 && !JB_IsSpecialDayRunning() && !JB_IsSpecialDayVoteRunning())
 	{
@@ -865,13 +867,13 @@ void showVoteActionPanel()
 	delete panel;
 }
 
-public int Handler_VoteAction(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_VoteAction(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
 		if (!g_bIsVoteOn || !(1 <= itemNum <= 3))
 		{
-			return;
+			return 0;
 		}
 		
 		itemNum -= 1; // Panel's item count starts from 1
@@ -890,6 +892,8 @@ public int Handler_VoteAction(Menu menu, MenuAction action, int client, int item
 		EmitSoundToClient(client, MENU_ITEM_SOUND);
 		g_esClientsData[client].bIsClientVoted = true;
 	}
+	
+	return 0;
 }
 
 void showVoteCTPanel()
@@ -921,18 +925,18 @@ void showVoteCTPanel()
 	delete panel;
 }
 
-public int Handler_VoteCT(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_VoteCT(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
 		if (!g_bIsVoteOn)
 		{
-			return;
+			return 0;
 		}
 		
 		if (JB_IsClientBannedCT(client)) {
 			PrintToChat(client, "%s You cannot vote due to your Ban CT.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		itemNum -= 1; // Panel's item count starts from 1
@@ -964,6 +968,8 @@ public int Handler_VoteCT(Menu menu, MenuAction action, int client, int itemNum)
 		EmitSoundToClient(client, MENU_ITEM_SOUND);
 		g_esClientsData[client].bIsClientVoted = true;
 	}
+	
+	return 0;
 }
 
 //================================[ Regular Menus ]================================//
@@ -989,9 +995,10 @@ void showAlertPanel(char[] szMessage, int iTime = MENU_TIME_FOREVER)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
 {
 	/* Do Nothing */
+	return 0;
 }
 
 void showMainGuardMenu(int client)
@@ -1030,7 +1037,7 @@ void showMainGuardMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_CTList(Menu menu, MenuAction action, int param1, int param2)
+int Handler_CTList(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -1039,7 +1046,7 @@ public int Handler_CTList(Menu menu, MenuAction action, int param1, int param2)
 		if (GetMainGuardIndex() != client)
 		{
 			PrintToChat(client, "%s You are no longer the \x0Cmain guard\x01 anymore!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		char szItem[16];
@@ -1057,7 +1064,7 @@ public int Handler_CTList(Menu menu, MenuAction action, int param1, int param2)
 			{
 				if (GetAvailableGuards() <= 0) {
 					showMainGuardMenu(client);
-					return;
+					return 0;
 				}
 				
 				showInviteMenu(client);
@@ -1074,6 +1081,8 @@ public int Handler_CTList(Menu menu, MenuAction action, int param1, int param2)
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showInviteMenu(int client)
@@ -1154,7 +1163,7 @@ public int Handler_Invite(Menu menu, MenuAction action, int client, int itemNum)
 				{
 					PrintToChat(client, "%s The selected player is no longer in-game.", PREFIX_ERROR);
 					showInviteMenu(client);
-					return;
+					return 0;
 				}
 				
 				showInvitationMenu(iInviteIndex, client);
@@ -1168,6 +1177,8 @@ public int Handler_Invite(Menu menu, MenuAction action, int client, int itemNum)
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showInvitationMenu(int client, int iMainGuardIndex)
@@ -1193,13 +1204,13 @@ public int Handler_Invitation(Menu menu, MenuAction action, int client, int item
 		if (JB_IsClientBannedCT(client))
 		{
 			PrintToChat(client, "%s Cannot accept the guard invitation due to your ct ban.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		if (GetAvailableGuards() <= 0)
 		{
 			PrintToChat(client, "%s No \x0Cguards\x01 are needed anymore!", PREFIX);
-			return;
+			return 0;
 		}
 		
 		char szItem[32];
@@ -1209,7 +1220,7 @@ public int Handler_Invitation(Menu menu, MenuAction action, int client, int item
 		if (!iMainGuardIndex)
 		{
 			PrintToChat(client, "%s The \x0Bmain guard\x01 who invited you is no longer in-game!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -1262,6 +1273,8 @@ public int Handler_Invitation(Menu menu, MenuAction action, int client, int item
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showViewGuardMenu(int client, int guard_userid)
@@ -1295,7 +1308,7 @@ public int Handler_ViewGuard(Menu menu, MenuAction action, int client, int itemN
 		{
 			PrintToChat(client, "%s The selected player is no longer in-game!", PREFIX);
 			showMainGuardMenu(client);
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -1304,7 +1317,7 @@ public int Handler_ViewGuard(Menu menu, MenuAction action, int client, int itemN
 			{
 				if (JB_GetDay() >= Day_Friday || ((GetTime() - g_iRoundStartTime) > g_cvPassedRoundSeconds.IntValue && IsPlayerAlive(guard_index)) && g_bIsInvitePeriodOn) {
 					PrintToChat(client, "%s Kicking doesn't meet the \x02requirements\x01 at the moment.", PREFIX);
-					return;
+					return 0;
 				}
 				
 				g_esClientsData[guard_index].iGuardRank = Guard_NotGuard;
@@ -1337,6 +1350,8 @@ public int Handler_ViewGuard(Menu menu, MenuAction action, int client, int itemN
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//
@@ -1445,13 +1460,15 @@ public Action Timer_VoteCT(Handle hTimer)
 	return Plugin_Continue;
 }
 
-public Action Timer_ResetVoteCT(Handle hTimer)
+Action Timer_ResetVoteCT(Handle hTimer)
 {
 	if (!g_bIsVoteDisabled && !g_bIsVoteOn && GetOnlineTeamCount(CS_TEAM_T, false) >= 1 && GetOnlineTeamCount(CS_TEAM_CT, false) == 0 && !JB_IsSpecialDayRunning() && !JB_IsSpecialDayVoteRunning()) {
 		StartVoteCT();
 	}
 	
 	g_hResetTimer = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
 public Action Timer_Invite(Handle hTimer)
@@ -1724,7 +1741,7 @@ char[] GetProgressBar(int value, int all)
 	return output;
 }
 
-char RemoveColors(const char[] string)
+char[] RemoveColors(const char[] string)
 {
 	char szFixedString[128];
 	strcopy(szFixedString, sizeof(szFixedString), string);

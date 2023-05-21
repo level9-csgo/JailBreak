@@ -196,7 +196,7 @@ void ShowMapFixerMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_MapFixer(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_MapFixer(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
@@ -218,6 +218,8 @@ public int Handler_MapFixer(Menu menu, MenuAction action, int client, int itemNu
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Natives & Forwards ]================================//

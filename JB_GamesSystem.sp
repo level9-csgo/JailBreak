@@ -123,7 +123,7 @@ public int Handler_Games(Menu menu, MenuAction action, int param1, int param2)
 		if (!IsClientAllowed(client))
 		{
 			PrintToChat(client, "%s Games menu is allowed only for \x04admins and guards\x01.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (item_position)
@@ -134,7 +134,7 @@ public int Handler_Games(Menu menu, MenuAction action, int param1, int param2)
 				if (g_CurrentGame == -1)
 				{
 					PrintToChat(client, "%s The side game is no longer running!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				// Notify server
@@ -166,6 +166,8 @@ public int Handler_Games(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowAlertPanel(int time, const char[] message, any...)
@@ -191,9 +193,10 @@ void ShowAlertPanel(int time, const char[] message, any...)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int iPlayerIndex, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int iPlayerIndex, int itemNum)
 {
 	// Do Nothing
+	return 0;
 }
 
 //================================[ Natives & Forwards ]================================//
@@ -321,7 +324,7 @@ int GetGameByName(const char[] name)
 	return g_GamesData.FindString(name);
 }
 
-char GetGameName(int index)
+char[] GetGameName(int index)
 {
 	char game_name[64];
 	g_GamesData.GetString(index, game_name, sizeof(game_name));

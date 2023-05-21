@@ -211,13 +211,13 @@ public int Handler_GangUpgrades(Menu menu, MenuAction action, int client, int it
 					if (Gangs_GetGangCash(iGangIndex) < iUpgradePrice)
 					{
 						PrintToChat(client, "%s Your gang doesn't have enough bank cash. (missing \x02%s\x01).", PREFIX_ERROR, JB_AddCommas(iUpgradePrice - Gangs_GetGangCash(iGangIndex)));
-						return;
+						return 0;
 					}
 					
 					if (iUpgradeLevel == UpgradeData.levels_prices.Length)
 					{
 						PrintToChat(client, "%s The gang upgrade is already at the maximum level.", PREFIX_ERROR);
-						return;
+						return 0;
 					}
 					
 					Gangs_SetGangCash(iGangIndex, Gangs_GetGangCash(iGangIndex) - iUpgradePrice);
@@ -253,6 +253,8 @@ public int Handler_GangUpgrades(Menu menu, MenuAction action, int client, int it
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Natives & Forwards ]================================//

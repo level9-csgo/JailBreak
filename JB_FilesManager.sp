@@ -100,16 +100,20 @@ void LoadFilesPaths(File hFile)
 	}
 }
 
-void GetFileExt(const char[] path, char[] buffer, int maxlength)
+char[] GetFileExt(const char[] path)
 {
+	char buffer[8];
+	
 	int idx = FindCharInString(path, 'c', true);
 	if (idx != -1)
 	{
-		strcopy(buffer, maxlength, path[idx]);
+		strcopy(buffer, sizeof(buffer), path[idx]);
 	}
+	
+	return buffer;
 }
 
-char GetFileParentDir(const char[] filePath)
+char[] GetFileParentDir(const char[] filePath)
 {
 	char szParentDir[16];
 	for (int iCurrentChar = 0; iCurrentChar < strlen(filePath); iCurrentChar++)

@@ -402,7 +402,7 @@ void showMainMenu(int client)
 	
 	if (gangId == NO_GANG)
 	{
-		menu.SetTitle("%s Gangs Menu - Main Menu\n \nWelcome to Play-IL JailBreak, enjoy your stay!\n ", PREFIX_MENU);
+		menu.SetTitle("%s Gangs Menu - Main Menu\n \nWelcome to Level9 JailBreak, enjoy your stay!\n ", PREFIX_MENU);
 		Format(szItem, sizeof(szItem), "Create New Gang [%s Cash]", AddCommas(g_cvGangCost.IntValue));
 		menu.AddItem("creategang", szItem, g_iNumOfGangs == MAX_GANGS || Shop_GetClientCredits(client) < g_cvGangCost.IntValue ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
 	} else {
@@ -448,7 +448,7 @@ public int Handler_Main(Menu menu, MenuAction action, int client, int itemNum)
 		else if (StrEqual(szItem, "donatecash")) {
 			if (iClientGangId == NO_GANG) {
 				showMainMenu(client);
-				return;
+				return 0;
 			}
 			
 			PrintToChat(client, "%s Type the amount of cash you would like to donate, or \x02-1\x01 to abort.", PREFIX);
@@ -457,7 +457,7 @@ public int Handler_Main(Menu menu, MenuAction action, int client, int itemNum)
 		else if (StrEqual(szItem, "memberlist")) {
 			if (iClientGangId == NO_GANG) {
 				showMainMenu(client);
-				return;
+				return 0;
 			}
 			
 			g_esClients[client].bLookFromMainMenu = true;
@@ -466,7 +466,7 @@ public int Handler_Main(Menu menu, MenuAction action, int client, int itemNum)
 		else if (StrEqual(szItem, "managegang")) {
 			if (iClientGangId == NO_GANG) {
 				showMainMenu(client);
-				return;
+				return 0;
 			}
 			
 			showManageGang(client, iClientGangId);
@@ -474,7 +474,7 @@ public int Handler_Main(Menu menu, MenuAction action, int client, int itemNum)
 		else if (StrEqual(szItem, "leavegang")) {
 			if (iClientGangId == NO_GANG) {
 				showMainMenu(client);
-				return;
+				return 0;
 			}
 			
 			showLeaveGang(client);
@@ -497,6 +497,8 @@ public int Handler_Main(Menu menu, MenuAction action, int client, int itemNum)
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showCreateGang(int client)
@@ -544,7 +546,7 @@ public int Handler_Create(Menu menu, MenuAction action, int client, int itemNum)
 				if (Shop_GetClientCredits(client) < g_cvGangCost.IntValue)
 				{
 					PrintToChat(client, "%s you don't have enough cash (missing \x02%s\x01).", PREFIX_ERROR, AddCommas(g_cvGangCost.IntValue - Shop_GetClientCredits(client)));
-					return;
+					return 0;
 				}
 				
 				if (getGangIdByColor(g_esCreateGang[client].iColor) != -1)
@@ -552,14 +554,14 @@ public int Handler_Create(Menu menu, MenuAction action, int client, int itemNum)
 					PrintToChat(client, "%s This color is already taken, please choose another color.", PREFIX_ERROR);
 					setFreeColor(client);
 					showCreateGang(client);
-					return;
+					return 0;
 				}
 				
 				if (getGangIdByName(g_esCreateGang[client].szName) != -1)
 				{
 					PrintToChat(client, "%s The name is already taken, please try new name.", PREFIX_ERROR);
 					showCreateGang(client);
-					return;
+					return 0;
 				}
 				
 				Shop_TakeClientCredits(client, g_cvGangCost.IntValue, CREDITS_BY_BUY_OR_SELL);
@@ -583,6 +585,8 @@ public int Handler_Create(Menu menu, MenuAction action, int client, int itemNum)
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showColors(int client)
@@ -651,6 +655,8 @@ public int Handler_Colors(Menu menu, MenuAction action, int client, int itemNum)
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showManageGang(int client, int gangId)
@@ -704,7 +710,7 @@ public int Handler_Manage(Menu menu, MenuAction action, int client, int itemNum)
 		if (g_esClients[client].iRank < Rank_Deputy_Leader)
 		{
 			showManageGang(client, gangId);
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -715,7 +721,7 @@ public int Handler_Manage(Menu menu, MenuAction action, int client, int itemNum)
 				{
 					PrintToChat(client, "%s The gang doesn't have enough cash (missing \x02%s\x01).", PREFIX, AddCommas(g_cvWeekCost.IntValue - iGangCash));
 					showManageGang(client, gangId);
-					return;
+					return 0;
 				}
 				
 				if (g_esGangs[gangId].iExpiration - GetTime() >= SECONDS_WEEK * MAX_WEEKLY_PAYMENT_WEEKS)
@@ -724,7 +730,7 @@ public int Handler_Manage(Menu menu, MenuAction action, int client, int itemNum)
 					
 					showManageGang(client, gangId);
 					
-					return;
+					return 0;
 				}
 				
 				SQL_AddWeek(gangId);
@@ -742,7 +748,7 @@ public int Handler_Manage(Menu menu, MenuAction action, int client, int itemNum)
 				{
 					PrintToChat(client, "%s The gang doesn't have enough cash (missing \x02%s\x01).", PREFIX, AddCommas(g_cvNameCost.IntValue - iGangCash));
 					showManageGang(client, gangId);
-					return;
+					return 0;
 				}
 				PrintToChat(client, "%s Write the new name you would like to set, or \x02-1\x01 to abort.", PREFIX);
 				g_esClients[client].iWrite = Write_Name;
@@ -753,7 +759,7 @@ public int Handler_Manage(Menu menu, MenuAction action, int client, int itemNum)
 				{
 					PrintToChat(client, "%s The gang doesn't have enough cash (missing \x02%s\x01).", PREFIX, AddCommas(g_cvColorCost.IntValue - iGangCash));
 					showManageGang(client, gangId);
-					return;
+					return 0;
 				}
 				showColors(client);
 			}
@@ -767,7 +773,7 @@ public int Handler_Manage(Menu menu, MenuAction action, int client, int itemNum)
 				if (g_esClients[client].iRank < Rank_Leader)
 				{
 					showManageGang(client, gangId);
-					return;
+					return 0;
 				}
 				
 				showTransferOwnerMembers(client, gangId);
@@ -777,7 +783,7 @@ public int Handler_Manage(Menu menu, MenuAction action, int client, int itemNum)
 				if (g_esClients[client].iRank < Rank_Leader)
 				{
 					showManageGang(client, gangId);
-					return;
+					return 0;
 				}
 				
 				showDisbandGang(client);
@@ -794,6 +800,8 @@ public int Handler_Manage(Menu menu, MenuAction action, int client, int itemNum)
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 public void SQL_GangsList_CB(Database db, DBResultSet results, const char[] error, any data)
@@ -853,6 +861,8 @@ public int Handler_GangsList(Menu menu, MenuAction action, int client, int itemN
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showGangDetails(int client, int gangId)
@@ -911,6 +921,8 @@ public int Handler_GangDetails(Menu menu, MenuAction action, int client, int ite
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 public void SQL_ShowMembersList_CB(Database db, DBResultSet results, const char[] error, any data)
@@ -1015,6 +1027,8 @@ public int Handler_LeaveGang(Menu menu, MenuAction action, int client, int itemN
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 public int Handler_MembersList(Menu menu, MenuAction action, int client, int itemNum)
@@ -1034,14 +1048,14 @@ public int Handler_MembersList(Menu menu, MenuAction action, int client, int ite
 					if (g_esGangs[gangId].iSlots - g_esGangs[gangId].iMembers == 0 || g_esClients[client].iRank == Rank_Member)
 					{
 						SQL_ShowMembersList(client, gangId);
-						return;
+						return 0;
 					}
 					showInviteMembers(client);
-					return;
+					return 0;
 				}
 				
 				SQL_ShowMemberDetails(client, gangId, szItem);
-				return;
+				return 0;
 			}
 			default:
 			{
@@ -1069,6 +1083,8 @@ public int Handler_MembersList(Menu menu, MenuAction action, int client, int ite
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showInviteMembers(int client)
@@ -1111,7 +1127,7 @@ public int Handler_InviteMembers(Menu menu, MenuAction action, int client, int i
 		if (g_esGangs[gangId].iSlots - g_esGangs[gangId].iMembers <= 0 || g_esClients[client].iRank == Rank_Member)
 		{
 			SQL_ShowMembersList(client, gangId);
-			return;
+			return 0;
 		}
 		
 		g_esClients[target].iWrite = Write_None;
@@ -1136,6 +1152,8 @@ public int Handler_InviteMembers(Menu menu, MenuAction action, int client, int i
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void sendInviteToClient(int client, int gangId)
@@ -1162,19 +1180,18 @@ public int Handler_InviteClient(Menu menu, MenuAction action, int client, int it
 		int gangId = StringToInt(szItem);
 		
 		if (itemNum != 0)
-			return;
+			return 0;
 		
 		if (g_esClients[client].iGang != NO_GANG)
 		{
 			PrintToChat(client, "%s You are already in a gang.", PREFIX);
-			return;
+			return 0;
 		}
-		
 		
 		if (g_esGangs[gangId].iSlots - g_esGangs[gangId].iMembers <= 0)
 		{
 			PrintToChat(client, "%s The gang doesn't have more slots.", PREFIX);
-			return;
+			return 0;
 		}
 		
 		SQL_UserJoinGang(client, gangId, false);
@@ -1189,6 +1206,8 @@ public int Handler_InviteClient(Menu menu, MenuAction action, int client, int it
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 public void SQL_ShowMemberDetails_CB(Database db, DBResultSet results, const char[] error, any data)
@@ -1259,22 +1278,22 @@ public int Handler_MemberDetails(Menu menu, MenuAction action, int client, int i
 				if (g_esMemberDetails[client].iRank > Rank_Manager)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				if (g_esClients[client].iRank <= Rank_Manager)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				if (g_esMemberDetails[client].iRank >= g_esClients[client].iRank)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				if (g_esMemberDetails[client].iGang != g_esClients[client].iGang)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				int iRank = g_esMemberDetails[client].iRank + 1;
 				if (clientId != -1)
@@ -1297,22 +1316,22 @@ public int Handler_MemberDetails(Menu menu, MenuAction action, int client, int i
 				if (g_esMemberDetails[client].iRank == Rank_Leader || g_esMemberDetails[client].iRank == Rank_Member)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				if (g_esClients[client].iRank <= Rank_Manager)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				if (g_esMemberDetails[client].iRank >= g_esClients[client].iRank)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				if (g_esMemberDetails[client].iGang != g_esClients[client].iGang)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				int iRank = g_esMemberDetails[client].iRank - 1;
 				if (clientId != -1)
@@ -1335,7 +1354,7 @@ public int Handler_MemberDetails(Menu menu, MenuAction action, int client, int i
 				if (g_esMemberDetails[client].iRank >= g_esClients[client].iRank)
 				{
 					SQL_ShowMemberDetails(client, gangId, g_esMemberDetails[client].szAuth);
-					return;
+					return 0;
 				}
 				
 				PrintGangMessage(gangId, "\x07%s\x01 has been kicked by \x02%N\x01.", g_esMemberDetails[client].szName, client);
@@ -1346,7 +1365,7 @@ public int Handler_MemberDetails(Menu menu, MenuAction action, int client, int i
 				{
 					if (g_esClients[clientId].iGang == -1)
 					{
-						return;
+						return 0;
 					}
 					
 					g_esClients[clientId].iGang = -1;
@@ -1375,6 +1394,8 @@ public int Handler_MemberDetails(Menu menu, MenuAction action, int client, int i
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showTransferOwnerMembers(int client, int gangId)
@@ -1436,6 +1457,8 @@ public int Handler_TransferOwnerMembers(Menu menu, MenuAction action, int client
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showDisbandGang(int client)
@@ -1490,6 +1513,8 @@ public int Handler_DisbandGang(Menu menu, MenuAction action, int client, int ite
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /* */
@@ -1703,6 +1728,8 @@ public int Native_CreateDBColumn(Handle plugin, int numParams)
 	char szQuery[512];
 	g_dbDatabase.Format(szQuery, sizeof(szQuery), "SHOW COLUMNS FROM `jb_gangs` LIKE '%s'", szColumn);
 	g_dbDatabase.Query(SQL_CreateDBColumn_CB, szQuery, dPack);
+	
+	return 0;
 }
 
 /* */

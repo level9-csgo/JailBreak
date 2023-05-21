@@ -24,12 +24,12 @@
 
 GlobalForward g_fwdOnPlantMineDamage;
 
-int g_iMine[MAXPLAYERS + 1]; 		  // 2792
-int g_LastButtons[MAXPLAYERS + 1]; 	  // 3056
-bool g_bIsPlanting[MAXPLAYERS + 1];   // 3320
+int g_iMine[MAXPLAYERS + 1]; // 2792
+int g_LastButtons[MAXPLAYERS + 1]; // 3056
+bool g_bIsPlanting[MAXPLAYERS + 1]; // 3320
 Handle g_PlaceTimers[MAXPLAYERS + 1]; // 3584
-int g_iTaps[MAXPLAYERS + 1]; 		  // 3848
-float g_fFirstTap[MAXPLAYERS + 1]; 	  // 4112
+int g_iTaps[MAXPLAYERS + 1]; // 3848
+float g_fFirstTap[MAXPLAYERS + 1]; // 4112
 float g_fLastExplode[MAXPLAYERS + 1]; // 4376
 
 int g_iExplosionSprite;
@@ -228,7 +228,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			return Plugin_Continue;
 		}
 		
-		float fVelocity[3] = 0.0;
+		float fVelocity[3];
 		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", fVelocity);
 		float fVelLength = GetVectorLength(fVelocity, false);
 		if (!g_bIsPlanting[client])
@@ -434,7 +434,7 @@ public Action OnGrenadeThink(Handle timer, any data)
 		return Plugin_Stop;
 	}
 	
-	float particleOrigin[3] = 0.0;
+	float particleOrigin[3];
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", particleOrigin, 0);
 	particleOrigin[2] += 10.0;
 	CreateParticle("c4_timer_light", particleOrigin, 0.1);
@@ -511,7 +511,7 @@ void DetonateMine(int entity)
 		g_iMine[attacker] = 0;
 	}
 	
-	float fOrigin[3] = 0.0;
+	float fOrigin[3];
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", fOrigin, 0);
 	EmitAmbientSound(INITIATE_SOUND, fOrigin, entity, 75, 0, 0.5, 100, 0.0);
 	CS_CreateExplosion(attacker, 144.0, 125.0, fOrigin);
@@ -575,7 +575,7 @@ void CS_CreateExplosion(int attacker, float damage, float radius, float pos[3])
 				
 				if (current_distance <= radius)
 				{
-					float modified_damage = Sine(((radius - current_distance) / radius) * (3.14159 / 2)) * damage;
+					float modified_damage = Sine(((radius - current_distance) / radius) * (FLOAT_PI / 2)) * damage;
 					
 					Call_StartForward(g_fwdOnPlantMineDamage);
 					Call_PushCell(attacker);
@@ -598,7 +598,7 @@ void CS_CreateExplosion(int attacker, float damage, float radius, float pos[3])
 						return;
 					}
 					
-					JB_DealDamage(current_victim, attacker, modified_damage, DMG_BLAST, "weapon_hegrenade");
+					SDKHooks_TakeDamage(current_victim, attacker, attacker, modified_damage, DMG_BLAST, .bypassHooks = false);
 				}
 			}
 		}

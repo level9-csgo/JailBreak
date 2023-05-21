@@ -133,7 +133,7 @@ void ShowCountdownMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_Countdown(Menu menu, MenuAction action, int param1, int param2)
+int Handler_Countdown(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -142,7 +142,7 @@ public int Handler_Countdown(Menu menu, MenuAction action, int param1, int param
 		if (!IsClientAllowed(client))
 		{
 			PrintToChat(client, "%s Countdown menu is allowed only for \x04admins and guards\x01.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (iItemNum)
@@ -164,6 +164,8 @@ public int Handler_Countdown(Menu menu, MenuAction action, int param1, int param
 		// Delete the menu to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//

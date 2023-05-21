@@ -15,8 +15,8 @@
 
 //==========[ Settings ]==========//
 
-#define PREFIX " \x04[Play-IL]\x01"
-#define PREFIX_MENU "[Play-IL]"
+#define PREFIX " \x04[Level9]\x01"
+#define PREFIX_MENU "[Level9]"
 #define PREFIX_ERROR " \x02[Error]\x01"
 
 #define RUNES_LIBRARY_NAME "JB_RunesSystem"
@@ -409,7 +409,7 @@ public int Handler_TradeInvitation(Menu menu, MenuAction action, int param1, int
 		if (!inviter_index)
 		{
 			PrintToChat(client, "%s The \x10trade\x01 inviter is no longer in-game.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (item_position)
@@ -421,14 +421,14 @@ public int Handler_TradeInvitation(Menu menu, MenuAction action, int param1, int
 				if (g_ClientsData[client].IsTrading())
 				{
 					PrintToChat(client, "%s You're already playing a \x10trade\x01 game!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				// Make sure the inviter isn't in a middle of a trade
 				if (g_ClientsData[inviter_index].IsTrading())
 				{
 					PrintToChat(client, "%s Inviter \x07%N\x01 is already in a \x10trade\x01 game!", PREFIX_ERROR, inviter_index);
-					return;
+					return 0;
 				}
 				
 				g_ClientsData[client].Reset(false);
@@ -459,6 +459,8 @@ public int Handler_TradeInvitation(Menu menu, MenuAction action, int param1, int
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowTradeMainMenu(int client)
@@ -506,7 +508,7 @@ public int Handler_TradeMain(Menu menu, MenuAction action, int param1, int param
 					// Make sure the trade is valid
 					if (!IsValidTrade(client, g_ClientsData[client].partner_index))
 					{
-						return;
+						return 0;
 					}
 					
 					ShowAlertPanel(client, "%s Trading With - %N\n \nTrade has been succeed!", PREFIX_MENU, g_ClientsData[client].partner_index);
@@ -549,6 +551,8 @@ public int Handler_TradeMain(Menu menu, MenuAction action, int param1, int param
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowAddItemsMenu(int client)
@@ -585,7 +589,7 @@ public int Handler_AddItems(Menu menu, MenuAction action, int param1, int param2
 		{
 			PrintToChat(client, "%s You've already reached the maximum available trade items.", PREFIX_ERROR);
 			ShowTradeMainMenu(client);
-			return;
+			return 0;
 		}
 		
 		switch (item_position)
@@ -626,6 +630,8 @@ public int Handler_AddItems(Menu menu, MenuAction action, int param1, int param2
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowShopCategoriesMenu(int client)
@@ -663,7 +669,7 @@ public int Handler_ShopCategories(Menu menu, MenuAction action, int param1, int 
 		{
 			PrintToChat(client, "%s You've already reached the maximum available trade items.", PREFIX_ERROR);
 			ShowTradeMainMenu(client);
-			return;
+			return 0;
 		}
 		
 		// Initiailize the category id
@@ -702,6 +708,8 @@ public int Handler_ShopCategories(Menu menu, MenuAction action, int param1, int 
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowCategoryItemsMenu(int client, CategoryId category_id)
@@ -739,7 +747,7 @@ public int Handler_CategoryItems(Menu menu, MenuAction action, int param1, int p
 		{
 			PrintToChat(client, "%s You've already reached the maximum available trade items.", PREFIX_ERROR);
 			ShowTradeMainMenu(client);
-			return;
+			return 0;
 		}
 		
 		// Initialize the selected item id
@@ -757,7 +765,7 @@ public int Handler_CategoryItems(Menu menu, MenuAction action, int param1, int p
 		{
 			PrintToChat(client, "%s You no longer have the selected shop item, please choose another.", PREFIX_ERROR);
 			ShowCategoryItemsMenu(client, category_id);
-			return;
+			return 0;
 		}
 		
 		TradeItem TradeItemData;
@@ -783,6 +791,8 @@ public int Handler_CategoryItems(Menu menu, MenuAction action, int param1, int p
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowPersonalRunesMenu(int client)
@@ -820,7 +830,7 @@ public int Handler_PersonalRunes(Menu menu, MenuAction action, int param1, int p
 		{
 			PrintToChat(client, "%s You've already reached the maximum available trade items.", PREFIX_ERROR);
 			ShowTradeMainMenu(client);
-			return;
+			return 0;
 		}
 		
 		// Initialize the selected rune index
@@ -839,7 +849,7 @@ public int Handler_PersonalRunes(Menu menu, MenuAction action, int param1, int p
 		{
 			PrintToChat(client, "%s You no longer have the selected rune, please select another.", PREFIX_ERROR);
 			ShowPersonalRunesMenu(client);
-			return;
+			return 0;
 		}
 		
 		TradeItem TradeItemData;
@@ -865,6 +875,8 @@ public int Handler_PersonalRunes(Menu menu, MenuAction action, int param1, int p
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowAlertPanel(int client, const char[] message, any...)
@@ -884,9 +896,10 @@ void ShowAlertPanel(int client, const char[] message, any...)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int iPlayerIndex, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int iPlayerIndex, int itemNum)
 {
 	// Do Nothing
+	return 0;
 }
 
 //================================[ Functions ]================================//
@@ -898,7 +911,7 @@ any[] GetTradeItemByIndex(int client, int index)
 	return TradeItemData;
 }
 
-char GetTradeAddedItems(int client)
+char[] GetTradeAddedItems(int client)
 {
 	char formatted_items[MAX_TRADE_ADDED_ITEMS * 64];
 	
@@ -945,7 +958,7 @@ char GetTradeAddedItems(int client)
 	return formatted_items;
 }
 
-char GetTradeItemName(int client, int item_index)
+char[] GetTradeItemName(int client, int item_index)
 {
 	TradeItem TradeItemData; TradeItemData = GetTradeItemByIndex(client, item_index);
 	

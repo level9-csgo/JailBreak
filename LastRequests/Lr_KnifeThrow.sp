@@ -172,7 +172,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 	return Plugin_Handled;
 }
 
-public Action Event_WeaponFire(Event event, const char[] name, bool dontBroadcast)
+void Event_WeaponFire(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
@@ -244,7 +244,7 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 	return Plugin_Handled;
 }
 
-public Action Hook_OnStartTouch(int entity, int other)
+Action Hook_OnStartTouch(int entity, int other)
 {
 	int iThrower = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
 	if (IsValidEntity(entity) && other != iThrower)
@@ -273,6 +273,8 @@ public Action Hook_OnStartTouch(int entity, int other)
 		
 		AcceptEntityInput(entity, "Kill");
 	}
+	
+	return Plugin_Continue;
 }
 
 /*  */
@@ -312,7 +314,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -350,18 +352,23 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */
 
 /* Timers */
 
-public Action Timer_ThrowKnife(Handle hTimer, int serial)
+Action Timer_ThrowKnife(Handle hTimer, int serial)
 {
 	int client = GetClientFromSerial(serial);
-	if (client) {
+	if (client) 
+	{
 		ThrowKnife(client, RIGHT_CLICK_DAMAGE);
 	}
+	
+	return Plugin_Continue;
 }
 
 /*  */
@@ -393,7 +400,7 @@ void StartLr()
 		}
 	}
 	
-	HookEvent("weapon_fire", Event_WeaponFire, EventHookMode_Post);
+	HookEvent("weapon_fire", Event_WeaponFire);
 	
 	g_bIsLrActivated = true;
 	JB_StartLr(g_esSetupData.iPrisoner, g_esSetupData.iAgainst, LR_ICON);

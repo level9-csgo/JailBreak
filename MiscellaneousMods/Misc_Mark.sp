@@ -158,7 +158,7 @@ void ShowMarkMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_Mark(Menu menu, MenuAction action, int param1, int param2)
+int Handler_Mark(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -168,13 +168,13 @@ public int Handler_Mark(Menu menu, MenuAction action, int param1, int param2)
 		if (!IsClientAllowed(client))
 		{
 			PrintToChat(client, "%s Mark menu is allowed only for \x04admins and guards\x01.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		if (!IsPlayerAlive(client))
 		{
 			PrintToChat(client, "%s Placing markers is allowed only for \x04alive admins and guards\x01!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (item_position)
@@ -187,7 +187,7 @@ public int Handler_Mark(Menu menu, MenuAction action, int param1, int param2)
 				if (g_iNumOfMarkers >= MAX_MARKERS)
 				{
 					PrintToChat(client, "%s Maximum possible markers at once is \x04%d\x01!", PREFIX_ERROR, MAX_MARKERS);
-					return;
+					return 0;
 				}
 				
 				// Initialize the client aim position
@@ -203,7 +203,7 @@ public int Handler_Mark(Menu menu, MenuAction action, int param1, int param2)
 				if (g_iNumOfMarkers >= MAX_MARKERS)
 				{
 					PrintToChat(client, "%s Maximum possible markers at once is \x04%d\x01!", PREFIX_ERROR, MAX_MARKERS);
-					return;
+					return 0;
 				}
 				
 				// Initialize the client position
@@ -223,16 +223,20 @@ public int Handler_Mark(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//
 
-public Action Timer_DecreaseMarker(Handle hTimer)
+Action Timer_DecreaseMarker(Handle timer)
 {
 	if (g_iNumOfMarkers > 0)
 	{
 		g_iNumOfMarkers--;
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//

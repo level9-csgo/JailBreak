@@ -7,9 +7,6 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-// Chat messages prefix.
-#define PREFIX " \x04[Play-IL]\x01" 
-
 ConVar g_ClingDurationAction;
 
 // Server tickrate. (64.0|128.0|...)
@@ -30,17 +27,20 @@ public Plugin myinfo =
 };
 
 public void OnPluginStart()
-{
-	if ((g_BackstabDayIndex = JB_FindSpecialDay("Backstab Day")) == -1)
-	{
-		SetFailState("Unable to find 'Backstab' day.");
-	}
-	
+{	
 	// ConVars configuration.
 	g_ClingDurationAction = CreateConVar("jb_anti_cling_duration_action", "3.0", "Wall cling duration for an action to be made. (Seconds)", .hasMin = true, .min = 1.5, .hasMax = true, .max = 10.0);
 	
 	// Get the server tickrate once.
 	g_ServerTickrate = 1.0 / GetTickInterval();
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+	if (StrEqual(name, "JB_SpecialDays") && (g_BackstabDayIndex = JB_FindSpecialDay("Backstab Day")) == -1)
+	{
+		SetFailState("Unable to find 'Backstab' day.");
+	}
 }
 
 //================================[ Events ]================================//

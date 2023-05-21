@@ -144,6 +144,8 @@ public Action JB_OnRuneSpawn(int entity, Rune runeData, int &runeId, float origi
 		RequestFrame(RF_TeleportRuneBox, EntIndexToEntRef(entity));
 		g_IsRuneNeedToTeleport = false;
 	}
+	
+	return Plugin_Continue;
 }
 
 void RF_TeleportRuneBox(int entRef)
@@ -258,13 +260,13 @@ void showLrSetupMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -274,7 +276,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 				if (g_esSetupData.fStartOrigin[0] == 0.0 || g_esSetupData.fEndOrigin[0] == 0.0) {
 					PrintToChat(g_esSetupData.iPrisoner, "%s Please select valid race points.", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				float fResult[3], fVectorLength;
@@ -285,7 +287,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 				{
 					PrintToChat(client, "%s The distance between the points is too far!", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				StartLr();
@@ -301,7 +303,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 				{
 					PrintToChat(client, "%s You must be standing on the ground to select a starting spot!", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				GetClientAbsOrigin(client, g_esSetupData.fStartOrigin);
@@ -314,7 +316,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 				{
 					PrintToChat(client, "%s You must be standing on the ground to select an ending spot!", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				GetClientAbsOrigin(client, g_esSetupData.fEndOrigin);
@@ -340,6 +342,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */
@@ -366,9 +370,10 @@ public Action Timer_RacePreapre(Handle hTimer)
 	return Plugin_Continue;
 }
 
-public Action Timer_EndBeacon(Handle hTimer)
+Action Timer_EndBeacon(Handle hTimer)
 {
 	ActiveBeacon(g_esSetupData.fEndOrigin, { 0, 0, 255, 255 } );
+	return Plugin_Continue;
 }
 
 /*  */

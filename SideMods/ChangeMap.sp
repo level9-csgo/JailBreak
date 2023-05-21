@@ -9,9 +9,7 @@
 #define PLUGIN_AUTHOR "KoNLiG"
 #define PLUGIN_VERSION "1.00"
 
-#define PREFIX " \x04[Play-IL]\x01"
-
-Handle g_ChangeMapTimer = INVALID_HANDLE;
+#define PREFIX " \x04[Level9]\x01"
 
 ConVar g_NextMap;
 
@@ -47,13 +45,15 @@ public int OnMapVoteEnd(const char[] map)
 {
 	if (!g_IsCmInProgress)
 	{
-		return;
+		return 0;
 	}
 	
 	strcopy(g_ChosenMapName, sizeof(g_ChosenMapName), map);
-	g_ChangeMapTimer = CreateTimer(4.0, Timer_ForceChangeLevel, .flags = TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(4.0, Timer_ForceChangeLevel, .flags = TIMER_FLAG_NO_MAPCHANGE);
 	
 	CS_TerminateRound(4.0, CSRoundEnd_Draw, false);
+	
+	return 0;
 }
 
 //================================[ Commands ]================================//
@@ -89,12 +89,13 @@ public Action Command_ChangeMap(int client, int args)
 
 //================================[ Timers ]================================//
 
-public Action Timer_ForceChangeLevel(Handle timer)
+Action Timer_ForceChangeLevel(Handle timer)
 {
 	ForceChangeLevel(g_ChosenMapName, "Voted for map change.");
 	
 	g_IsCmInProgress = false;
-	g_ChangeMapTimer = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//
@@ -128,7 +129,7 @@ void OnVotePassed(int results[MAXPLAYERS + 1])
 		g_NextMap.GetString(next_map, sizeof(next_map));
 		
 		strcopy(g_ChosenMapName, sizeof(g_ChosenMapName), next_map);
-		g_ChangeMapTimer = CreateTimer(4.0, Timer_ForceChangeLevel, .flags = TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(4.0, Timer_ForceChangeLevel, .flags = TIMER_FLAG_NO_MAPCHANGE);
 		
 		CS_TerminateRound(4.0, CSRoundEnd_Draw);
 		

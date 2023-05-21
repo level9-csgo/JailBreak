@@ -265,7 +265,8 @@ public Action Hook_OnStartTouch(int entity, int other)
 		if (g_IsDayActivated)
 		{
 			if (!(1 <= other <= MaxClients)) {
-				JB_DealDamage(other, iThrower, 128.0, DMG_BULLET); // If the arrow has touched a vent/etc...
+				// If the knife has touched a vent/etc...
+				SDKHooks_TakeDamage(other, entity, iThrower, 128.0, DMG_BULLET, .bypassHooks = false);
 			}
 			else
 			{
@@ -274,7 +275,7 @@ public Action Hook_OnStartTouch(int entity, int other)
 				SetVariantString("csblood");
 				AcceptEntityInput(entity, "DispatchEffect");
 				
-				JB_DealDamage(iVictim, iThrower, ARROW_DMG, DMG_BULLET);
+				SDKHooks_TakeDamage(iVictim, entity, iThrower, ARROW_DMG, DMG_BULLET, .bypassHooks = false);
 			}
 			
 			float fEntityPos[3];
@@ -415,8 +416,8 @@ void CS_CreateExplosion(int attacker, float damage, float radius, float vec[3])
 				TeleportEntity(iCurrentVictim, NULL_VECTOR, NULL_VECTOR, fVelocity);
 				
 				if (attacker != iCurrentVictim) {
-					float fResult = Sine(((radius - fCurrentDis) / radius) * (3.14159 / 2)) * damage;
-					JB_DealDamage(iCurrentVictim, attacker, fResult, DMG_BLAST);
+					float fResult = Sine(((radius - fCurrentDis) / radius) * (FLOAT_PI / 2)) * damage;
+					SDKHooks_TakeDamage(iCurrentVictim, attacker, attacker, fResult, DMG_BLAST, .bypassHooks = false);
 				}
 			}
 		}

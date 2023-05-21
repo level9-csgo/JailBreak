@@ -23,8 +23,8 @@
 #define LEFT 0
 #define RIGHT 1
 
-#define PREFIX_MENU "[Play-IL]"
-#define PREFIX " \x04[Play-IL]\x03 "
+#define PREFIX_MENU "[Level9]"
+#define PREFIX " \x04[Level9]\x03 "
 
 new g_iPongGameSession[MAXPLAYERS + 1] =  { -1, ... };
 new g_iPadPosition[MAXPLAYERS + 1] =  { 6, ... };

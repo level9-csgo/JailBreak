@@ -2,38 +2,38 @@
 {
 	"NoAccessToCommand"
 	{
-		"en"		"{green}[Play-IL]{default} You do not have access to this command."
+		"en"		"{green}[Level9]{default} You do not have access to this command."
 	}
 	
 	"TargetNotFound"
 	{
 		"#format"   "{1:s}"
-		"en"		"{green}[Play-IL]{default} Target {green}{1}{default} not found!"
+		"en"		"{green}[Level9]{default} Target {green}{1}{default} not found!"
 	}
 
 	"select_target"
 	{
-		"en"		"[Play-IL] Shop System - Player Selection"
+		"en"		"[Level9] Shop System - Player Selection"
 	}
 
 	"select_category"
 	{
-		"en"		"[Play-IL] Shop System - Category Selection"
+		"en"		"[Level9] Shop System - Category Selection"
 	}
 	
 	"select_item"
 	{
-		"en"		"[Play-IL] Shop System - Item Selection"
+		"en"		"[Level9] Shop System - Item Selection"
 	}
 
 	"no_targets"
 	{
-		"en"		"{green}[Play-IL]{default} No appropriate targets!"
+		"en"		"{green}[Level9]{default} No appropriate targets!"
 	}
 
 	"target_left_game"
 	{
-		"en"		"{green}[Play-IL]{default} Player has left the game!"
+		"en"		"{green}[Level9]{default} Player has left the game!"
 	}
 
 	"trans_credits_operation"
@@ -44,36 +44,36 @@
 	"TransferSuccess"
 	{
 		"#format"   "{1:i},{2:N}"
-		"en"		"{green}[Play-IL]{default} You have successfully sent {green}{1}{default} credits to {green}{2}{default}!"
+		"en"		"{green}[Level9]{default} You have successfully sent {green}{1}{default} credits to {green}{2}{default}!"
 	}
 
 	"ReceiveSuccess"
 	{
 		"#format"   "{1:i},{2:N}"
-		"en"		"{green}[Play-IL]{default} You have successfully received {green}{1}{default} credits from {green}{2}{default}!"
+		"en"		"{green}[Level9]{default} You have successfully received {green}{1}{default} credits from {green}{2}{default}!"
 	}
 
 	"ReceiveCommission"
 	{
 		"#format"	"{1:i}"
-		"en"		"{green}[Play-IL]{default} Withholding fee: {green}{1} {default}credits"
+		"en"		"{green}[Level9]{default} Withholding fee: {green}{1} {default}credits"
 	}
 
 	"receive_item"
 	{
 		"#format"   "{1:N},{2:s},{3:s}"
-		"en"		"{green}[Play-IL]{default} You have received {green}\"{3}\"{default} to the category {green}\"{2}\"{default} from {green}{1}{default}!"
+		"en"		"{green}[Level9]{default} You have received {green}\"{3}\"{default} to the category {green}\"{2}\"{default} from {green}{1}{default}!"
 	}
 
 	"already_has"
 	{
 		"#format"   "{1:N}"
-		"en"		"{green}[Play-IL]{default} Player {green}{1}{default} already has the item!"
+		"en"		"{green}[Level9]{default} Player {green}{1}{default} already has the item!"
 	}
 	
 	"no_item"
 	{
-		"en"		"{green}[Play-IL]{default} The item isn't exists in your inventory!"
+		"en"		"{green}[Level9]{default} The item isn't exists in your inventory!"
 	}
 
 	"IncorrectCredits"
@@ -145,27 +145,27 @@
 
 	"give_credits_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Give Credits"
+		"en"		"[Level9] Shop System - Give Credits"
 	}
 
 	"take_credits_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Take Credits"
+		"en"		"[Level9] Shop System - Take Credits"
 	}
 	
 	"set_credits_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Set Credits"
+		"en"		"[Level9] Shop System - Set Credits"
 	}
 
 	"give_items_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Give Items"
+		"en"		"[Level9] Shop System - Give Items"
 	}
 	
 	"take_items_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Take Items"
+		"en"		"[Level9] Shop System - Take Items"
 	}
 
 	"give_credits_menu_button"
@@ -195,102 +195,102 @@
 
 	"give_item_success"
 	{
-		"en"		"{green}[Play-IL]{default} You have successfuly gave the item!"
+		"en"		"{green}[Level9]{default} You have successfuly gave the item!"
 	}
 
 	"take_item_success"
 	{
-		"en"		"{green}[Play-IL]{default} You have successfuly took the item!"
+		"en"		"{green}[Level9]{default} You have successfuly took the item!"
 	}
 
 	"give_credits_success"
 	{
 		"#format"   "{1:s},{2:s}"
-		"en"		"{green}[Play-IL]{default} You have sent {1} credits to {green}{2}{default}!"
+		"en"		"{green}[Level9]{default} You have sent {1} credits to {green}{2}{default}!"
 	}
 	
 	"remove_credits_success"
 	{
 		"#format"   "{1:s},{2:s}"
-		"en"		"{green}[Play-IL]{default} You have took {1} credits from {green}{2}{default}!"
+		"en"		"{green}[Level9]{default} You have took {1} credits from {green}{2}{default}!"
 	}
 
 	"set_credits_success"
 	{
 		"#format"   "{1:s},{2:s}"
-		"en"		"{green}[Play-IL]{default} You have set {1} credits to {green}{2}{default}!"
+		"en"		"{green}[Level9]{default} You have set {1} credits to {green}{2}{default}!"
 	}
 
 	"view_own_credits"
 	{
 		"#format"   "{1:s}"
-		"en"		"{green}[Play-IL]{default} You have {lightblue}{1}{default} credits!"
+		"en"		"{green}[Level9]{default} You have {lightblue}{1}{default} credits!"
 	}
 	
 	"view_other_credits"
 	{
 		"#format"   "{1:N},{2:s}"
-		"en"		"{green}[Play-IL]{default} {lightred}{1}{default} have {lightblue}{2}{default} credits!"
+		"en"		"{green}[Level9]{default} {lightred}{1}{default} have {lightblue}{2}{default} credits!"
 	}
 	
 	"set_you_credits"
 	{
 		"#format"   "{1:s}"
-		"en"		"{green}[Play-IL]{default} Admin has set your credits to {green}{1}{default}!"
+		"en"		"{green}[Level9]{default} Admin has set your credits to {green}{1}{default}!"
 	}
 	
 	"take_you_credits"
 	{
 		"#format"   "{1:s}"
-		"en"		"{green}[Play-IL]{default} Admin has took {green}{1}{default} credits!"
+		"en"		"{green}[Level9]{default} Admin has took {green}{1}{default} credits!"
 	}
 	
 	"give_you_credits"
 	{
 		"#format"   "{1:s}"
-		"en"		"{green}[Play-IL]{default} Admin has gave you {green}{1}{default} credits!"
+		"en"		"{green}[Level9]{default} Admin has gave you {green}{1}{default} credits!"
 	}
 	
 	"EmptyInventory"
 	{
-		"en"		"{green}[Play-IL]{default} Your inventory is empty!"
+		"en"		"{green}[Level9]{default} Your inventory is empty!"
 	}
 
 	"EmptyShop"
 	{
-		"en"		"{green}[Play-IL]{default} Shop is empty!"
+		"en"		"{green}[Level9]{default} Shop is empty!"
 	}
 
 	"EmptyCategory"
 	{
-		"en"		"{green}[Play-IL]{default} The category is empty!"
+		"en"		"{green}[Level9]{default} The category is empty!"
 	}
 
 	"NothingToLuck"
 	{
-		"en"		"{green}[Play-IL]{default} There is nothing that you can luck!"
+		"en"		"{green}[Level9]{default} There is nothing that you can luck!"
 	}
 
 	"Looser"
 	{
-		"en"		"{green}[Play-IL]{default} No luck! You have got nothing :("
+		"en"		"{green}[Level9]{default} No luck! You have got nothing :("
 	}
 
 	"Lucker"
 	{
 		"#format"   "{1:s},{2:s}"
-		"en"		"{green}[Play-IL]{default} You have a lucky day :). You have got {green}\"{2}\"{default} to the category {green}\"{1}\"{default}."
+		"en"		"{green}[Level9]{default} You have a lucky day :). You have got {green}\"{2}\"{default} to the category {green}\"{1}\"{default}."
 	}
 
 	"ItemElapsed"
 	{
 		"#format"   "{1:s},{2:s}"
-		"en"		"{green}[Play-IL]{default} Item {green}\"{2}\"{default} from category {green}\"{1}\"{default} has been elapsed!"
+		"en"		"{green}[Level9]{default} Item {green}\"{2}\"{default} from category {green}\"{1}\"{default} has been elapsed!"
 	}
 
 	"trans_credits_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Transfer Credits"
+		"en"		"[Level9] Shop System - Transfer Credits"
 	}
 
 	"trans_credits_menu_item"
@@ -413,23 +413,23 @@
 
 	"MainMenuTitle"
 	{
-		"en"		"[Play-IL] Shop System - Main Menu"
+		"en"		"[Level9] Shop System - Main Menu"
 	}
 	
 	"Shop"
 	{
-		"en"		"[Play-IL] Shop System - Buying Items"
+		"en"		"[Level9] Shop System - Buying Items"
 	}
 
 	"shop_viewing_category"
 	{
 		"#format"   "{1:s}"
-		"en"		"[Play-IL] Shop System - Viewing {1}"
+		"en"		"[Level9] Shop System - Viewing {1}"
 	}
 	
 	"item_info_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Viewing Item"
+		"en"		"[Level9] Shop System - Viewing Item"
 	}
 	
 	"credits"
@@ -460,7 +460,7 @@
 	
 	"inventory_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Personal Inventory"
+		"en"		"[Level9] Shop System - Personal Inventory"
 	}
 	
 	"category"
@@ -496,7 +496,7 @@
 
 	"functions_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Functions"
+		"en"		"[Level9] Shop System - Functions"
 	}
 	
 	"functions_menu_item"
@@ -511,7 +511,7 @@
 
 	"admin_panel_menu_title"
 	{
-		"en"		"[Play-IL] Shop System - Admin Panel"
+		"en"		"[Level9] Shop System - Admin Panel"
 	}
 	
 	"admin_panel_menu_item"
@@ -531,29 +531,29 @@
 	
 	"NotEnoughCredits"
 	{
-		"en"		"{green}[Play-IL] {default}Insufficient credits!"
+		"en"		"{green}[Level9] {default}Insufficient credits!"
 	}
 
 	"PreviewIn"
 	{
 		"#format"   "{1:i}"
-		"en"		"{green}[Play-IL] {default}Preview will be available in {1} sec.!"
+		"en"		"{green}[Level9] {default}Preview will be available in {1} sec.!"
 	}
 
 	"DataLoaded"
 	{
 		"#format"   "{1:s}"
-		"en"		"{green}[Play-IL] {default}Your data of the shop has been loaded! Type {green}/{1}{default} to open the shop menu!"
+		"en"		"{green}[Level9] {default}Your data of the shop has been loaded! Type {green}/{1}{default} to open the shop menu!"
 	}
 	
 	"DataLoaded2"
 	{
-		"en"		"{green}[Play-IL] {default}Your data of the shop has been loaded!"
+		"en"		"{green}[Level9] {default}Your data of the shop has been loaded!"
 	}
 	
 	"DataLoading"
 	{
-		"en"		"{green}[Play-IL] {default}Your data is being loaded!"
+		"en"		"{green}[Level9] {default}Your data is being loaded!"
 	}
 	
 	"y."

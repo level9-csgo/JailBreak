@@ -2,6 +2,7 @@
 #pragma newdecls required
 
 #include <sourcemod>
+#include <sdkhooks>
 #include <cstrike>
 #include <JailBreak>
 #include <JB_SpecialDays>
@@ -319,7 +320,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		{
 			thrower_index = GetClientOfUserId(CurrentSmokeData.thrower_userid);
 			
-			JB_DealDamage(client, !thrower_index ? client : thrower_index, GetRandomFloat(7.0, 15.0), DMG_ACID);
+			SDKHooks_TakeDamage(client, !thrower_index ? client : thrower_index, !thrower_index ? client : thrower_index, GetRandomFloat(7.0, 15.0), DMG_ACID, .bypassHooks = false);
 		}
 	}
 }

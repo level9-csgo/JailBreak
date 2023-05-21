@@ -42,6 +42,7 @@ public void OnLibraryAdded(const char[] name)
 Action Listener_LookAtWeapon(int client, const char[] command, int argc)
 {
 	ToggleFlashlight(client);
+	return Plugin_Continue;
 }
 
 void ToggleFlashlight(int client)

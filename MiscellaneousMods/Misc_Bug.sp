@@ -171,7 +171,7 @@ void ShowBugsListMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_BugsList(Menu menu, MenuAction action, int param1, int param2)
+int Handler_BugsList(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -190,7 +190,7 @@ public int Handler_BugsList(Menu menu, MenuAction action, int param1, int param2
 			// Display the list menu again
 			ShowBugsListMenu(client);
 			
-			return;
+			return 0;
 		}
 		
 		ShowBugDetailMenu(client, bug_index);
@@ -200,6 +200,8 @@ public int Handler_BugsList(Menu menu, MenuAction action, int param1, int param2
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowBugDetailMenu(int client, int bug_index)
@@ -226,7 +228,7 @@ void ShowBugDetailMenu(int client, int bug_index)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_BugDetail(Menu menu, MenuAction action, int param1, int param2)
+int Handler_BugDetail(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -245,7 +247,7 @@ public int Handler_BugDetail(Menu menu, MenuAction action, int param1, int param
 			// Display the list menu again
 			ShowBugsListMenu(client);
 			
-			return;
+			return 0;
 		}
 		
 		// Initialize the bug data struct by the given index
@@ -294,6 +296,8 @@ public int Handler_BugDetail(Menu menu, MenuAction action, int param1, int param
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Key Values ]================================//
@@ -440,7 +444,7 @@ int GetClientFromAuthID(const char[] auth_id)
 	return -1;
 }
 
-char GetRandomString(char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234556789")
+char[] GetRandomString(char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234556789")
 {
 	char randomized_string[8];
 	

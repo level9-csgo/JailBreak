@@ -35,6 +35,8 @@ public Action JB_OnRunePickup(int client, int entity, Rune runeData, int &runeId
 		// Add quest progress points for the client who picked up the rune box
 		JB_AddQuestProgress(client, g_QuestIndex);
 	}
+	
+	return Plugin_Continue;
 }
 
 public void JB_OnQuestRewardDisplay(int client, int quest_id, char[] display_text, int length, ExecuteType execute_type)

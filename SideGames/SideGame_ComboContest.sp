@@ -154,7 +154,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 //================================[ Timers ]================================//
 
-public Action Timer_HintText(Handle hTimer)
+Action Timer_HintText(Handle timer)
 {
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
@@ -163,6 +163,8 @@ public Action Timer_HintText(Handle hTimer)
 			PrintClientButtons(current_client);
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//

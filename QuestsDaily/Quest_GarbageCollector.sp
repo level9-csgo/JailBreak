@@ -32,6 +32,8 @@ public bool JB_OnRuneSell(int client, int clientRuneIndex, int profit)
 {
 	// Add quest progress points for the client who sold the rune
 	JB_AddQuestProgress(client, g_QuestIndex);
+	
+	return false;
 }
 
 public void JB_OnQuestRewardDisplay(int client, int quest_id, char[] display_text, int length, ExecuteType execute_type)

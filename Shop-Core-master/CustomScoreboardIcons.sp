@@ -179,4 +179,6 @@ public Action Timer_PreviewIconRepeat(Handle timer, DataPack dp)
 {
 	// First cell: client | Second cell: icon index
 	PreviewIcon(dp.ReadCell(), dp.ReadCell(), false);
+	
+	return Plugin_Continue;
 } 

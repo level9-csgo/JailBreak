@@ -109,14 +109,15 @@ void ShowAlertPanel(const char[] message, any...)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
 {
 	/* Do Nothing */
+	return 0;
 }
 
 //================================[ Functions ]================================//
 
-char GetRandomString(int length = 32, char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234556789")
+char[] GetRandomString(int length = 32, char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234556789")
 {
 	char szString[32];
 	

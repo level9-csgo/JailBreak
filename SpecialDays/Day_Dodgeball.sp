@@ -84,7 +84,7 @@ public void JB_OnSpecialDayStart(int specialDayId)
 	{
 		g_cvFallDamageScale.IntValue = 0;
 		
-		HookEvent("grenade_thrown", Event_GrenadeThrow, EventHookMode_Post);
+		HookEvent("grenade_thrown", Event_GrenadeThrow);
 		
 		int iUpgradeIndex = JB_FindGangUpgrade("healthpoints");
 		if (iUpgradeIndex != -1) {
@@ -106,11 +106,11 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 		{
 			for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
 			{
-				if (IsClientInGame(iCurrentClient)) 
+				if (IsClientInGame(iCurrentClient))
 				{
-					SetEntityCollisionGroup(client, COLLISION_GROUP_DEBRIS_TRIGGER);
-					EntityCollisionRulesChanged(client);
-
+					SetEntityCollisionGroup(iCurrentClient, COLLISION_GROUP_DEBRIS_TRIGGER);
+					EntityCollisionRulesChanged(iCurrentClient);
+					
 					SetEntProp(iCurrentClient, Prop_Data, "m_iMaxHealth", 100);
 				}
 			}
@@ -176,14 +176,16 @@ Action Hook_OnStartTouch(int entity, int other)
 		SetEntProp(other, Prop_Send, "m_ArmorValue", 0);
 		
 		// Eliminate the victim.
-		SDKHooks_TakeDamage(other, thrower, thrower, float(GetClientHealth(other)), entity);
+		SDKHooks_TakeDamage(other, thrower, thrower, float(GetClientHealth(other)), entity, .bypassHooks = false);
 	}
 	
 	// Remove the entity from the world.
 	AcceptEntityInput(entity, "Kill");
+	
+	return Plugin_Continue;
 }
 
-public Action Event_GrenadeThrow(Event event, const char[] name, bool dontBroadcast)
+void Event_GrenadeThrow(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	DisarmPlayer(client);

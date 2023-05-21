@@ -941,7 +941,7 @@ public Action Timer_PrintBotMessage(Handle timer, DataPack dp)
 	{
 		if (IsClientInGame(current_client))
 		{
-			CPrintToChat(current_client, "%s {%s}%s :\x01 %s", BOT_PREFIX, GetClientTeam(current_client) == CS_TEAM_T ? "red" : "blue", bot_name, message);
+			CPrintToChat(current_client, false, "%s {%s}%s :\x01 %s", BOT_PREFIX, GetClientTeam(current_client) == CS_TEAM_T ? "red" : "blue", bot_name, message);
 		}
 	}
 	return Plugin_Continue;

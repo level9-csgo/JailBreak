@@ -124,9 +124,10 @@ void showAlertPanel(char[] szMessage, int iTime = MENU_TIME_FOREVER)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
 {
 	/* Do Nothing */
+	return 0;
 }
 
 /*  */
@@ -155,20 +156,22 @@ public Action Timer_FirstWrite(Handle hTimer)
 	return Plugin_Continue;
 }
 
-public Action Timer_EndGame(Handle hTimer)
+Action Timer_EndGame(Handle timer)
 {
 	g_szRandomWrite = "";
 	JB_SetVoteCTWinner(g_iVoteId, -1);
 	
 	g_bIsEventEnabled = false;
 	g_hEndGameTimer = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
 /*  */
 
 /* Functions */
 
-char GetRandomString(int length = 32, char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234556789")
+char[] GetRandomString(int length = 32, char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234556789")
 {
 	char szString[32];
 	

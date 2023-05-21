@@ -20,7 +20,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	g_isHooked = true;
-	HookEvent("player_spawn", OnSpawn, EventHookMode_Post);
+	HookEvent("player_spawn", OnSpawn);
 	
 	sm_noblock = CreateConVar("sm_noblock", "1", "Removes player vs. player collisions", FCVAR_NOTIFY | FCVAR_REPLICATED);
 	HookConVarChange(sm_noblock, OnConVarChange);
@@ -46,7 +46,7 @@ public void OnConVarChange(ConVar convar, const char[] oldValue, const char[] ne
 	}
 }
 
-public Action OnSpawn(Event event, const char[] name, bool dontBroadcast)
+void OnSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	

@@ -158,7 +158,7 @@ void ShowGlowManagementMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_GlowManagement(Menu menu, MenuAction action, int param1, int param2)
+int Handler_GlowManagement(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -168,7 +168,7 @@ public int Handler_GlowManagement(Menu menu, MenuAction action, int param1, int 
 		if (!IsClientAllowed(client))
 		{
 			PrintToChat(client, "%s Glow management menu allowed for alive guards or admins.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (item_position)
@@ -191,7 +191,7 @@ public int Handler_GlowManagement(Menu menu, MenuAction action, int param1, int 
 				if (aimed_target <= 0)
 				{
 					PrintToChat(client, "%s You aren't aiming on any player!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				GlowPlayer(aimed_target, client, g_ClientsData[client].glow_color_index);
@@ -231,7 +231,7 @@ public int Handler_GlowManagement(Menu menu, MenuAction action, int param1, int 
 				if (!target_index)
 				{
 					PrintToChat(client, "%s The selected player is no longer in-game!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				GlowPlayer(target_index, client);
@@ -243,6 +243,8 @@ public int Handler_GlowManagement(Menu menu, MenuAction action, int param1, int 
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowPlayerListMenu(int client)
@@ -287,7 +289,7 @@ public int Handler_PlayerList(Menu menu, MenuAction action, int param1, int para
 		if (!IsClientAllowed(client))
 		{
 			PrintToChat(client, "%s Glow management menu allowed for alive guards or admins.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		char item_info[16];
@@ -299,7 +301,7 @@ public int Handler_PlayerList(Menu menu, MenuAction action, int param1, int para
 		if (!target_index)
 		{
 			PrintToChat(client, "%s The selected player is no longer in-game!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		GlowPlayer(target_index, client, g_ClientsData[client].glow_color_index);
@@ -313,6 +315,8 @@ public int Handler_PlayerList(Menu menu, MenuAction action, int param1, int para
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowRandomTeamsMenu(int client)
@@ -343,7 +347,7 @@ public int Handler_RandomTeams(Menu menu, MenuAction action, int param1, int par
 		if (!IsClientAllowed(client))
 		{
 			PrintToChat(client, "%s Glow management menu allowed for alive guards or admins.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (item_position)
@@ -399,6 +403,8 @@ public int Handler_RandomTeams(Menu menu, MenuAction action, int param1, int par
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Functions ]================================//

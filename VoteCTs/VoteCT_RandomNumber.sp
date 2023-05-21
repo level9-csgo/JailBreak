@@ -160,9 +160,10 @@ void showAlertPanel(char[] szMessage, int iTime = MENU_TIME_FOREVER)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
 {
 	/* Do Nothing */
+	return 0;
 }
 
 /*  */

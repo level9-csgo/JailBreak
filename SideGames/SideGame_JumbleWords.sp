@@ -137,9 +137,10 @@ void ShowAlertPanel(const char[] message, any...)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
 {
 	// Do Nothing
+	return 0;
 }
 
 //================================[ Key Values ]================================//

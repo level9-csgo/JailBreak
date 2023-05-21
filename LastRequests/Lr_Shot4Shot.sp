@@ -48,8 +48,8 @@ enum struct Setup
 
 Setup g_esSetupData;
 
-char g_szWeaponNames[MAX_WEAPONS][] =  { "Desert Eagle", "AWP", "SSG 08", "AK-47", "M4A4", "USP-S", "R8 Revolver" };
-char g_szWeaponTags[MAX_WEAPONS][] =  { "weapon_deagle", "weapon_awp", "weapon_ssg08", "weapon_ak47", "weapon_m4a1", "weapon_usp_silencer", "weapon_revolver" };
+char g_szWeaponNames[MAX_WEAPONS][] = { "Desert Eagle", "AWP", "SSG 08", "AK-47", "M4A4", "USP-S", "R8 Revolver" };
+char g_szWeaponTags[MAX_WEAPONS][] = { "weapon_deagle", "weapon_awp", "weapon_ssg08", "weapon_ak47", "weapon_m4a1", "weapon_usp_silencer", "weapon_revolver" };
 
 bool g_bIsLrActivated;
 
@@ -249,6 +249,8 @@ public Action Hook_OnPreThink(int client)
 			}
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
 /*  */
@@ -292,7 +294,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -344,6 +346,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */

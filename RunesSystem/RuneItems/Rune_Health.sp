@@ -35,7 +35,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
+	HookEvent("player_spawn", Event_PlayerSpawn);
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -63,13 +63,15 @@ public void JB_OnClientSetupSpecialDay(int client, int specialDayId)
 	}
 }
 
-public Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	if (g_IsRuneEnabled)
 	{
 		int client = GetClientOfUserId(event.GetInt("userid"));
-		
-		ApplyRuneBenefit(client);
+		if (client)
+		{
+			ApplyRuneBenefit(client);
+		}
 	}
 }
 

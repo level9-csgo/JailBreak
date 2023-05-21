@@ -122,11 +122,11 @@ public void OnPluginStart()
 	RegAdminCmd("sm_voteday", Command_VoteDay, ADMFLAG_BAN, "Starts a special day voting.");
 	RegAdminCmd("sm_stopday", Command_StopDay, ADMFLAG_BAN, "Stops the current special day operation that is running.");
 	
-	HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_Post);
-	HookEvent("round_end", Event_RoundEnd, EventHookMode_Post);
-	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Post);
-	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
-	HookEvent("player_connect_full", Event_PlayerConnectFull, EventHookMode_Post);
+	HookEvent("round_freeze_end", Event_RoundFreezeEnd);
+	HookEvent("round_end", Event_RoundEnd);
+	HookEvent("player_death", Event_PlayerDeath);
+	HookEvent("player_spawn", Event_PlayerSpawn);
+	HookEvent("player_connect_full", Event_PlayerConnectFull);
 }
 
 public void OnPluginEnd()
@@ -144,6 +144,23 @@ public void OnClientPostAdminCheck(int client)
 	g_esClientsData[client].Reset();
 }
 
+public void OnClientDisconnect_Post(int client)
+{
+	if (g_bIsSpecialDayRunning && g_hStartCountDownTimer == INVALID_HANDLE)
+	{		
+		int iAlivePlayers = GetOnlineTeamCount(CS_TEAM_T);
+		
+		if (iAlivePlayers == 1 && !g_cvRespawnOnDeath.BoolValue)
+		{
+			CreateTimer(0.1, Timer_EndSpecialDay);
+		}
+		else if (iAlivePlayers > 2 && Gangs_GetPlayerGang(client) != NO_GANG && !g_cvRespawnOnDeath.BoolValue)
+		{
+			PrintSpecialDayStatus();
+		}
+	}
+}
+
 public void OnMapStart()
 {
 	if (g_bIsSpecialDayRunning && g_iCurrentDay != -1)
@@ -154,7 +171,7 @@ public void OnMapStart()
 	ResetValues();
 }
 
-public Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!g_bIsSpecialDayRunning && !g_bIsSpecialDayVoteOn && !g_IsSetupRunning && JB_GetDay() == SPECIAL_DAY_DAY && !JB_IsVoteCTRunning())
 	{
@@ -169,7 +186,7 @@ public Action Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroa
 	}
 }
 
-public Action Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	if (g_bIsSpecialDayRunning && g_iCurrentDay != -1)
 	{
@@ -191,7 +208,7 @@ void RF_UpdateDay()
 	JB_SetDay(Day_Sunday);
 }
 
-public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	if (g_bIsSpecialDayRunning && g_hStartCountDownTimer == INVALID_HANDLE)
 	{
@@ -237,7 +254,7 @@ public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast
 	}
 }
 
-public Action Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
 {
 	if (g_bIsSpecialDayRunning)
 	{
@@ -458,28 +475,28 @@ void showDaysListMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_DaysList(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DaysList(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
 		if (g_bIsSpecialDayRunning) {
 			PrintToChat(client, "%s There is another Special Day game running!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		if (g_bIsSpecialDayVoteOn) {
 			PrintToChat(client, "%s There is a vote Special Day running!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		if (JB_IsVoteCTRunning()) {
 			PrintToChat(client, "%s There is a \x0CVote CT\x01 running!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		if (JB_IsLrRunning()) {
 			PrintToChat(client, "%s There is a last request game running!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		char szItem[16];
@@ -530,6 +547,8 @@ public int Handler_DaysList(Menu menu, MenuAction action, int client, int itemNu
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showSpecialDayVotePanel()
@@ -561,13 +580,13 @@ void showSpecialDayVotePanel()
 	delete panel;
 }
 
-public int Handler_SpecialDayVote(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_SpecialDayVote(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
 		if (!g_bIsSpecialDayVoteOn)
 		{
-			return;
+			return 0;
 		}
 		
 		itemNum -= 1; // Panel's item count starts from 1
@@ -599,6 +618,8 @@ public int Handler_SpecialDayVote(Menu menu, MenuAction action, int client, int 
 		EmitSoundToClient(client, MENU_ITEM_SOUND);
 		g_esClientsData[client].bIsClientVoted = true;
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//
@@ -693,15 +714,17 @@ public Action Timer_StartCountdown(Handle hTimer, int specialDayIndex)
 	}
 	
 	g_iTimer--;
-	PrintCenterTextAll(" %s starts in: <font color='#27AFD0'>%d Seconds</font>", SpecialDayData.szName, g_iTimer);
+	PrintCenterTextAll(" %s starts in: <font color='#27AFD0'>%ds</font>", SpecialDayData.szName, g_iTimer);
 	return Plugin_Continue;
 }
 
-public Action Timer_EndSpecialDay(Handle hTimer)
+Action Timer_EndSpecialDay(Handle hTimer)
 {
 	if (g_iCurrentDay != -1 && GetOnlineTeamCount(CS_TEAM_T) <= 1) {
 		EndSpecialDay(g_iCurrentDay);
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//
@@ -778,7 +801,7 @@ void StartSpecialDayCountdown(int specialDayIndex)
 	g_iTimer = g_cvStartCountdown.IntValue;
 	g_hStartCountDownTimer = CreateTimer(1.0, Timer_StartCountdown, specialDayIndex, TIMER_REPEAT);
 	
-	PrintCenterTextAll(" %s starts in: <font color='#27AFD0'>%d Seconds</font>", GetSpecialDayByIndex(specialDayIndex).szName, g_iTimer);
+	PrintCenterTextAll(" %s starts in: <font color='#27AFD0'>%ds</font>", GetSpecialDayByIndex(specialDayIndex).szName, g_iTimer);
 	g_bIsSpecialDayRunning = true;
 	g_bIsSpecialDayVoteOn = false;
 	
@@ -1043,7 +1066,7 @@ void ResetValues()
 	g_cvRespawnOnDeath.BoolValue = false;
 }
 
-char GetProgressBar(int value, int all)
+char[] GetProgressBar(int value, int all)
 {
 	char szProgress[PROGRESS_BAR_LENGTH * 6];
 	int iLength = PROGRESS_BAR_LENGTH;

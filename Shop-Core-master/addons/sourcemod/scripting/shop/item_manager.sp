@@ -1877,7 +1877,7 @@ void ItemManager_OnPlayerItemElapsed(int client, int item_id)
 	if (plugin == null)
 		return;
 	
-	DataPack dpCallback = dpCallback = view_as<DataPack>(h_KvItems.GetNum("callbacks", 0));
+	DataPack dpCallback = view_as<DataPack>(h_KvItems.GetNum("callbacks", 0));
 	if (dpCallback == null)
 		ThrowNativeError(SP_ERROR_NATIVE, "Callbacks for this item not found");
 	
@@ -1937,7 +1937,7 @@ stock void ItemManager_OnUseToggleCategory(int client, int category_id)
 		
 		Handle plugin = view_as<Handle>(h_KvItems.GetNum("plugin", 0));
 		
-		DataPack dpCallback = dpCallback = view_as<DataPack>(h_KvItems.GetNum("callbacks", 0));
+		DataPack dpCallback = view_as<DataPack>(h_KvItems.GetNum("callbacks", 0));
 		if (dpCallback == null)
 			ThrowNativeError(SP_ERROR_NATIVE, "Callbacks for this item not found");
 		

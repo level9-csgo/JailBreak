@@ -213,13 +213,12 @@ public Action Event_PlayerBlind(Event event, const char[] name, bool dontBroadca
 	return Plugin_Handled;
 }
 
-public Action Event_WeaponReload(Event event, const char[] name, bool dontBroadcast)
+void Event_WeaponReload(Event event, const char[] name, bool dontBroadcast)
 {
-	int iPrimary = GetPlayerWeaponSlot(GetClientOfUserId(event.GetInt("userid")), CS_SLOT_PRIMARY);
-	
-	if (iPrimary != -1)
+	int primary = GetPlayerWeaponSlot(GetClientOfUserId(event.GetInt("userid")), CS_SLOT_PRIMARY);
+	if (primary != -1)
 	{
-		SetEntProp(iPrimary, Prop_Send, "m_iClip1", 10);
+		SetEntProp(primary, Prop_Send, "m_iClip1", 10);
 	}
 }
 
