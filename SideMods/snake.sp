@@ -4,7 +4,7 @@
 
 #define PLUGIN_VERSION "1.0"
 
-#define PREFIX " \x04[Play-IL]\x03 "
+#define PREFIX " \x04[Level9]\x03 "
 
 #define FIELD_X 14
 #define FIELD_Y 11
@@ -21,7 +21,7 @@
 #define WORM_MIN_LENGTH 3
 #define FOOD_SCORE 100
 
-#define PREFIX_MENU "[Play-IL]"
+#define PREFIX_MENU "[Level9]"
 
 #define SIZE_OF_INT 2147483647 // without 0
 
@@ -47,8 +47,8 @@ new g_iWormLength[MAXPLAYERS + 1];
 new g_iNomNomPosition[MAXPLAYERS + 1][2];
 new g_iAwesomeNomNomPosition[MAXPLAYERS + 1][2];
 new Handle:g_hGameThink[MAXPLAYERS + 1] =  { INVALID_HANDLE, ... };
-new g_iNextAwesomeNomNom[MAXPLAYERS + 1] = 0;
-new g_iAwesomeNomNomLifetime[MAXPLAYERS + 1] = 0;
+new g_iNextAwesomeNomNom[MAXPLAYERS + 1];
+new g_iAwesomeNomNomLifetime[MAXPLAYERS + 1];
 new WormMode:g_iSnakeMode[MAXPLAYERS + 1];
 
 new g_iScore[MAXPLAYERS + 1];
@@ -123,6 +123,8 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 	}
 	
 	g_iButtons[client] = buttons;
+	
+	return Plugin_Continue;
 }
 
 public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)

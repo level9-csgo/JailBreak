@@ -143,16 +143,18 @@ public Action Timer_DisableSpawnProtection(Handle timer)
 	}
 	
 	g_PrisonersFreezeTimer = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
-public Action Timer_PerformModFeatures(Handle timer, int serial)
+Action Timer_PerformModFeatures(Handle timer, int serial)
 {
 	int client = GetClientFromSerial(serial);
 	
 	// Make sure the client index is in-game and valid
 	if (!client)
 	{
-		return;
+		return Plugin_Continue;
 	}
 	
 	// If the client is a prisoner, and the freeze timer is running / the freeze period is running, perform the effects on him
@@ -162,6 +164,7 @@ public Action Timer_PerformModFeatures(Handle timer, int serial)
 	}
 	
 	PerformVoiceEdit(client);
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//

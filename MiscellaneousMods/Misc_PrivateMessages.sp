@@ -4,7 +4,7 @@
 #include <sourcemod>
 #include <basecomm>
 
-#define PREFIX " \x04[Play-IL]\x01"
+#define PREFIX " \x04[Level9]\x01"
 
 #define MESSAGE_COOLDOWN 1.5
 
@@ -40,7 +40,7 @@ public Plugin myinfo =
 	author = "KoNLiG", 
 	description = "Private messages system, futures blockpm and message reply.", 
 	version = "1.0.0", 
-	url = "play-il.co.il"
+	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
 public void OnPluginStart()

@@ -29,11 +29,18 @@ public void OnLibraryAdded(const char[] name)
 
 public Action JB_OnPlantMineDamage(int attacker, int victim, float &damage)
 {
+	if (!(1 <= attacker <= MaxClients))
+	{
+		return Plugin_Continue;
+	}
+	
 	if (GetClientHealth(victim) <= RoundToFloor(damage))
 	{
 		// Add quest progress points for the killer
 		JB_AddQuestProgress(attacker, g_QuestIndex);
 	}
+	
+	return Plugin_Continue;
 }
 
 public void JB_OnQuestRewardDisplay(int client, int quest_id, char[] display_text, int length, ExecuteType execute_type)

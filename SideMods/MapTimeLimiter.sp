@@ -7,7 +7,7 @@
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
-#define PREFIX " \x04[Play-IL]\x01"
+#define PREFIX " \x04[Level9]\x01"
 
 native void RTV_ForceVote();
 

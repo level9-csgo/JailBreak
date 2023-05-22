@@ -10,8 +10,8 @@
 
 //==========[ Settings ]==========//
 
-#define PREFIX " \x04[Play-IL]\x01"
-#define PREFIX_MENU "[Play-IL]"
+#define PREFIX " \x04[Level9]\x01"
+#define PREFIX_MENU "[Level9]"
 #define PREFIX_ERROR " \x02[Error]\x01"
 
 #define CANCEL_SYMBOL "-1"
@@ -175,7 +175,7 @@ Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast
 	// Get the client index from the event structure
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
-	if (!IsClientInGame(client))
+	if (!client || !IsClientInGame(client))
 	{
 		return Plugin_Continue;
 	}

@@ -24,11 +24,6 @@ public Plugin myinfo =
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
-public void OnPluginStart()
-{
-	SetupConfigLoad();
-}
-
 /*  */
 
 /* Events */
@@ -100,16 +95,20 @@ void LoadFilesPaths(File hFile)
 	}
 }
 
-void GetFileExt(const char[] path, char[] buffer, int maxlength)
+char[] GetFileExt(const char[] path)
 {
-	int idx = FindCharInString(path, 'c', true);
+	char buffer[8];
+	
+	int idx = FindCharInString(path, '.', true);
 	if (idx != -1)
 	{
-		strcopy(buffer, maxlength, path[idx]);
+		strcopy(buffer, sizeof(buffer), path[idx + 1]);
 	}
+	
+	return buffer;
 }
 
-char GetFileParentDir(const char[] filePath)
+char[] GetFileParentDir(const char[] filePath)
 {
 	char szParentDir[16];
 	for (int iCurrentChar = 0; iCurrentChar < strlen(filePath); iCurrentChar++)

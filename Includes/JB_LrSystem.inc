@@ -3,6 +3,8 @@
 #endif
 #define _JB_LrSystem_included
 
+#include <cstrike>
+
 #define INVALID_LR_WINNER -1
 #define INVALID_LR_LOSER -1
 

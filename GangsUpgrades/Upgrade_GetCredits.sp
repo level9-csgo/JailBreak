@@ -46,7 +46,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_gc", Command_GetCredits, "Claims the get credits reward for the round. (An Alias)");
 	
 	// Event Hooks
-	HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_Post);
+	HookEvent("round_prestart", Event_RoundPreStart);
 }
 
 //================================[ Events ]================================//
@@ -71,16 +71,13 @@ public void OnClientPostAdminCheck(int client)
 	g_IsGetCreditsClaimed[client] = true;
 }
 
-public Action Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 {
 	for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
 	{
 		if (IsClientInGame(iCurrentClient))
 		{
-			if (Gangs_GetPlayerGang(iCurrentClient) != NO_GANG)
-			{
-				g_IsGetCreditsClaimed[iCurrentClient] = false;
-			}
+			g_IsGetCreditsClaimed[iCurrentClient] = false;
 		}
 	}
 }

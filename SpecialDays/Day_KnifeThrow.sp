@@ -78,7 +78,7 @@ public void JB_OnSpecialDayStart(int specialDayId)
 {
 	if (g_iDayId == specialDayId)
 	{
-		HookEvent("weapon_fire", Event_WeaponFire, EventHookMode_Post);
+		HookEvent("weapon_fire", Event_WeaponFire);
 		
 		ToggleRunesState(false);
 		
@@ -130,9 +130,11 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			}
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
-public Action Event_WeaponFire(Event event, const char[] name, bool dontBroadcast)
+void Event_WeaponFire(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	int iActiveWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
@@ -166,7 +168,8 @@ public Action Hook_OnStartTouch(int entity, int other)
 		{
 			if (!(1 <= other <= MaxClients))
 			{
-				JB_DealDamage(other, iThrower, 128.0, DMG_BULLET); // If the knife has touched a vent/etc...
+				// If the knife has touched a vent/etc...
+				SDKHooks_TakeDamage(other, entity, iThrower, 128.0, DMG_BULLET, .bypassHooks = false);
 			}
 			else
 			{
@@ -176,17 +179,19 @@ public Action Hook_OnStartTouch(int entity, int other)
 				SetVariantString("csblood");
 				AcceptEntityInput(entity, "DispatchEffect");
 				
-				JB_DealDamage(iVictim, iThrower, float(iDamage), DMG_BULLET);
+				SDKHooks_TakeDamage(iVictim, iThrower, iThrower, float(iDamage), DMG_BULLET, .bypassHooks = false);
 			}
 		}
 		
 		AcceptEntityInput(entity, "Kill");
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Timers ]================================//
 
-public Action Timer_ThrowKnife(Handle hTimer, int serial)
+Action Timer_ThrowKnife(Handle timer, int serial)
 {
 	int client = GetClientFromSerial(serial);
 	
@@ -195,6 +200,8 @@ public Action Timer_ThrowKnife(Handle hTimer, int serial)
 	{
 		ThrowKnife(client, RIGHT_CLICK_DAMAGE);
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//

@@ -4,10 +4,11 @@
 #include <sourcemod>
 #include <sdkhooks>
 #include <JailBreak>
+#include <TransmitManager>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
-bool g_bHide[MAXPLAYERS + 1];
+bool g_Hide[MAXPLAYERS + 1];
 
 public Plugin myinfo = 
 {
@@ -20,62 +21,50 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	RegConsoleCmd("sm_hide", Command_Hide, "");
+	RegConsoleCmd("sm_hide", Command_Hide, "Toggles the hide state.");
 	
-	AddTempEntHook("Shotgun Shot", Hook_SilenceShots);
-	
-	for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
+	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
-		if (IsClientInGame(iCurrentClient)) {
-			OnClientPostAdminCheck(iCurrentClient);
-		}
-	}
-}
-
-/* Events */
-
-public void OnClientPostAdminCheck(int iPlayerIndex)
-{
-	SDKHook(iPlayerIndex, SDKHook_SetTransmit, Hook_OnSetTransmit);
-	g_bHide[iPlayerIndex] = false;
-}
-
-public Action Hook_SilenceShots(const char[] teName, const int[] players, int numClients, float delay)
-{
-	for (int iCurrentClient = 0; iCurrentClient < numClients; iCurrentClient++)
-	{
-		if (g_bHide[players[iCurrentClient]]) 
+		if (IsClientInGame(current_client))
 		{
-			return Plugin_Stop;
+			OnClientPutInServer(current_client);
 		}
 	}
-	
-	return Plugin_Continue;
 }
 
-/*  */
-
-/* Hooks */
-
-public Action Hook_OnSetTransmit(int entity, int iPlayerIndex)
+public void OnClientPutInServer(int client)
 {
-	if (iPlayerIndex != entity && (0 < entity <= MaxClients) && g_bHide[iPlayerIndex] && IsPlayerAlive(entity) && IsPlayerAlive(iPlayerIndex)) 
+	if (IsFakeClient(client) || TransmitManager_IsEntityHooked(client))
 	{
-		return Plugin_Handled;
+		return;
 	}
 	
-	return Plugin_Continue;
+	TransmitManager_AddEntityHooks(client);
 }
 
-/*  */
-
-/* Commands */
-
-public Action Command_Hide(int iPlayerIndex, int args)
+public void OnClientDisconnect(int client)
 {
-	g_bHide[iPlayerIndex] = !g_bHide[iPlayerIndex];
-	PrintToChat(iPlayerIndex, "%s Hide is now %s\x01!", PREFIX, g_bHide[iPlayerIndex] ? "\x04enabled":"\x02disabled");
+	g_Hide[client] = false;
+}
+
+Action Command_Hide(int client, int args)
+{
+	g_Hide[client] = !g_Hide[client];
+	UpdateClientHideState(client);
+	
+	PrintToChat(client, "%s Hide is now %s\x01!", PREFIX, g_Hide[client] ? "\x04enabled":"\x02disabled");
 	return Plugin_Handled;
 }
 
-/*  */
+void UpdateClientHideState(int client)
+{
+	for (int current_client = 1; current_client <= MaxClients; current_client++)
+	{
+		if (!IsClientInGame(current_client) || IsFakeClient(current_client))
+		{
+			continue;
+		}
+		
+		TransmitManager_SetEntityState(current_client, client, !g_Hide[client]);
+	}
+} 

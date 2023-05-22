@@ -134,8 +134,6 @@ public void JB_OnSpecialDayStart(int specialDayId)
 	// Add the special day event hooks
 	HookEvent("bullet_impact", Event_BulletImpact, EventHookMode_Post);
 	
-	AddTempEntHook("Shotgun Shot", Hook_SilenceShot);
-	
 	g_cvInfiniteAmmo.SetInt(2);
 	
 	ToggleBunnyhop(false);
@@ -171,8 +169,6 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 		
 		// Remove the special day event hooks
 		UnhookEvent("bullet_impact", Event_BulletImpact, EventHookMode_Post);
-		
-		RemoveTempEntHook("Shotgun Shot", Hook_SilenceShot);
 		
 		ToggleBunnyhop(true);
 		ToggleRunesState(true);
@@ -337,7 +333,7 @@ void CS_CreateExplosion(int attacker, float damage, float radius, float pos[3])
 			
 			if (current_distance <= radius)
 			{
-				JB_DealDamage(current_victim, attacker, Sine(((radius - current_distance) / radius) * (3.14159 / 2)) * damage, DMG_BLAST);
+				SDKHooks_TakeDamage(current_victim, attacker, sizeof(attacker), Sine(((radius - current_distance) / radius) * (FLOAT_PI / 2)) * damage, DMG_BLAST, .bypassHooks = true);
 			}
 		}
 	}

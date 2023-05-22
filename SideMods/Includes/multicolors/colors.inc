@@ -109,7 +109,7 @@ stock void C_PrintToChat(int client, bool chat, const char[] szMessage, any ...)
 stock void C_ReplyToCommand(int client, bool chat, const char[] szMessage, any ...) {
 	char szCMessage[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(client);
-	VFormat(szCMessage, sizeof(szCMessage), szMessage, 3);
+	VFormat(szCMessage, sizeof(szCMessage), szMessage, 4);
 
 	if (client == 0) {
 		C_RemoveTags(szCMessage, sizeof(szCMessage));
@@ -137,10 +137,10 @@ stock void C_ReplyToCommand(int client, bool chat, const char[] szMessage, any .
  * 
  * On error/Errors:   If the client is not connected or invalid.
  */
-stock void C_ReplyToCommandEx(int client, int author, const char[] szMessage, any ...) {
+stock void C_ReplyToCommandEx(int client, int author, bool chat, const char[] szMessage, any ...) {
 	char szCMessage[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(client);
-	VFormat(szCMessage, sizeof(szCMessage), szMessage, 4);
+	VFormat(szCMessage, sizeof(szCMessage), szMessage, 5);
 
 	if (client == 0) {
 		C_RemoveTags(szCMessage, sizeof(szCMessage));
@@ -151,7 +151,7 @@ stock void C_ReplyToCommandEx(int client, int author, const char[] szMessage, an
 		PrintToConsole(client, "%s", szCMessage);
 	}
 	else {
-		C_PrintToChatEx(client, author, "%s", szCMessage);
+		C_PrintToChatEx(client, author, chat, "%s", szCMessage);
 	}
 }
 
@@ -163,15 +163,15 @@ stock void C_ReplyToCommandEx(int client, int author, const char[] szMessage, an
  * @param szMessage   Message (formatting rules)
  * @return			  No return
  */
-stock void C_PrintToChatAll(const char[] szMessage, any ...) {
+stock void C_PrintToChatAll(bool chat, const char[] szMessage, any ...) {
 	char szBuffer[MAX_MESSAGE_LENGTH];
 
 	for (int i = 1; i <= MaxClients; ++i) {
 		if (IsClientInGame(i) && !IsFakeClient(i) && !C_SkipList[i]) {
 			SetGlobalTransTarget(i);
-			VFormat(szBuffer, sizeof(szBuffer), szMessage, 2);
+			VFormat(szBuffer, sizeof(szBuffer), szMessage, 3);
 
-			C_PrintToChat(i, "%s", szBuffer);
+			C_PrintToChat(i, chat, "%s", szBuffer);
 		}
 
 		C_SkipList[i] = false;
@@ -231,7 +231,7 @@ stock void C_PrintToChatEx(int client, int author, bool chat, const char[] szMes
  * 
  * On error/Errors:   If the author is not connected an error will be thrown.
  */
-stock void C_PrintToChatAllEx(int author, const char[] szMessage, any ...) {
+stock void C_PrintToChatAllEx(int author, bool chat, const char[] szMessage, any ...) {
 	if (author < 0 || author > MaxClients) {
 		ThrowError("Invalid client index %d", author);
 	}
@@ -245,9 +245,9 @@ stock void C_PrintToChatAllEx(int author, const char[] szMessage, any ...) {
 	for (int i = 1; i <= MaxClients; ++i) {
 		if (IsClientInGame(i) && !IsFakeClient(i) && !C_SkipList[i]) {
 			SetGlobalTransTarget(i);
-			VFormat(szBuffer, sizeof(szBuffer), szMessage, 3);
+			VFormat(szBuffer, sizeof(szBuffer), szMessage, 4);
 
-			C_PrintToChatEx(i, author, "%s", szBuffer);
+			C_PrintToChatEx(i, author, chat, "%s", szBuffer);
 		}
 
 		C_SkipList[i] = false;
@@ -578,6 +578,8 @@ public Action C_Event_MapStart(Event event, const char[] name, bool dontBroadcas
 	for (int i = 1; i <= MaxClients; ++i) {
 		C_SkipList[i] = false;
 	}
+	
+	return Plugin_Continue;
 }
 
 /**
@@ -596,7 +598,7 @@ public Action C_Event_MapStart(Event event, const char[] name, bool dontBroadcas
  * @noreturn
  * @error
  */
-stock int C_ShowActivity(int client, const char[] format, any ...) {
+stock int C_ShowActivity(int client, bool chat, const char[] format, any ...) {
 	if (sm_show_activity == null) {
 		sm_show_activity = FindConVar("sm_show_activity");
 	}
@@ -606,110 +608,6 @@ stock int C_ShowActivity(int client, const char[] format, any ...) {
 	char szBuffer[MAX_MESSAGE_LENGTH];
 	//char szCMessage[MAX_MESSAGE_LENGTH];
 	int  value = sm_show_activity.IntValue;
-	ReplySource replyto = GetCmdReplySource();
-
-	char name[MAX_NAME_LENGTH] = "Console";
-	char sign[MAX_NAME_LENGTH] = "ADMIN";
-	bool display_in_chat = false;
-	if (client != 0) {
-		if (client < 0 || client > MaxClients || !IsClientConnected(client)) {
-			ThrowError("Client index %d is invalid", client);
-		}
-
-		GetClientName(client, name, sizeof(name));
-		AdminId id = GetUserAdmin(client);
-		if (id == INVALID_ADMIN_ID || !GetAdminFlag(id, Admin_Generic, Access_Effective)) {
-			sign = "PLAYER";
-		}
-
-		/* Display the message to the client? */
-		if (replyto == SM_REPLY_TO_CONSOLE) {
-			SetGlobalTransTarget(client);
-			VFormat(szBuffer, sizeof(szBuffer), format, 3);
-
-			C_RemoveTags(szBuffer, sizeof(szBuffer));
-			PrintToConsole(client, "%s%s\n", tag, szBuffer);
-			display_in_chat = true;
-		}
-	}
-	else {
-		SetGlobalTransTarget(LANG_SERVER);
-		VFormat(szBuffer, sizeof(szBuffer), format, 3);
-
-		C_RemoveTags(szBuffer, sizeof(szBuffer));
-		PrintToServer("%s%s\n", tag, szBuffer);
-	}
-
-	if (!value) {
-		return 1;
-	}
-
-	for (int i = 1; i <= MaxClients; ++i) {
-		if (!IsClientInGame(i) || IsFakeClient(i) || (display_in_chat && i == client)) {
-			continue;
-		}
-
-		AdminId id = GetUserAdmin(i);
-		SetGlobalTransTarget(i);
-		if (id == INVALID_ADMIN_ID || !GetAdminFlag(id, Admin_Generic, Access_Effective)) {
-			/* Treat this as a normal user. */
-			if ((value & 1) | (value & 2)) {
-				char newsign[MAX_NAME_LENGTH];
-				
-				if ((value & 2) || (i == client)) {
-					newsign = name;
-				}
-				else {
-					newsign = sign;
-				}
-
-				VFormat(szBuffer, sizeof(szBuffer), format, 3);
-
-				C_PrintToChatEx(i, client, "%s%s: %s", tag, newsign, szBuffer);
-			}
-		}
-		else {
-			/* Treat this as an admin user */
-			bool is_root = GetAdminFlag(id, Admin_Root, Access_Effective);
-			if ((value & 4) || (value & 8) || ((value & 16) && is_root)) {
-				char newsign[MAX_NAME_LENGTH];
-				
-				if ((value & 8) || ((value & 16) && is_root) || (i == client)) {
-					newsign = name;
-				}
-				else {
-					newsign = sign;
-				}
-
-				VFormat(szBuffer, sizeof(szBuffer), format, 3);
-
-				C_PrintToChatEx(i, client, "%s%s: %s", tag, newsign, szBuffer);
-			}
-		}
-	}
-
-	return 1;
-}
-
-/**
- * Same as C_ShowActivity(), except the tag parameter is used instead of "[SM] " (note that you must supply any spacing).
- * Supports color tags.
- *
- * @param client		Client index doing the action, or 0 for server.
- * @param tags			Tag to display with.
- * @param format		Formatting rules.
- * @param ...			Variable number of format parameters.
- * @noreturn
- * @error
- */
-stock int C_ShowActivityEx(int client, const char[] tag, const char[] format, any ...) {
-	if (sm_show_activity == null) {
-		sm_show_activity = FindConVar("sm_show_activity");
-	}
-
-	char szBuffer[MAX_MESSAGE_LENGTH];
-	//char szCMessage[MAX_MESSAGE_LENGTH];
-	int value = sm_show_activity.IntValue;
 	ReplySource replyto = GetCmdReplySource();
 
 	char name[MAX_NAME_LENGTH] = "Console";
@@ -759,7 +657,7 @@ stock int C_ShowActivityEx(int client, const char[] tag, const char[] format, an
 			/* Treat this as a normal user. */
 			if ((value & 1) | (value & 2)) {
 				char newsign[MAX_NAME_LENGTH];
-
+				
 				if ((value & 2) || (i == client)) {
 					newsign = name;
 				}
@@ -769,7 +667,111 @@ stock int C_ShowActivityEx(int client, const char[] tag, const char[] format, an
 
 				VFormat(szBuffer, sizeof(szBuffer), format, 4);
 
-				C_PrintToChatEx(i, client, "%s%s: %s", tag, newsign, szBuffer);
+				C_PrintToChatEx(i, client, chat, "%s%s: %s", tag, newsign, szBuffer);
+			}
+		}
+		else {
+			/* Treat this as an admin user */
+			bool is_root = GetAdminFlag(id, Admin_Root, Access_Effective);
+			if ((value & 4) || (value & 8) || ((value & 16) && is_root)) {
+				char newsign[MAX_NAME_LENGTH];
+				
+				if ((value & 8) || ((value & 16) && is_root) || (i == client)) {
+					newsign = name;
+				}
+				else {
+					newsign = sign;
+				}
+
+				VFormat(szBuffer, sizeof(szBuffer), format, 4);
+
+				C_PrintToChatEx(i, client, chat, "%s%s: %s", tag, newsign, szBuffer);
+			}
+		}
+	}
+
+	return 1;
+}
+
+/**
+ * Same as C_ShowActivity(), except the tag parameter is used instead of "[SM] " (note that you must supply any spacing).
+ * Supports color tags.
+ *
+ * @param client		Client index doing the action, or 0 for server.
+ * @param tags			Tag to display with.
+ * @param format		Formatting rules.
+ * @param ...			Variable number of format parameters.
+ * @noreturn
+ * @error
+ */
+stock int C_ShowActivityEx(int client, const char[] tag, bool chat, const char[] format, any ...) {
+	if (sm_show_activity == null) {
+		sm_show_activity = FindConVar("sm_show_activity");
+	}
+
+	char szBuffer[MAX_MESSAGE_LENGTH];
+	//char szCMessage[MAX_MESSAGE_LENGTH];
+	int value = sm_show_activity.IntValue;
+	ReplySource replyto = GetCmdReplySource();
+
+	char name[MAX_NAME_LENGTH] = "Console";
+	char sign[MAX_NAME_LENGTH] = "ADMIN";
+	bool display_in_chat = false;
+	if (client != 0) {
+		if (client < 0 || client > MaxClients || !IsClientConnected(client)) {
+			ThrowError("Client index %d is invalid", client);
+		}
+
+		GetClientName(client, name, sizeof(name));
+		AdminId id = GetUserAdmin(client);
+		if (id == INVALID_ADMIN_ID || !GetAdminFlag(id, Admin_Generic, Access_Effective)) {
+			sign = "PLAYER";
+		}
+
+		/* Display the message to the client? */
+		if (replyto == SM_REPLY_TO_CONSOLE) {
+			SetGlobalTransTarget(client);
+			VFormat(szBuffer, sizeof(szBuffer), format, 5);
+
+			C_RemoveTags(szBuffer, sizeof(szBuffer));
+			PrintToConsole(client, "%s%s\n", tag, szBuffer);
+			display_in_chat = true;
+		}
+	}
+	else {
+		SetGlobalTransTarget(LANG_SERVER);
+		VFormat(szBuffer, sizeof(szBuffer), format, 5);
+
+		C_RemoveTags(szBuffer, sizeof(szBuffer));
+		PrintToServer("%s%s\n", tag, szBuffer);
+	}
+
+	if (!value) {
+		return 1;
+	}
+
+	for (int i = 1; i <= MaxClients; ++i) {
+		if (!IsClientInGame(i) || IsFakeClient(i) || (display_in_chat && i == client)) {
+			continue;
+		}
+
+		AdminId id = GetUserAdmin(i);
+		SetGlobalTransTarget(i);
+		if (id == INVALID_ADMIN_ID || !GetAdminFlag(id, Admin_Generic, Access_Effective)) {
+			/* Treat this as a normal user. */
+			if ((value & 1) | (value & 2)) {
+				char newsign[MAX_NAME_LENGTH];
+
+				if ((value & 2) || (i == client)) {
+					newsign = name;
+				}
+				else {
+					newsign = sign;
+				}
+
+				VFormat(szBuffer, sizeof(szBuffer), format, 5);
+
+				C_PrintToChatEx(i, client, chat, "%s%s: %s", tag, newsign, szBuffer);
 			}
 		}
 		else {
@@ -785,9 +787,9 @@ stock int C_ShowActivityEx(int client, const char[] tag, const char[] format, an
 					newsign = sign;
 				}
 
-				VFormat(szBuffer, sizeof(szBuffer), format, 4);
+				VFormat(szBuffer, sizeof(szBuffer), format, 5);
 
-				C_PrintToChatEx(i, client, "%s%s: %s", tag, newsign, szBuffer);
+				C_PrintToChatEx(i, client, chat, "%s%s: %s", tag, newsign, szBuffer);
 			}
 		}
 	}
@@ -808,7 +810,7 @@ stock int C_ShowActivityEx(int client, const char[] tag, const char[] format, an
  * @noreturn
  * @error
  */
-stock int C_ShowActivity2(int client, const char[] tag, const char[] format, any ...) {
+stock int C_ShowActivity2(int client, const char[] tag, bool chat, const char[] format, any ...) {
 	if (sm_show_activity == null) {
 		sm_show_activity = FindConVar("sm_show_activity");
 	}
@@ -832,17 +834,17 @@ stock int C_ShowActivity2(int client, const char[] tag, const char[] format, any
 		}
 
 		SetGlobalTransTarget(client);
-		VFormat(szBuffer, sizeof(szBuffer), format, 4);
+		VFormat(szBuffer, sizeof(szBuffer), format, 5);
 
 		/* We don't display directly to the console because the chat text 
 		 * simply gets added to the console, so we don't want it to print 
 		 * twice.
 		 */
-		C_PrintToChatEx(client, client, "%s%s", tag, szBuffer);
+		C_PrintToChatEx(client, client, chat, "%s%s", tag, szBuffer);
 	}
 	else {
 		SetGlobalTransTarget(LANG_SERVER);
-		VFormat(szBuffer, sizeof(szBuffer), format, 4);
+		VFormat(szBuffer, sizeof(szBuffer), format, 5);
 
 		C_RemoveTags(szBuffer, sizeof(szBuffer));
 		PrintToServer("%s%s\n", tag, szBuffer);
@@ -872,9 +874,9 @@ stock int C_ShowActivity2(int client, const char[] tag, const char[] format, any
 					newsign = sign;
 				}
 
-				VFormat(szBuffer, sizeof(szBuffer), format, 4);
+				VFormat(szBuffer, sizeof(szBuffer), format, 5);
 
-				C_PrintToChatEx(i, client, "%s%s: %s", tag, newsign, szBuffer);
+				C_PrintToChatEx(i, client, chat, "%s%s: %s", tag, newsign, szBuffer);
 			}
 		}
 		else {
@@ -890,9 +892,9 @@ stock int C_ShowActivity2(int client, const char[] tag, const char[] format, any
 					newsign = sign;
 				}
 
-				VFormat(szBuffer, sizeof(szBuffer), format, 4);
+				VFormat(szBuffer, sizeof(szBuffer), format, 5);
 
-				C_PrintToChatEx(i, client, "%s%s: %s", tag, newsign, szBuffer);
+				C_PrintToChatEx(i, client, chat, "%s%s: %s", tag, newsign, szBuffer);
 			}
 		}
 	}

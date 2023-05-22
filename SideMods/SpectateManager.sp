@@ -100,7 +100,6 @@ public Action Listener_SpecNext(int client, const char[] command, int argc)
 	}
 	
 	int target_index = FindNextPlayer(GetObservingTarget(client), false, GetClientTeam(client));
-	
 	if (target_index == -1)
 	{
 		return Plugin_Continue;

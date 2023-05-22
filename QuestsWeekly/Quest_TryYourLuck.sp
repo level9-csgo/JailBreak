@@ -29,6 +29,8 @@ public Action Shop_OnWishAnimationStart(int client, int wishesLeft, int award_in
 {
 	// Add quest progress points for the client
 	JB_AddQuestProgress(client, g_QuestIndex);
+	
+	return Plugin_Continue;
 }
 
 public void JB_OnQuestRewardDisplay(int client, int quest_id, char[] display_text, int length, ExecuteType execute_type)

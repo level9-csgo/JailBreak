@@ -239,13 +239,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	return APLRes_Success;
 }
 
-public int Native_CreateSettingCategory(Handle plugin, int numParams)
+int Native_CreateSettingCategory(Handle plugin, int numParams)
 {
 	Category CategoryData;
 	GetNativeString(1, CategoryData.szName, sizeof(CategoryData.szName));
 	
 	if (GetCategoryByName(CategoryData.szName) != -1) {
-		return;
+		return 0;
 	}
 	
 	GetNativeString(2, CategoryData.szDesc, sizeof(CategoryData.szDesc));
@@ -253,6 +253,8 @@ public int Native_CreateSettingCategory(Handle plugin, int numParams)
 	
 	g_arCategoriesData.PushArray(CategoryData, sizeof(CategoryData));
 	g_arCategoriesData.SortCustom(SortCategoriesADTA);
+	
+	return 0;
 }
 
 public int Native_CreateSetting(Handle plugin, int numParams)
@@ -428,7 +430,7 @@ void showSettingsMainMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_SettingsMain(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_SettingsMain(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
@@ -450,6 +452,8 @@ public int Handler_SettingsMain(Menu menu, MenuAction action, int client, int it
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /* Sort Custom cretead by LuqS */
@@ -506,7 +510,7 @@ void showSettingsMenu(int client, int iCategoryId)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_Settings(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_Settings(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
@@ -520,6 +524,8 @@ public int Handler_Settings(Menu menu, MenuAction action, int client, int itemNu
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Functions ]================================//

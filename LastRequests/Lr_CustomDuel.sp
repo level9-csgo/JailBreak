@@ -227,7 +227,7 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 	return Plugin_Continue;
 }
 
-public Action Hook_OnPreThink(int client)
+Action Hook_OnPreThink(int client)
 {
 	if (g_esSetupData.bNoScope)
 	{
@@ -242,6 +242,8 @@ public Action Hook_OnPreThink(int client)
 			}
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
 /*  */
@@ -281,13 +283,13 @@ void showLrSetupMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -344,6 +346,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */

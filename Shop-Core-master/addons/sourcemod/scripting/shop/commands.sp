@@ -117,7 +117,7 @@ public Action Commands_GiveCredits(int client, int args)
 	if (args < 2)
 	{
 		GetCmdArg(0, buffer, sizeof(buffer));
-		ReplyToCommand(client, " \x04[Play-IL]\x01 Usage: %s <name|#userid> <credits>", buffer);
+		ReplyToCommand(client, " \x04[Level9]\x01 Usage: %s <name|#userid> <credits>", buffer);
 		return Plugin_Handled;
 	}
 	
@@ -184,7 +184,7 @@ public Action Commands_TakeCredits(int client, int args)
 	if (args < 2)
 	{
 		GetCmdArg(0, buffer, sizeof(buffer));
-		ReplyToCommand(client, " \x04[Play-IL]\x01 Usage: %s <name|#userid> <credits>", buffer);
+		ReplyToCommand(client, " \x04[Level9]\x01 Usage: %s <name|#userid> <credits>", buffer);
 		return Plugin_Handled;
 	}
 	
@@ -252,7 +252,7 @@ public Action Commands_SetCredits(int client, int args)
 	if (args < 2)
 	{
 		GetCmdArg(0, buffer, sizeof(buffer));
-		ReplyToCommand(client, " \x04[Play-IL]\x01 Usage: %s <name|#userid> <credits>", buffer);
+		ReplyToCommand(client, " \x04[Level9]\x01 Usage: %s <name|#userid> <credits>", buffer);
 		return Plugin_Handled;
 	}
 	

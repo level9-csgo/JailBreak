@@ -11,7 +11,7 @@
 
 //==========[ Settings ]==========//
 
-#define PREFIX " \x04[Play-IL]\x01"
+#define PREFIX " \x04[Level9]\x01"
 #define PREFIX_ERROR " \x02[Error]\x01"
 
 #define GAMBLE_MIN_BET 300

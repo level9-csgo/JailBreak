@@ -153,6 +153,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		
 		TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fVelocity);
 	}
+	
+	return Plugin_Continue;
 }
 
 public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
@@ -171,24 +173,30 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 
 //================================[ Timers ]================================//
 
-public Action Timer_ResetProgressBar(Handle hTimer, int serial)
+Action Timer_ResetProgressBar(Handle hTimer, int serial)
 {
 	int client = GetClientFromSerial(serial);
 	
 	// Make sure the client index is the index we want
-	if (client) {
+	if (client) 
+	{
 		ResetProgressBar(client);
 	}
+	
+	return Plugin_Continue;
 }
 
-public Action Timer_DisplayProgressBar(Handle hTimer, int serial)
+Action Timer_DisplayProgressBar(Handle hTimer, int serial)
 {
 	int client = GetClientFromSerial(serial);
 	
 	// Make sure the client index is the index we want
-	if (client) {
+	if (client) 
+	{
 		SetProgressBarFloat(client, SUPERJUMP_COOLDOWN);
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//

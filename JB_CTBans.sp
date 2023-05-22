@@ -289,6 +289,8 @@ public int Handler_BanCTList(Menu menu, MenuAction action, int client, int itemN
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void showBanCTMenu(int client, int iTargetIndex)
@@ -331,7 +333,7 @@ public int Handler_BanCT(Menu menu, MenuAction action, int client, int itemNum)
 		if (!g_ClientsData[iTargetIndex].CheckBan())
 		{
 			PrintToChat(client, "%s The selected player is no logner \x02banned\x01!", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		if (GetAdminImmunityLevel(GetUserAdmin(client)) < g_ClientsData[iTargetIndex].iAdminImmunity) {
@@ -347,6 +349,8 @@ public int Handler_BanCT(Menu menu, MenuAction action, int client, int itemNum)
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Natives & Forwards ]================================//

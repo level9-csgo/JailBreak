@@ -43,6 +43,8 @@ Action Timer_GivePlayMinute(Handle timer)
 			JB_AddQuestProgress(current_client, g_QuestIndex);
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
 public void JB_OnQuestRewardDisplay(int client, int quest_id, char[] display_text, int length, ExecuteType execute_type)

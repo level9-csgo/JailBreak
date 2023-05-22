@@ -650,7 +650,7 @@ void CS_CreateExplosion(int attacker, int weapon, float damage, float radius, fl
 				
 				if (attacker != iCurrentVictim)
 				{
-					float fResult = Sine(((radius - fCurrentDis) / radius) * (3.14159 / 2)) * damage;
+					float fResult = Sine(((radius - fCurrentDis) / radius) * (FLOAT_PI / 2)) * damage;
 					SDKHooks_TakeDamage(iCurrentVictim, attacker, attacker, fResult, DMG_BLAST, weapon, NULL_VECTOR, vec);
 				}
 			}

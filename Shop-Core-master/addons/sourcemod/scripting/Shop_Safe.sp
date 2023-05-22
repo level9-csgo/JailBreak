@@ -15,8 +15,8 @@
 
 //==========[ Settings ]==========//
 
-#define PREFIX " \x04[Play-IL]\x01"
-#define PREFIX_MENU "[Play-IL]"
+#define PREFIX " \x04[Level9]\x01"
+#define PREFIX_MENU "[Level9]"
 #define PREFIX_ERROR " \x02[Error]\x01"
 
 #define CONFIG_PATH "addons/sourcemod/configs/SafeBoxData.cfg"
@@ -299,6 +299,8 @@ any Native_GetSafeBoxData(Handle plugin, int numParams)
 {
 	// Store the safe box data inside the given buffer
 	SetNativeArray(1, g_SafeBoxData, sizeof(g_SafeBoxData));
+	
+	return 0;
 }
 
 // Forwards
@@ -422,7 +424,7 @@ int Handler_SafeBox(Menu menu, MenuAction action, int param1, int param2)
 				{
 					PrintToChat(client, "You don't have enough credits. (missing \x02%s\x01)", AddCommas(g_CombinationGuessPrice.IntValue - Shop_GetClientCredits(client)));
 					ShowSafeBoxMenu(client);
-					return;
+					return 0;
 				}
 				
 				// Set the client guess state to true
@@ -443,6 +445,8 @@ int Handler_SafeBox(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowRecentFailuresMenu(int client)
@@ -492,6 +496,8 @@ int Handler_RecentFailures(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Key Values ]================================//
@@ -554,7 +560,7 @@ int GenerateCombinationCode()
 	return GetRandomInt(g_StartCombinationCodeRange.IntValue, g_EndCombinationCodeRange.IntValue);
 }
 
-char GetCombinationClue()
+char[] GetCombinationClue()
 {
 	char combination_clue[8];
 	IntToString(g_SafeBoxData.code, combination_clue, sizeof(combination_clue));

@@ -115,7 +115,7 @@ int Handler_RunesInventory(Menu menu, MenuAction action, int param1, int param2)
 		
 		if (!IsClientInGame(client))
 		{
-			return;
+			return 0;
 		}
 		
 		RequestFrame(RF_DisplayMenu, GetClientSerial(client));
@@ -125,6 +125,8 @@ int Handler_RunesInventory(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu handle to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void RF_DisplayMenu(int serial)

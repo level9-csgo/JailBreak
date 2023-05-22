@@ -156,7 +156,7 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 
 //================================[ SDK Hooks ]================================//
 
-public Action Hook_OnPreThink(int client)
+Action Hook_OnPreThink(int client)
 {
 	static int m_hActiveWeaponOffset, m_flNextSecondaryAttackOffset;
 	if (!m_hActiveWeaponOffset)
@@ -174,6 +174,8 @@ public Action Hook_OnPreThink(int client)
 	{
 		SetEntDataFloat(iWeaponIndex, m_flNextSecondaryAttackOffset, GetGameTime() + 2.0);
 	}
+	
+	return Plugin_Continue;
 }
 
 //================================[ Vote Panels ]================================//
@@ -212,7 +214,7 @@ public int Handler_WeaponSelectionSetup(Menu menu, MenuAction action, int client
 		// 'menuselect x' command can cause a log error, prevent that!
 		if (itemNum >= VoteOption_Total)
 		{
-			return;
+			return 0;
 		}
 		
 		bool bUpdateValues;
@@ -235,6 +237,8 @@ public int Handler_WeaponSelectionSetup(Menu menu, MenuAction action, int client
 		
 		EmitSoundToClient(client, MENU_ITEM_SOUND);
 	}
+	
+	return 0;
 }
 
 void showAllowScopeSetupPanel()
@@ -262,7 +266,7 @@ void showAllowScopeSetupPanel()
 	delete panel;
 }
 
-public int Handler_AllowScopeSetup(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_AllowScopeSetup(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
@@ -271,7 +275,7 @@ public int Handler_AllowScopeSetup(Menu menu, MenuAction action, int client, int
 		// 'menuselect x' command can cause a log error, prevent that!
 		if (itemNum >= VoteOption_Total)
 		{
-			return;
+			return 0;
 		}
 		
 		bool bUpdateValues;
@@ -294,6 +298,8 @@ public int Handler_AllowScopeSetup(Menu menu, MenuAction action, int client, int
 		
 		EmitSoundToClient(client, MENU_ITEM_SOUND);
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//
@@ -356,7 +362,7 @@ void ResetValues()
 	}
 }
 
-char GetProgressBar(int value, int all)
+char[] GetProgressBar(int value, int all)
 {
 	char szProgress[PROGRESS_BAR_LENGTH * 6];
 	int iLength = PROGRESS_BAR_LENGTH;

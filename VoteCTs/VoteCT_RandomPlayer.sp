@@ -132,13 +132,13 @@ public int Handler_RandomPlayer(Menu menu, MenuAction action, int client, int it
 	{
 		if (!g_bIsEventEnabled)
 		{
-			return;
+			return 0;
 		}
 		
 		if (JB_IsClientBannedCT(client))
 		{
 			PrintToChat(client, "%s You cannot compete on this game due to your Ban CT.", PREFIX);
-			return;
+			return 0;
 		}
 		
 		g_bClientChoice[client] = itemNum == 0;
@@ -148,6 +148,8 @@ public int Handler_RandomPlayer(Menu menu, MenuAction action, int client, int it
 	{
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */

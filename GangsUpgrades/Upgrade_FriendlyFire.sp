@@ -79,7 +79,7 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 	if (iClientGang != NO_GANG && 1 <= attacker <= MaxClients && iClientGang == Gangs_GetPlayerGang(attacker) && !IsGangLastAlive())
 	{
 		int upgrade_level = JB_GetGangUpgradeLevel(iClientGang, g_iUpgradeId);
-		
+
 		if (upgrade_level)
 		{
 			damage -= (damage * g_iLevels[upgrade_level - 1][Item_Percent]) / 100;

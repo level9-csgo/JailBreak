@@ -139,7 +139,7 @@ public void JB_OnShowLrInfoMenu(Panel panel, int currentLr)
 	}
 }
 
-public Action Event_GrenadeThrow(Event event, const char[] name, bool dontBroadcast)
+void Event_GrenadeThrow(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if (client == g_esSetupData.iPrisoner || client == g_esSetupData.iAgainst)
@@ -206,6 +206,8 @@ Action Hook_OnStartTouch(int entity, int other)
 	
 	// Remove the entity from the world.
 	AcceptEntityInput(entity, "Kill");
+	
+	return Plugin_Continue;
 }
 
 /*  */
@@ -234,13 +236,13 @@ void showLrSetupMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		char szItem[16];
@@ -261,6 +263,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */
@@ -281,7 +285,7 @@ void StartLr()
 	
 	g_cvFallDamageScale.IntValue = 0;
 	
-	HookEvent("grenade_thrown", Event_GrenadeThrow, EventHookMode_Post);
+	HookEvent("grenade_thrown", Event_GrenadeThrow);
 	
 	ToggleBunnyhop(false);
 	

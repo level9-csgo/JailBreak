@@ -50,16 +50,18 @@ enum struct Client
 		this.DeleteTimer();
 	}
 	
-	void DeleteTimer(bool award = false)
+	void DeleteTimer(int client = 0)
 	{
 		if (this.WishAnimationTimer != INVALID_HANDLE)
 		{
 			KillTimer(this.WishAnimationTimer);
 			this.WishAnimationTimer = INVALID_HANDLE;
 			
-			if (award)
+			if (client)
 			{
 				this.wishes_amount++;
+				
+				SQL_UpdateClient(client);
 			}
 		}
 	}
@@ -159,13 +161,7 @@ public void OnClientPostAdminCheck(int client)
 public void OnClientDisconnect(int client)
 {
 	// FIX: Set the timers handle back to invalid to avoid connection error
-	g_ClientsData[client].DeleteTimer(true);
-	
-	// If the client is not fake, send the client data to the database
-	if (!IsFakeClient(client))
-	{
-		SQL_UpdateClient(client);
-	}
+	g_ClientsData[client].DeleteTimer(client);
 }
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -684,6 +680,8 @@ Action Timer_ClearOverlay(Handle timer, int serial)
 void GiveClientWish(int client, int amount = 1)
 {
 	g_ClientsData[client].wishes_amount += amount;
+	
+	SQL_UpdateClient(client);
 }
 
 void RemoveClientWish(int client, int amount = 1)
@@ -692,6 +690,8 @@ void RemoveClientWish(int client, int amount = 1)
 	{
 		g_ClientsData[client].wishes_amount = 0;
 	}
+	
+	SQL_UpdateClient(client);
 }
 
 void ExecuteWishAnimation(int client)
@@ -715,7 +715,7 @@ void ExecuteWishAnimation(int client)
 	
 	g_ClientsData[client].roll_times = -1;
 	g_ClientsData[client].full_cycle = GetRandomInt(2, 3);
-	g_ClientsData[client].wishes_amount--;
+	RemoveClientWish(client);
 	
 	g_ClientsData[client].WishAnimationTimer = CreateTimer(0.25, Timer_WishAnimation, GetClientSerial(client), TIMER_REPEAT);
 	

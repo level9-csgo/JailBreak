@@ -92,43 +92,6 @@ forward void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winn
  */
 forward void JB_OnClientSetupSpecialDay(int client, int specialDayId);
 
-#include <sdkhooks>
-
-/**
- * An alternative for the function 'SDKHooks_TakeDamage()', but this function calls damage hooks. (OnTakeDamage, TraceAttack, etc...)
- * 
- * @param entity              		Victim index.
- * @param attacker             		Attacker index.
- * @param damage					Damage to hurt.
- * @param damageType				Damage type to send, DMG_GENERIC by default.
- */
-stock void JB_DealDamage(int entity, int attacker, float damage, int damageType = DMG_GENERIC, char[] classname = "")
-{
-	char damageStr[8];
-	FloatToString(damage, damageStr, sizeof(damageStr));
-	
-	char damageTypeStr[11];
-	IntToString(damageType, damageTypeStr, sizeof(damageTypeStr));
-	
-	int pointHurt = CreateEntityByName("point_hurt");
-	
-	if (pointHurt == -1)
-	{
-		return;
-	}
-	
-	DispatchKeyValue(entity, "targetname", "war3_hurtme");
-	DispatchKeyValue(pointHurt, "DamageTarget", "war3_hurtme");
-	DispatchKeyValue(pointHurt, "Damage", damageStr);
-	DispatchKeyValue(pointHurt, "DamageType", damageTypeStr);
-	
-	DispatchSpawn(pointHurt);
-	AcceptEntityInput(pointHurt, "Hurt", attacker);
-	DispatchKeyValue(pointHurt, "classname", classname[0] ? classname : "point_hurt");
-	DispatchKeyValue(entity, "targetname", "war3_donthurtme");
-	RemoveEdict(pointHurt);
-}
-
 #if !defined REQUIRE_PLUGIN
 public void __pl_JB_SpecialDays_SetNTVOptional()
 {

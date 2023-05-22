@@ -12,7 +12,7 @@
 #define SETTINGS_LIBRARY_NAME "JB_SettingsSystem"
 
 // If the plugin is enabled
-ConVar g_cvPluginEnabled, 
+ConVar
 // HUD message color start and end (effect)
 g_cvMessageColorGainStart, 
 g_cvMessageColorGainEnd, 
@@ -126,7 +126,6 @@ public void OnPluginStart()
 	}
 	
 	// ConVars
-	g_cvPluginEnabled = CreateConVar("hud_cnx_enabled", "1", "Any non zero value will enable 'HUD Credits & XP' plugin");
 	g_cvMessageColorGainStart = CreateConVar("hud_cnx_color_fx_gain_start", "168 235 52 255", "The start color for the HUD message effect");
 	g_cvMessageColorGainEnd = CreateConVar("hud_cnx_color_fx_gain_end", "52 235 205 255", "The end color for the HUD message effect");
 	g_cvMessageColorLoseStart = CreateConVar("hud_cnx_color_fx_lose_start", "235 52 52 255", "The start color for the HUD message effect");

@@ -313,7 +313,7 @@ void ShowRpsInvitationMenu(int client, int inviter, int credits_amount)
 	menu.Display(client, INVITE_EXPIRE_SECONDS);
 }
 
-public int Handler_RpsInvitation(Menu menu, MenuAction action, int param1, int param2)
+int Handler_RpsInvitation(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -329,7 +329,7 @@ public int Handler_RpsInvitation(Menu menu, MenuAction action, int param1, int p
 		if (!inviter_index)
 		{
 			PrintToChat(client, "%s The \x10rps\x01 inviter is no longer in-game.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		// Get the game credits bet amount
@@ -345,28 +345,28 @@ public int Handler_RpsInvitation(Menu menu, MenuAction action, int param1, int p
 				if (Shop_GetClientCredits(inviter_index) < credits_amount)
 				{
 					PrintToChat(client, " \x02%N\x01 don't has enough credits for the game.", inviter_index);
-					return;
+					return 0;
 				}
 				
 				// Make sure the client has enough shop credits
 				if (Shop_GetClientCredits(client) < credits_amount)
 				{
 					PrintToChat(client, "You don't have enough credits. (missing \x02%s\x01)", JB_AddCommas(credits_amount - Shop_GetClientCredits(client)));
-					return;
+					return 0;
 				}
 				
 				// Make sure the client isn't in a middle of a game
 				if (IsInRpsGame(client))
 				{
 					PrintToChat(client, "%s You're already playing a \x10rps\x01 game!", PREFIX_ERROR);
-					return;
+					return 0;
 				}
 				
 				// Make sure the inviter isn't in a middle of a game
 				if (IsInRpsGame(inviter_index))
 				{
 					PrintToChat(client, "%s Inviter \x07%N\x01 is already in a \x10rps\x01 game!", PREFIX_ERROR, inviter_index);
-					return;
+					return 0;
 				}
 				
 				ExecuteRpsGame(client, inviter_index, credits_amount);
@@ -387,6 +387,8 @@ public int Handler_RpsInvitation(Menu menu, MenuAction action, int param1, int p
 		// Delete the menu to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 void ShowRpsGameMenu(int client)
@@ -423,7 +425,7 @@ public int Handler_RpsGame(Menu menu, MenuAction action, int param1, int param2)
 			
 			g_ClientsData[client].Reset(false);
 			
-			return;
+			return 0;
 		}
 		
 		// Apply the selected action by the menu item position
@@ -433,7 +435,7 @@ public int Handler_RpsGame(Menu menu, MenuAction action, int param1, int param2)
 		{
 			PrintToChat(client, "%s You have selected \x04%s\x01, waiting for the opponent choice!", PREFIX, g_RpsActions[g_ClientsData[client].selected_action]);
 			PrintToChat(rival_index, "%s Opponent chose his action, it's time for your to make a choice!", PREFIX);
-			return;
+			return 0;
 		}
 		
 		int winner_action = GetWinnerAction(g_ClientsData[client].selected_action, g_ClientsData[rival_index].selected_action);
@@ -451,7 +453,7 @@ public int Handler_RpsGame(Menu menu, MenuAction action, int param1, int param2)
 			g_ClientsData[client].Reset(false);
 			g_ClientsData[rival_index].Reset(false);
 			
-			return;
+			return 0;
 		}
 		
 		int winner_client_index = ((winner_action == 1) ? client : rival_index);
@@ -464,6 +466,8 @@ public int Handler_RpsGame(Menu menu, MenuAction action, int param1, int param2)
 		// Delete the menu to avoid memory problems
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//

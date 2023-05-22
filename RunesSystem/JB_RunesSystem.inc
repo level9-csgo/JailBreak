@@ -228,13 +228,13 @@ native int JB_GetClientOwnedRunes(int client, int runeIndex, int star = -1, int 
  * 
  * @param client             	Client index.
  * @param clientRuneIndex      	Client rune index to perform the upgrade on.
- * @param successChances		Chances for the upgrade to succeed.
+ * @param successChances		Chances for the upgrade to succeed, or -1 to randomaly generate the chances accordingly.
  * @param replicate				If true, the function will call the rune level upgrade forward.
  *
  * @return						True if the upgrade has succeed, false otherwise.
  * @error                       If the client is not connected, the client rune index is invalid, or the rune level is maxed out, an error will be thrown.
  */
-native bool JB_PerformRuneLevelUpgrade(int client, int clientRuneIndex, int successChances, bool replicate = true);
+native bool JB_PerformRuneLevelUpgrade(int client, int clientRuneIndex, int successChances = -1, bool replicate = true);
 
 /**
  * Toggles a certain rune, controls whenther the rune will function or not.

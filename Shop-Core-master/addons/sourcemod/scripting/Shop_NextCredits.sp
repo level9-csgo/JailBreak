@@ -10,7 +10,7 @@
 
 //==========[ Settings ]==========//
 
-#define PREFIX " \x04[Play-IL]\x01"
+#define PREFIX " \x04[Level9]\x01"
 #define PREFIX_ERROR " \x02[Error]\x01"
 
 // Represents the amount of credits once a client has claimed his next credits

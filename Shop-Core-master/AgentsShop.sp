@@ -8,7 +8,7 @@
 #pragma newdecls required
 
 // Default agents model file paths.
-#define DEFAULT_TERRORIST_SKIN "models/player/custom_player/legacy/tm_phoenix.mdl"
+#define DEFAULT_TERRORIST_SKIN "models/player/custom_player/legacy/tm_jumpsuit_variantb.mdl"
 #define DEFAULT_COUNTER_TERRORIST_SKIN "models/player/custom_player/legacy/ctm_st6.mdl"
 
 enum struct Agent

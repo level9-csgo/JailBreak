@@ -282,13 +282,13 @@ void showLrSetupMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -301,13 +301,13 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 				if (fCurrentTime - fCooldown[client] < SHOW_PATH_TIME) {
 					PrintToChat(client, "%s Please wait \x04%.1f\x01 seconds before trying to start the lr again.", PREFIX, fCooldown[client] + SHOW_PATH_TIME - fCurrentTime);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				if (g_esSetupData.fPrisonerOrigin[0] == 0.0 || g_esSetupData.fGuardOrigin[0] == 0.0) {
 					PrintToChat(g_esSetupData.iPrisoner, "%s Please select valid flying stabs points.", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				float fResult[3], fVectorLength;
@@ -318,27 +318,27 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 				{
 					PrintToChat(client, "%s The distance between the points is too far!", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				if (fVectorLength < MIN_LR_DISTANCE)
 				{
 					PrintToChat(client, "%s The distance between the points is too short!", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				if ((g_esSetupData.fPrisonerOrigin[2] - g_esSetupData.fGuardOrigin[2]) > MAX_HEIGTH) {
 					PrintToChat(g_esSetupData.iPrisoner, "%s The points must be in the same height.", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				if (IsEntityBetween(g_esSetupData.fPrisonerOrigin, g_esSetupData.fGuardOrigin)) {
 					PrintToChat(g_esSetupData.iPrisoner, "%s The points must be between an empty path.", PREFIX);
 					showLrSetupMenu(client);
 					fCooldown[client] = fCurrentTime;
-					return;
+					return 0;
 				}
 				
 				StartLr();
@@ -354,7 +354,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 				{
 					PrintToChat(client, "%s You must be standing on the ground to select a prisoner spot!", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				GetClientAbsOrigin(client, g_esSetupData.fPrisonerOrigin);
@@ -367,7 +367,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 				{
 					PrintToChat(client, "%s You must be standing on the ground to select a guard spot!", PREFIX);
 					showLrSetupMenu(client);
-					return;
+					return 0;
 				}
 				
 				GetClientAbsOrigin(client, g_esSetupData.fGuardOrigin);
@@ -393,6 +393,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */

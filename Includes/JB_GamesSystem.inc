@@ -3,6 +3,8 @@
 #endif
 #define _JB_GamesSystem_included
 
+#define INVALID_GAME_WINNER -1
+
 /**
  * Creates a side game item to the core menu.
  * 
@@ -46,7 +48,7 @@ forward void JB_OnGameStart(int gameId, int client);
  * @param gameId                   Game index.
  * @param winner              	   Winner client index.
  */
-forward void JB_OnGameStart(int gameId, int winner);
+forward void JB_OnGameStop(int gameId, int winner);
 
 #if !defined REQUIRE_PLUGIN
 public void __pl_JB_GamesSystem_SetNTVOptional()

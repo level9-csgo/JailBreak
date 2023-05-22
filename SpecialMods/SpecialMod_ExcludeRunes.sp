@@ -66,6 +66,7 @@ public Action Event_RoundPreStart(Event event, const char[] name, bool dontBroad
 {
 	// Toggle the rune toggle state
 	ToggleRunesState(false);
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//

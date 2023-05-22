@@ -57,7 +57,11 @@ public void JB_OnGameStart(int gameId, int client)
 {
 	if (g_iGameId == gameId)
 	{
-		char math_operators[4][1] =  { '+', '-', '/', '*' };
+		char math_operators[4];
+		math_operators[0] = '+';
+		math_operators[1] = '-';
+		math_operators[2] = '/';
+		math_operators[3] = '*';
 		
 		int operator_index = GetRandomInt(0, sizeof(math_operators) - 1);
 		int var1, var2;
@@ -153,9 +157,10 @@ void ShowAlertPanel(const char[] message, any...)
 	delete panel;
 }
 
-public int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DoNothing(Menu menu, MenuAction action, int client, int itemNum)
 {
 	// Do Nothing
+	return 0;
 }
 
 //================================================================//

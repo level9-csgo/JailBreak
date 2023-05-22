@@ -55,9 +55,6 @@ bool g_bIsDayActivated;
 int g_iCurrentWeapon[MAXPLAYERS + 1];
 int g_iDayId = -1;
 
-float g_WorldMaxs[3];
-float g_WorldMins[3];
-
 public Plugin myinfo = 
 {
 	name = "[CS:GO] JailBreak - "...DAY_NAME, 
@@ -160,43 +157,6 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 	}
 }
 
-public void OnGameFrame()
-{
-	if (g_bIsDayActivated)
-	{
-		int iClientWeapon, iLeadingClient;
-		for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
-		{
-			if (IsClientInGame(iCurrentClient))
-			{
-				iClientWeapon = g_iCurrentWeapon[iCurrentClient];
-				iLeadingClient = GetLeader();
-				
-				PrintCenterText(iCurrentClient, "<font color='#CC0000'> Gun Game:</font> \n<font color='#FFA500'>%N</font> is leading with %s | <font color='#8AC7DB'>%d/%d</font>\nCurrent Weapon: %s | %d/%d\nNext %s: %s", 
-					iLeadingClient, 
-					g_szWeapons[g_iCurrentWeapon[iLeadingClient]][Weapon_Name], 
-					g_iCurrentWeapon[iLeadingClient] + 1 == MAX_WEAPONS_GG ? MAX_WEAPONS_GG:g_iCurrentWeapon[iLeadingClient] + 1, 
-					MAX_WEAPONS_GG, 
-					g_szWeapons[iClientWeapon][Weapon_Name], 
-					iClientWeapon + 1, 
-					MAX_WEAPONS_GG, 
-					iClientWeapon == MAX_WEAPONS_GG - 1 ? "Kill":"Weapon", 
-					iClientWeapon == MAX_WEAPONS_GG - 1 ? "Victory!":g_szWeapons[iClientWeapon + 1][Weapon_Name]
-					);
-			}
-		}
-	}
-}
-
-public void OnMapStart()
-{
-	GetEntPropVector(0, Prop_Data, "m_WorldMaxs", g_WorldMaxs);
-	GetEntPropVector(0, Prop_Data, "m_WorldMins", g_WorldMins);
-	
-	// Remove 0.5% from the world minimum height, this is required to prevent spawning in a void, etc...
-	g_WorldMins[2] -= g_WorldMins[2] * 0.005;
-}
-
 public void OnClientPostAdminCheck(int client)
 {
 	g_iCurrentWeapon[client] = 0;
@@ -212,8 +172,9 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 	int iVictimIndex = GetClientOfUserId(event.GetInt("userid"));
 	int iAttackerIndex = GetClientOfUserId(event.GetInt("attacker"));
 	
-	if (!iAttackerIndex || iVictimIndex == iAttackerIndex) {
-		return;
+	if (!iAttackerIndex || iVictimIndex == iAttackerIndex)
+	{
+		return Plugin_Continue;
 	}
 	
 	if ((StrContains(szWeapon, "knife") != -1 || StrContains(szWeapon, "bayonet") != -1) && g_iCurrentWeapon[iVictimIndex] > 0)
@@ -223,13 +184,13 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 	
 	if (StrContains(g_szWeapons[g_iCurrentWeapon[iAttackerIndex]][Weapon_Tag], szWeapon) == -1 && (StrContains(szWeapon, "knife") == -1 && StrContains(szWeapon, "bayonet") == -1))
 	{
-		return;
+		return Plugin_Continue;
 	}
 	
 	if (g_iCurrentWeapon[iAttackerIndex] == MAX_WEAPONS_GG - 1)
 	{
 		EndGame(iAttackerIndex);
-		return;
+		return Plugin_Continue;
 	}
 	
 	SetLevelUp(iAttackerIndex);
@@ -250,14 +211,18 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 	}
 	
 	newEvent.Cancel();
+	
+	DisplayProgressInfoAll();
+	
+	return Plugin_Continue;
 }
 
-public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	SetupPlayer(GetClientOfUserId(event.GetInt("userid")));
 }
 
-public Action Event_GrenadeThrow(Event event, const char[] name, bool dontBroadcast)
+void Event_GrenadeThrow(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	DisarmPlayer(client);
@@ -362,6 +327,32 @@ void ToggleRunesState(bool state)
 	for (int current_rune = 0; current_rune < JB_GetRunesAmount(); current_rune++)
 	{
 		JB_ToggleRune(current_rune, state);
+	}
+}
+
+void DisplayProgressInfo(int client, int leading_client)
+{
+	PrintCenterText(client, "<font color='#CC0000'> Gun Game:</font> \n<font color='#FFA500'>%N</font> is leading with %s | <font color='#8AC7DB'>%d/%d</font>\nCurrent Weapon: %s | %d/%d\nNext %s: %s", 
+		leading_client, 
+		g_szWeapons[g_iCurrentWeapon[leading_client]][Weapon_Name], 
+		g_iCurrentWeapon[leading_client] + 1 == MAX_WEAPONS_GG ? MAX_WEAPONS_GG:g_iCurrentWeapon[leading_client] + 1, 
+		MAX_WEAPONS_GG, 
+		g_szWeapons[g_iCurrentWeapon[client]][Weapon_Name], 
+		g_iCurrentWeapon[client] + 1, 
+		MAX_WEAPONS_GG, 
+		g_iCurrentWeapon[client] == MAX_WEAPONS_GG - 1 ? "Kill":"Weapon", 
+		g_iCurrentWeapon[client] == MAX_WEAPONS_GG - 1 ? "Victory!":g_szWeapons[g_iCurrentWeapon[client] + 1][Weapon_Name]
+		);
+}
+
+void DisplayProgressInfoAll()
+{
+	for (int current_client = 1, leading_client = GetLeader(); current_client <= MaxClients; current_client++)
+	{
+		if (IsClientInGame(current_client))
+		{
+			DisplayProgressInfo(current_client, leading_client);
+		}
 	}
 }
 

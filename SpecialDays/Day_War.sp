@@ -209,7 +209,7 @@ void ShowWeaponSelectionSetupPanel()
 	delete panel;
 }
 
-public int Handler_WeaponSelectionSetup(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_WeaponSelectionSetup(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
@@ -235,6 +235,8 @@ public int Handler_WeaponSelectionSetup(Menu menu, MenuAction action, int client
 		
 		EmitSoundToClient(client, MENU_ITEM_SOUND);
 	}
+	
+	return 0;
 }
 
 void showOnlyHeadshotSetupPanel()
@@ -262,7 +264,7 @@ void showOnlyHeadshotSetupPanel()
 	delete panel;
 }
 
-public int Handler_OnlyHeadshotSetup(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_OnlyHeadshotSetup(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
@@ -288,6 +290,8 @@ public int Handler_OnlyHeadshotSetup(Menu menu, MenuAction action, int client, i
 		
 		EmitSoundToClient(client, MENU_ITEM_SOUND);
 	}
+	
+	return 0;
 }
 
 //================================[ Timers ]================================//
@@ -353,7 +357,7 @@ void ResetValues()
 	}
 }
 
-char GetProgressBar(int value, int all)
+char[] GetProgressBar(int value, int all)
 {
 	char szProgress[PROGRESS_BAR_LENGTH * 6];
 	int iLength = PROGRESS_BAR_LENGTH;

@@ -11,7 +11,7 @@
 #include <JB_SettingsSystem>
 #define REQUIRE_PLUGIN
 
-#define PREFIX " \x04[Play-IL]\x01"
+#define PREFIX " \x04[Level9]\x01"
 
 #define SETTINGS_LIBRARY_NAME "JB_SettingsSystem"
 
@@ -1144,6 +1144,12 @@ void AddDirectoryToDownloadTable(const char[] dir)
 
 ItemId GetToggledItem(int client, int category_type)
 {
+	// Cannot use shop natives on bots.
+	if (IsFakeClient(client))
+	{
+		return INVALID_ITEM;
+	}
+	
 	// Get the client shop items arraylist, and make sure it's not empty
 	ArrayList client_shop_items = Shop_GetClientItems(client);
 	

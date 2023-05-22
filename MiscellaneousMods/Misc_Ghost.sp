@@ -9,6 +9,7 @@
 #include <JB_RunesSystem>
 #include <JB_SettingsSystem>
 #include <JB_SpecialDays>
+#include <TransmitManager>
 
 //==========[ Settings ]==========//
 
@@ -140,9 +141,6 @@ public void OnClientPostAdminCheck(int client)
 {
 	// Reset the local client variables
 	g_Players[client].Reset();
-	
-	// Hook set transmit to avoid team ghosting
-	SDKHook(client, SDKHook_SetTransmit, Hook_OnSetTransmit);
 }
 
 public void OnMapStart()
@@ -171,6 +169,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			buttons &= ~IN_USE;
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
 Action Listener_Drop(int client, const char[] command, int argc)
@@ -208,7 +208,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	// Make sure the spawned client is a ghost
 	if (g_Players[client].IsClientGhost && g_Players[client].IsGhostDeployed)
 	{
-		ToggleGhostFeature(client, false, false);
+		ToggleGhostFeature(client, false, false, false);
 	}
 }
 
@@ -329,26 +329,6 @@ Action Hook_OnWeaponCanUse(int client, int weapon)
 	return Plugin_Handled;
 }
 
-Action Hook_OnSetTransmit(int entity, int other)
-{
-	if (entity == other || (!g_Players[other].IsClientGhost && !g_Players[entity].IsClientGhost))
-	{
-		return Plugin_Continue;
-	}
-	
-	if (!g_Players[other].IsClientGhost && g_Players[entity].IsClientGhost)
-	{
-		return Plugin_Handled;
-	}
-	
-	if (g_Players[other].IsClientGhost && GetClientTeam(other) != GetClientTeam(entity) && IsPlayerAlive(entity) && !g_Players[entity].IsClientGhost)
-	{
-		return Plugin_Handled;
-	}
-	
-	return Plugin_Continue;
-}
-
 //================================[ Commands ]================================//
 
 Action Command_Ghost(int client, int args)
@@ -437,6 +417,8 @@ Action Timer_DisableGhostEffect(Handle timer, int userid)
 	{
 		SetEntProp(client, Prop_Send, "m_bIsPlayerGhost", false);
 	}
+	
+	return Plugin_Continue;
 }
 
 Action Timer_DeployGhost(Handle timer, int userid)
@@ -446,16 +428,17 @@ Action Timer_DeployGhost(Handle timer, int userid)
 	
 	if (!client || IsPlayerAlive(client))
 	{
-		return;
+		return Plugin_Continue;
 	}
 	
 	// Deploy the client's ghost ability!
 	Command_Ghost(client, 0);
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//
 
-void ToggleGhostFeature(int client, bool toggle_mode, bool apply_effect = true)
+void ToggleGhostFeature(int client, bool toggle_mode, bool apply_effect = true, bool kill = true)
 {
 	if (g_Players[client].IsClientGhost == toggle_mode || GetClientTeam(client) <= CS_TEAM_SPECTATOR)
 	{
@@ -477,40 +460,37 @@ void ToggleGhostFeature(int client, bool toggle_mode, bool apply_effect = true)
 		// Perform sdk hook on the client
 		SDKHook(client, SDKHook_WeaponCanUse, Hook_OnWeaponCanUse);
 		
-		SetEntityRenderMode(client, RENDER_TRANSCOLOR);
-		SetEntityRenderColor(client, 255, 255, 255, 100);
-		
 		// Set client god mode on
 		SetEntProp(client, Prop_Data, "m_takedamage", 0, 1);
+		
+		PrintCenterText(client, "<font color='#1CC752' class='fontSize-xl'>Press G to noclip</font>");
 	}
 	else
 	{
 		SDKUnhook(client, SDKHook_WeaponCanUse, Hook_OnWeaponCanUse);
 		
-		SetEntityRenderMode(client, RENDER_NORMAL);
-		SetEntityRenderColor(client, 255, 255, 255, 255);
-		
-		if (apply_effect)
-		{
-			ForcePlayerSuicide(client);
-		}
-		else
-		{
-			SetEntProp(client, Prop_Send, "m_lifeState", PLAYER_LIFE_ALIVE);
-		}
-		
 		// Set client god mode off
 		SetEntProp(client, Prop_Data, "m_takedamage", 2, 1);
+		
+		if (kill)
+		{
+			SetEntProp(client, Prop_Send, "m_lifeState", PLAYER_LIFE_ALIVE);
+			ForcePlayerSuicide(client);
+			
+			g_Players[client].IsClientGhost = !toggle_mode;
+		}
 	}
 	
 	SetEntityCollisionGroup(client, toggle_mode ? COLLISION_GROUP_IN_VEHICLE : COLLISION_GROUP_DEBRIS_TRIGGER);
 	EntityCollisionRulesChanged(client);
-
+	
 	if (apply_effect)
 	{
-		ApplyGhostEffect(client);
 		SetEntProp(client, Prop_Send, "m_lifeState", PLAYER_LIFE_DEAD);
+		ApplyGhostEffect(client);
 	}
+	
+	UpdateClientTransmitState(client);
 }
 
 void ApplyGhostEffect(int client)
@@ -518,6 +498,26 @@ void ApplyGhostEffect(int client)
 	SetEntProp(client, Prop_Send, "m_bIsPlayerGhost", GetEntProp(client, Prop_Send, "m_bIsPlayerGhost") ^ 1);
 	
 	CreateTimer(0.5, Timer_DisableGhostEffect, GetClientUserId(client));
+}
+
+void UpdateClientTransmitState(int client)
+{
+	int client_team = GetClientTeam(client);
+	
+	for (int current_client = 1; current_client <= MaxClients; current_client++)
+	{
+		if (!IsClientInGame(current_client) || IsFakeClient(current_client) || client == current_client)
+		{
+			continue;
+		}
+		
+		TransmitManager_SetEntityState(client, current_client, !g_Players[client].IsClientGhost);
+		
+		if (client_team != GetClientTeam(current_client))
+		{
+			TransmitManager_SetEntityState(current_client, client, !g_Players[client].IsClientGhost);
+		}
+	}
 }
 
 //================================================================//

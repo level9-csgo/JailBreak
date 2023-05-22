@@ -63,7 +63,6 @@ char g_szDays[][] =
 float g_fStartMapTime;
 
 int g_iCurrentDay;
-int g_iSettingId = -1;
 
 public Plugin myinfo = 
 {
@@ -94,8 +93,6 @@ public void OnPluginStart()
 	// Global Commands
 	RegConsoleCmd("sm_day", Command_Day, "Prints the current day.");
 	RegConsoleCmd("sm_maptime", Command_MapTime, "Prints the time that the current map running.");
-	
-	AddCommandListener(Listener_JoinTeam, "jointeam");
 	
 	HookEvent("server_cvar", Event_ServerCvar, EventHookMode_Pre);
 	HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_Post);
@@ -129,17 +126,11 @@ public void OnMapStart()
 {
 	GameRules_SetProp("m_bWarmupPeriod", 0);
 	
+	// Disable any manual team menu interaction for players.
+	GameRules_SetProp("m_bIsQueuedMatchmaking", true);
+	
 	g_iCurrentDay = Day_Sunday;
 	g_fStartMapTime = GetEngineTime();
-}
-
-public void OnLibraryAdded(const char[] name)
-{
-	if (StrEqual(name, "JB_SettingsSystem"))
-	{
-		JB_CreateSettingCategory("Sound Settings", "This category is associated with sound in general, as well as music settings.");
-		g_iSettingId = JB_CreateSetting("setting_mute_chat_sound", "Mutes the chat tick sound for certain clients. (Bool setting)", "Mute Chat Sound", "Sound Settings", Setting_Bool, 1);
-	}
 }
 
 public Action CP_OnChatMessage(int & author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool & processcolors, bool & removecolors)
@@ -172,6 +163,7 @@ public void OnClientPostAdminCheck(int client)
 public Action Event_ServerCvar(Event event, const char[] name, bool dontBroadcast)
 {
 	event.BroadcastDisabled = true;
+	return Plugin_Continue;
 }
 
 public void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
@@ -210,7 +202,7 @@ public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 	g_iCurrentDay = ++g_iCurrentDay % sizeof(g_szDays);
 }
 
-public Action Event_ClientConnectFull(Event event, const char[] name, bool dontBroadcast)
+void Event_ClientConnectFull(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	ChangeClientTeam(client, CS_TEAM_T);
@@ -235,9 +227,7 @@ public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast
 	
 	g_ClientsData[client].bIsReported = false;
 	
-	int crazy_knife_mod_index = JB_FindSpecialMod("Crazy Knife");
-	
-	if (crazy_knife_mod_index != -1 && crazy_knife_mod_index == JB_GetCurrentSpecialMod())
+	if (IsCrazyKnifeRunning())
 	{
 		return;
 	}
@@ -291,19 +281,6 @@ public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 		
 		delete AttackerSpectators;
 	}
-}
-
-public Action Listener_JoinTeam(int client, const char[] command, int argc)
-{
-	char szArg[8];
-	GetCmdArg(1, szArg, sizeof(szArg));
-	int iTeam = StringToInt(szArg);
-	
-	PrintToChat(client, "%s You are not allowed to join the %s\x01 team.", PREFIX_ERROR, iTeam == CS_TEAM_SPECTATOR ? "\x0Dspectator" : iTeam == CS_TEAM_T ? "\x10prisoners" : "\x0Cguards");
-	
-	EmitSoundToClient(client, "buttons/button11.wav", _, _, _, _, 0.30);
-	
-	return Plugin_Stop;
 }
 
 //================================[ Commands ]================================//
@@ -442,6 +419,8 @@ public int Native_TogglePrisonersMute(Handle plugin, int numParams)
 			PrintToChatAll("Prisoners can speak now.");
 		}
 	}
+	
+	return 0;
 }
 
 public any Native_GetDatabase(Handle plugin, int numParams)
@@ -472,6 +451,8 @@ Action Timer_PrisonersMute(Handle hTimer)
 	TogglePrisonersMute(false);
 	PrintToChatAll(" \x0FPrisoners can speak now... quietly...\x01");
 	g_hPrisonersMuteTimer = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
 //================================[ Functions ]================================//
@@ -507,6 +488,17 @@ ArrayList GetClientSpectators(int client)
 	}
 	
 	return spectators;
+}
+
+bool IsCrazyKnifeRunning()
+{
+	static int crazy_knife_mod_index = -1;
+	if (crazy_knife_mod_index == -1)
+	{
+		crazy_knife_mod_index = JB_FindSpecialMod("Crazy Knife");
+	}
+	
+	return crazy_knife_mod_index != -1 && crazy_knife_mod_index == JB_GetCurrentSpecialMod();
 }
 
 //================================================================//

@@ -209,7 +209,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	return Plugin_Continue;
 }
 
-public Action Event_WeaponFire(Event event, const char[] name, bool dontBroadcast)
+void Event_WeaponFire(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
@@ -280,7 +280,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -318,6 +318,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */
@@ -343,6 +345,8 @@ public Action Timer_RefillTaser(Handle hTimer, int serial)
 	
 	// Set the timer handle as invalid, to prevent timer errors
 	g_hRefillTimer[client] = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
 /*  */

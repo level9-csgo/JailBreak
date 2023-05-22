@@ -136,10 +136,10 @@ stock void CPrintToChatAll(bool chat, const char[] message, any ...) {
  * @param target 	Client index.
  * @param message	Message (formatting rules).
  */
-stock void CPrintToChatObservers(int target, const char[] message, any ...) {
+stock void CPrintToChatObservers(int target, bool chat, const char[] message, any ...) {
 	char buffer[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(LANG_SERVER);
-	VFormat(buffer, sizeof(buffer), message, 3);
+	VFormat(buffer, sizeof(buffer), message, 4);
 
 	if (!g_bCFixColors) {
 		CFixColors();
@@ -151,7 +151,7 @@ stock void CPrintToChatObservers(int target, const char[] message, any ...) {
  			int ObserverMode = GetEntProp(client, Prop_Send, "m_iObserverMode");
  
  			if (observee == target && (ObserverMode == 4 || ObserverMode == 5)) {
- 				CPrintToChat(client, buffer);
+ 				CPrintToChat(client, chat, buffer);
  			}
  		}
  	}
@@ -190,17 +190,17 @@ stock void CPrintToChatEx(int client, int author, bool chat, const char[] messag
  * @param author        Author index.
  * @param message       Message (formatting rules).
  */
-stock void CPrintToChatAllEx(int author, const char[] message, any ...) {
+stock void CPrintToChatAllEx(int author, bool chat, const char[] message, any ...) {
 	char buffer[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(LANG_SERVER);
-	VFormat(buffer, sizeof(buffer), message, 3);
+	VFormat(buffer, sizeof(buffer), message, 4);
 
 	if (!g_bCFixColors) {
 		CFixColors();
 	}
 
 	if (!IsSource2009()) {
-		C_PrintToChatAllEx(author, "%s%s", g_sCPrefix, buffer);
+		C_PrintToChatAllEx(author, chat, "%s%s", g_sCPrefix, buffer);
 	}
 	else {
 		MC_PrintToChatAllEx(author, "%s%s", g_sCPrefix, buffer);
@@ -214,10 +214,10 @@ stock void CPrintToChatAllEx(int author, const char[] message, any ...) {
  * @param target 	Client index.
  * @param message	Message (formatting rules).
  */
-stock void CPrintToChatObserversEx(int target, const char[] message, any ...) {
+stock void CPrintToChatObserversEx(int target, bool chat, const char[] message, any ...) {
 	char buffer[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(LANG_SERVER);
-	VFormat(buffer, sizeof(buffer), message, 3);
+	VFormat(buffer, sizeof(buffer), message, 4);
 
 	if (!g_bCFixColors) {
 		CFixColors();
@@ -229,7 +229,7 @@ stock void CPrintToChatObserversEx(int target, const char[] message, any ...) {
  			int ObserverMode = GetEntProp(client, Prop_Send, "m_iObserverMode");
  
  			if (observee == target && (ObserverMode == 4 || ObserverMode == 5)) {
- 				CPrintToChatEx(client, target, buffer);
+ 				CPrintToChatEx(client, target, chat, buffer);
  			}
  		}
  	}
@@ -245,7 +245,7 @@ stock void CPrintToChatObserversEx(int target, const char[] message, any ...) {
 stock void CReplyToCommand(int client, bool chat, const char[] message, any ...) {
 	char buffer[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(client);
-	VFormat(buffer, sizeof(buffer), message, 3);
+	VFormat(buffer, sizeof(buffer), message, 4);
 
 	if (!g_bCFixColors) {
 		CFixColors();
@@ -266,17 +266,17 @@ stock void CReplyToCommand(int client, bool chat, const char[] message, any ...)
  * @param author		Client to use for {teamcolor}
  * @param message		Message (formatting rules)
  */
-stock void CReplyToCommandEx(int client, int author, const char[] message, any ...) {
+stock void CReplyToCommandEx(int client, int author, bool chat, const char[] message, any ...) {
 	char buffer[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(client);
-	VFormat(buffer, sizeof(buffer), message, 4);
+	VFormat(buffer, sizeof(buffer), message, 5);
 
 	if (!g_bCFixColors) {
 		CFixColors();
 	}
 
 	if (!IsSource2009()) {
-		C_ReplyToCommandEx(client, author, "%s%s", g_sCPrefix, buffer);
+		C_ReplyToCommandEx(client, author, chat, "%s%s", g_sCPrefix, buffer);
 	}
 	else {
 		MC_ReplyToCommandEx(client, author, "%s%s", g_sCPrefix, buffer);
@@ -321,17 +321,17 @@ stock void CPrintToServer(const char[] message, any ...) {
  * 
  * @error
  */
-stock void CShowActivity(int author, const char[] message, any ...) {
+stock void CShowActivity(int author, bool chat, const char[] message, any ...) {
 	char buffer[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(LANG_SERVER);
-	VFormat(buffer, sizeof(buffer), message, 3);
+	VFormat(buffer, sizeof(buffer), message, 4);
 
 	if (!g_bCFixColors) {
 		CFixColors();
 	}
 
 	if (!IsSource2009()) {
-		C_ShowActivity(author, "%s", buffer);
+		C_ShowActivity(author, chat, "%s", buffer);
 	}
 	else {
 		MC_ShowActivity(author, "%s", buffer);
@@ -349,17 +349,17 @@ stock void CShowActivity(int author, const char[] message, any ...) {
  * 
  * @error
  */
-stock void CShowActivityEx(int author, const char[] tag, const char[] message, any ...) {
+stock void CShowActivityEx(int author, const char[] tag, bool chat, const char[] message, any ...) {
 	char buffer[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(LANG_SERVER);
-	VFormat(buffer, sizeof(buffer), message, 4);
+	VFormat(buffer, sizeof(buffer), message, 5);
 
 	if (!g_bCFixColors) {
 		CFixColors();
 	}
 
 	if (!IsSource2009()) {
-		C_ShowActivityEx(author, tag, "%s", buffer);
+		C_ShowActivityEx(author, tag, chat, "%s", buffer);
 	}
 	else {
 		MC_ShowActivityEx(author, tag, "%s", buffer);
@@ -379,17 +379,17 @@ stock void CShowActivityEx(int author, const char[] tag, const char[] message, a
  * 
  * @error
  */
- stock void CShowActivity2(int author, const char[] tag, const char[] message, any ...) {
+ stock void CShowActivity2(int author, const char[] tag, bool chat, const char[] message, any ...) {
 	char buffer[MAX_MESSAGE_LENGTH];
 	SetGlobalTransTarget(LANG_SERVER);
-	VFormat(buffer, sizeof(buffer), message, 4);
+	VFormat(buffer, sizeof(buffer), message, 5);
 
 	if (!g_bCFixColors) {
 		CFixColors();
 	}
 
 	if (!IsSource2009()) {
-		C_ShowActivity2(author, tag, "%s", buffer);
+		C_ShowActivity2(author, tag, chat, "%s", buffer);
 	}
 	else {
 		MC_ShowActivity2(author, tag, "%s", buffer);

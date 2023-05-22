@@ -75,13 +75,14 @@ void showDeagleGiverMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Handler_DeagleGiver(Menu menu, MenuAction action, int client, int itemNum)
+int Handler_DeagleGiver(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
-		if (!IsClientAllowed(client)) {
+		if (!IsClientAllowed(client)) 
+		{
 			PrintToChat(client, "%s Deagle giver menu allowed for alive guards or admins.", PREFIX_ERROR);
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -106,13 +107,15 @@ public int Handler_DeagleGiver(Menu menu, MenuAction action, int client, int ite
 					}
 				}
 				
-				PrintToChatAll("%s \x04%N\x01 has gave all the everyone an empty deagle!", PREFIX, client, itemNum == 2 ? "n empty" : " full");
+				PrintToChatAll("%s \x04%N\x01 has gave everyone a%s deagle!", PREFIX, client, itemNum == 2 ? "n empty" : " full");
 			}
 		}
 	}
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 //================================[ Functions ]================================//

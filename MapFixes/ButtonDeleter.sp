@@ -27,7 +27,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	HookEvent("round_start", Event_RoundStart, EventHookMode_Post);
+	HookEvent("round_start", Event_RoundStart);
 }
 
 //================================[ Events ]================================//
@@ -54,7 +54,7 @@ public void OnMapStart()
 	}
 }
 
-public Action Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	// Repeat the code in OnMapStart()
 	OnMapStart();

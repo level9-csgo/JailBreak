@@ -143,6 +143,8 @@ public Action JB_OnRuneSpawn(int entity, Rune runeData, int &runeId, float origi
 		RequestFrame(RF_TeleportRuneBox, EntIndexToEntRef(entity));
 		g_IsRuneNeedToTeleport = false;
 	}
+	
+	return Plugin_Continue;
 }
 
 void RF_TeleportRuneBox(int entRef)
@@ -165,10 +167,13 @@ public Action CS_OnCSWeaponDrop(int client, int weaponIndex)
 	if (g_bIsLrActivated)
 	{
 		int iEntity = EntRefToEntIndex(g_iWeaponRef);
-		if (iEntity != INVALID_ENT_REFERENCE && iEntity == weaponIndex) {
+		if (iEntity != INVALID_ENT_REFERENCE && iEntity == weaponIndex) 
+		{
 			SDKHook(weaponIndex, SDKHook_Think, Hook_OnThink);
 		}
 	}
+	
+	return Plugin_Continue;
 }
 
 /*  */
@@ -188,6 +193,8 @@ public Action Hook_OnWeaponCanUse(int client, int weapon)
 		g_iCurrentHolder = client;
 		SDKUnhook(EntRefToEntIndex(g_iWeaponRef), SDKHook_Think, Hook_OnThink);
 	}
+	
+	return Plugin_Continue;
 }
 
 void Hook_OnThink(int entity)
@@ -253,7 +260,7 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	{
 		if (!IsLrAvailable(client, client))
 		{
-			return;
+			return 0;
 		}
 		
 		switch (itemNum)
@@ -281,6 +288,8 @@ public int Handler_LrSetup(Menu menu, MenuAction action, int client, int itemNum
 	else if (action == MenuAction_End) {
 		delete menu;
 	}
+	
+	return 0;
 }
 
 /*  */
@@ -291,6 +300,8 @@ public Action Timer_Explode(Handle hTimer)
 {
 	ForcePlayerSuicide(g_iCurrentHolder);
 	g_hExplodeTimer = INVALID_HANDLE;
+	
+	return Plugin_Continue;
 }
 
 /*  */
