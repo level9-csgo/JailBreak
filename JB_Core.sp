@@ -227,9 +227,7 @@ public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast
 	
 	g_ClientsData[client].bIsReported = false;
 	
-	int crazy_knife_mod_index = JB_FindSpecialMod("Crazy Knife");
-	
-	if (crazy_knife_mod_index != -1 && crazy_knife_mod_index == JB_GetCurrentSpecialMod())
+	if (IsCrazyKnifeRunning())
 	{
 		return;
 	}
@@ -490,6 +488,17 @@ ArrayList GetClientSpectators(int client)
 	}
 	
 	return spectators;
+}
+
+bool IsCrazyKnifeRunning()
+{
+	static int crazy_knife_mod_index = -1;
+	if (crazy_knife_mod_index == -1)
+	{
+		crazy_knife_mod_index = JB_FindSpecialMod("Crazy Knife");
+	}
+	
+	return crazy_knife_mod_index != -1 && crazy_knife_mod_index == JB_GetCurrentSpecialMod();
 }
 
 //================================================================//

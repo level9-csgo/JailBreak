@@ -144,13 +144,12 @@ public void OnClientPostAdminCheck(int client)
 	g_esClientsData[client].Reset();
 }
 
-public void OnClientDisconnect_Post(int client)
+public void OnClientDisconnect(int client)
 {
 	if (g_bIsSpecialDayRunning && g_hStartCountDownTimer == INVALID_HANDLE)
-	{		
+	{
 		int iAlivePlayers = GetOnlineTeamCount(CS_TEAM_T);
-		
-		if (iAlivePlayers == 1 && !g_cvRespawnOnDeath.BoolValue)
+		if (iAlivePlayers == 2 && !g_cvRespawnOnDeath.BoolValue)
 		{
 			CreateTimer(0.1, Timer_EndSpecialDay);
 		}

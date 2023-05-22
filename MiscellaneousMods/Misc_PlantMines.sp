@@ -554,6 +554,11 @@ public Action EntityFadeOut(Handle timer, any data)
 
 void CS_CreateExplosion(int attacker, float damage, float radius, float pos[3])
 {
+	if (attacker == -1)
+	{
+		attacker = 0;
+	}
+	
 	// Setup and send the explosion sprite effect
 	TE_SetupExplosion(pos, g_iExplosionSprite, 10.0, 30, 0, 600, 5000);
 	TE_SendToAll();

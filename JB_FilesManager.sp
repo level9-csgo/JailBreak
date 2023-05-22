@@ -24,11 +24,6 @@ public Plugin myinfo =
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
-public void OnPluginStart()
-{
-	SetupConfigLoad();
-}
-
 /*  */
 
 /* Events */
@@ -104,10 +99,10 @@ char[] GetFileExt(const char[] path)
 {
 	char buffer[8];
 	
-	int idx = FindCharInString(path, 'c', true);
+	int idx = FindCharInString(path, '.', true);
 	if (idx != -1)
 	{
-		strcopy(buffer, sizeof(buffer), path[idx]);
+		strcopy(buffer, sizeof(buffer), path[idx + 1]);
 	}
 	
 	return buffer;
