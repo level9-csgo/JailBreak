@@ -6,6 +6,7 @@
 #include <sdkhooks>
 #include <shop>
 #include <JB_GuardsSystem>
+#include <spec_hooks>
 
 #undef REQUIRE_PLUGIN
 #include <JB_SettingsSystem>
@@ -539,18 +540,8 @@ void ExecuteEmote(int client, char[] anim1, char[] anim2, char[] sound_name, boo
 	{
 		spectator = spectators.Get(current_spectator);
 		
-		// mode 4 - first person [1 iteration]
-		// mode 5 - third person [0 iterations]
-		// mode 6 - free look [2 iterations]
-		int iterations[3] = { 1, 0, 2 };
-		int mode = GetEntProp(spectator, Prop_Send, "m_iObserverMode");
-		if (mode - 4 >= 0)
-		{
-			for (int i; i < iterations[mode - 4]; i++)
-			{
-				FakeClientCommand(spectator, "spec_mode");
-			}
-		}
+		// Apply third person.
+		SpecHooks_SetObserverMode(spectator, OBS_MODE_CHASE);
 	}
 	
 	delete spectators;
@@ -601,18 +592,8 @@ void StopEmote(int client)
 	{
 		spectator = spectators.Get(current_spectator);
 		
-		// mode 4 - first person [0 iteration]
-		// mode 5 - third person [2 iterations]
-		// mode 6 - free look [1 iterations]
-		int iterations[3] = { 0, 2, 1 };
-		int mode = GetEntProp(spectator, Prop_Send, "m_iObserverMode");
-		if (mode - 4 >= 0)
-		{
-			for (int i; i < iterations[mode - 4]; i++)
-			{
-				FakeClientCommand(spectator, "spec_mode");
-			}
-		}
+		// Apply third person.
+		SpecHooks_SetObserverMode(spectator, OBS_MODE_IN_EYE);
 	}
 	
 	delete spectators;
@@ -1277,7 +1258,7 @@ ArrayList GetClientSpectators(int client)
 	
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
-		if (IsClientInGame(current_client) && !IsPlayerAlive(current_client) && GetEntPropEnt(current_client, Prop_Send, "m_hObserverTarget") == client)
+		if (IsClientInGame(current_client) && SpecHooks_GetObserverTarget(current_client) == client)
 		{
 			spectators.Push(current_client);
 		}

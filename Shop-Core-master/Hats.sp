@@ -2,8 +2,7 @@
 #include <sdktools>
 #include <shop>
 #include <TransmitManager>
-
-#define OBS_MODE_IN_EYE 4
+#include <spec_hooks>
 
 #define HATS_PREVIEW_FILES_PATH "hat_previews"
 
@@ -121,11 +120,6 @@ public void OnPluginStart()
 	
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	HookEvent("player_death", Event_PlayerDeath);
-	
-	AddCommandListener(Listener_OnSpectateChange, "spec_prev");
-	AddCommandListener(Listener_OnSpectateChange, "spec_next");
-	AddCommandListener(Listener_OnSpectateChange, "spec_player");
-	AddCommandListener(Listener_OnSpectateChange, "spec_mode");
 	
 	Lateload();
 	
@@ -248,15 +242,7 @@ public void Shop_OnClientEmotePost(int client)
 		return;
 	}
 	
-	ArrayList spectators = GetClientSpectators(client);
-	spectators.Push(client); // hack.
-	
-	for (int current_spectator; current_spectator < spectators.Length; current_spectator++)
-	{
-		TransmitManager_SetEntityState(entity, spectators.Get(current_spectator), true);
-	}
-	
-	delete spectators;
+	TransmitManager_SetEntityState(entity, client, true);
 }
 
 public void Shop_OnClientEmoteStop(int client)
@@ -272,67 +258,39 @@ public void Shop_OnClientEmoteStop(int client)
 		return;
 	}
 	
-	ArrayList spectators = GetClientSpectators(client);
-	spectators.Push(client); // hack.
-	
-	for (int current_spectator; current_spectator < spectators.Length; current_spectator++)
-	{
-		TransmitManager_SetEntityState(entity, spectators.Get(current_spectator), false);
-	}
-	
-	delete spectators;
+	TransmitManager_SetEntityState(entity, client, false);
 }
 
-Action Listener_OnSpectateChange(int client, const char[] command, int argc)
+public void SpecHooks_OnObserverTargetChange(int client, int target, int last_target)
 {
-	if (!IsClientInGame(client))
+	if (last_target != -1 && g_Players[last_target].equipped_hat)
 	{
-		return Plugin_Continue;
-	}
-	
-	int target = GetObservingTarget(client);
-	if (target == -1)
-	{
-		return Plugin_Continue;
-	}
-	
-	DataPack dp = new DataPack();
-	dp.WriteCell(g_Players[client].userid);
-	dp.WriteCell(g_Players[target].userid);
-	RequestFrame(Frame_SpectateChangePost, dp);
-	return Plugin_Continue;
-}
-
-void Frame_SpectateChangePost(DataPack dp)
-{
-	dp.Reset();
-	
-	int userid = dp.ReadCell(), prev_target_userid = dp.ReadCell();
-	dp.Close();
-	
-	int client = GetClientOfUserId(userid);
-	if (!client)
-	{
-		return;
-	}
-	
-	int prev_target = GetClientOfUserId(prev_target_userid);
-	if (prev_target && g_Players[prev_target].equipped_hat)
-	{
-		int entity = g_Players[prev_target].GetHatEntity();
+		int entity = g_Players[last_target].GetHatEntity();
 		if (entity != -1)
 		{
 			TransmitManager_SetEntityState(entity, client, true);
 		}
 	}
 	
-	int target = GetObservingTarget(client);
-	if (target != -1 && g_Players[target].equipped_hat)
+	if (g_Players[target].equipped_hat)
 	{
 		int entity = g_Players[target].GetHatEntity();
 		if (entity != -1)
 		{
-			TransmitManager_SetEntityState(entity, client, !(GetObserverMode(client) == OBS_MODE_IN_EYE));
+			TransmitManager_SetEntityState(entity, client, !(SpecHooks_GetObserverMode(client) == OBS_MODE_IN_EYE));
+		}
+	}
+}
+
+public void SpecHooks_OnObserverModeChangePost(int client, int mode, int last_mode)
+{
+	int observer_target = SpecHooks_GetObserverTarget(client);
+	if (observer_target != -1 && g_Players[observer_target].equipped_hat)
+	{
+		int entity = g_Players[observer_target].GetHatEntity();
+		if (entity != -1)
+		{
+			TransmitManager_SetEntityState(entity, client, !(SpecHooks_GetObserverMode(client) == OBS_MODE_IN_EYE));
 		}
 	}
 }
@@ -477,16 +435,6 @@ void PrecacheHatsModels()
 	}
 }
 
-int GetObservingTarget(int client)
-{
-	return GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-}
-
-int GetObserverMode(int client)
-{
-	return GetEntProp(client, Prop_Send, "m_iObserverMode");
-}
-
 void AddDirectoryToDownloadsTable(const char[] directory)
 {
 	// Open directory
@@ -522,21 +470,6 @@ void AddDirectoryToDownloadsTable(const char[] directory)
 	}
 	
 	delete directory_listing;
-}
-
-ArrayList GetClientSpectators(int client)
-{
-	ArrayList spectators = new ArrayList();
-	
-	for (int current_client = 1; current_client <= MaxClients; current_client++)
-	{
-		if (IsClientInGame(current_client) && !IsPlayerAlive(current_client) && GetObservingTarget(current_client) == client)
-		{
-			spectators.Push(current_client);
-		}
-	}
-	
-	return spectators;
 }
 
 void PreviewHat(int client, char[] identifier, bool isFirstRun = true)
