@@ -318,8 +318,6 @@ void PrecacheAgentModels()
 		
 		PrecacheModel(model);
 	}
-	
-	g_Models.Clear();
 }
 
 /**
