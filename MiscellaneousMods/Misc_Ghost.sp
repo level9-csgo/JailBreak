@@ -445,8 +445,6 @@ void ToggleGhostFeature(int client, bool toggle_mode, bool apply_effect = true, 
 		return;
 	}
 	
-	g_Players[client].IsClientGhost = toggle_mode;
-	
 	if (toggle_mode)
 	{
 		CS_RespawnPlayer(client);
@@ -476,10 +474,10 @@ void ToggleGhostFeature(int client, bool toggle_mode, bool apply_effect = true, 
 		{
 			SetEntProp(client, Prop_Send, "m_lifeState", PLAYER_LIFE_ALIVE);
 			ForcePlayerSuicide(client);
-			
-			g_Players[client].IsClientGhost = !toggle_mode;
 		}
 	}
+	
+	g_Players[client].IsClientGhost = toggle_mode;
 	
 	SetEntityCollisionGroup(client, toggle_mode ? COLLISION_GROUP_IN_VEHICLE : COLLISION_GROUP_DEBRIS_TRIGGER);
 	EntityCollisionRulesChanged(client);
@@ -512,11 +510,7 @@ void UpdateClientTransmitState(int client)
 		}
 		
 		TransmitManager_SetEntityState(client, current_client, !g_Players[client].IsClientGhost);
-		
-		if (client_team != GetClientTeam(current_client))
-		{
-			TransmitManager_SetEntityState(current_client, client, !g_Players[client].IsClientGhost);
-		}
+		TransmitManager_SetEntityState(current_client, client, client_team == GetClientTeam(current_client) || !g_Players[client].IsClientGhost);
 	}
 }
 
