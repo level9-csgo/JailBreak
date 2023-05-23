@@ -179,7 +179,7 @@ void OnPlayerNetWorthCalculatedSuccess(Database db, DBResultSet results, const c
 	
 	EscapeBackslashes(json_str, sizeof(json_str));
 	
-	JSONObject jsonObject = JSONObject.FromString(json_str);
+	JSONObject jsonObject = JSONObject.FromString(json_str, JSON_DECODE_ANY);
 	
 	char target_name[MAX_NAME_LENGTH];
 	jsonObject.GetString("player_name", target_name, sizeof(target_name));
