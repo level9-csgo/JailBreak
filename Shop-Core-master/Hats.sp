@@ -190,6 +190,8 @@ public void OnMapStart()
 	AddDirectoryToDownloadsTable("models/spartahelm");
 	AddDirectoryToDownloadsTable("models/store");
 	AddDirectoryToDownloadsTable("models/vikinghelmet");
+	AddDirectoryToDownloadsTable("models/player/items/engineer");
+	AddDirectoryToDownloadsTable("models/ptrunners");
 	AddDirectoryToDownloadsTable("materials/models/gmod_tower");
 	AddDirectoryToDownloadsTable("materials/models/mudhatk");
 	AddDirectoryToDownloadsTable("materials/models/pedobear");
@@ -199,6 +201,8 @@ public void OnMapStart()
 	AddDirectoryToDownloadsTable("materials/models/spartahelm");
 	AddDirectoryToDownloadsTable("materials/models/store");
 	AddDirectoryToDownloadsTable("materials/models/vikinghelmet");
+	AddDirectoryToDownloadsTable("materials/models/player/items/engineer");
+	AddDirectoryToDownloadsTable("materials/models/ptrunners");
 	
 	// Add all preview images to download table.
 	AddDirectoryToDownloadsTable("materials/hat_previews");

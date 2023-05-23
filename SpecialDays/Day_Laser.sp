@@ -333,7 +333,7 @@ void CS_CreateExplosion(int attacker, float damage, float radius, float pos[3])
 			
 			if (current_distance <= radius)
 			{
-				SDKHooks_TakeDamage(current_victim, attacker, sizeof(attacker), Sine(((radius - current_distance) / radius) * (FLOAT_PI / 2)) * damage, DMG_BLAST, .bypassHooks = true);
+				SDKHooks_TakeDamage(current_victim, attacker, sizeof(attacker), Sine(((radius - current_distance) / radius) * (FLOAT_PI / 2)) * damage, DMG_BLAST, .bypassHooks = false);
 			}
 		}
 	}
