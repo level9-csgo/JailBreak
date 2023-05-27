@@ -37,8 +37,6 @@ enum struct Player
 
 Player g_Players[MAXPLAYERS + 1];
 
-ConVar g_DisableImmunityAlpha;
-
 int m_bAliveOffset, g_AutoGhostRespawnSettingId;
 
 public Plugin myinfo = 
@@ -58,14 +56,10 @@ public void OnPluginStart()
 		SetFailState("Unable to find offset for 'CCSPlayerResource::m_bAlive'");
 	}
 	
-	// ConVars Configurate
-	g_DisableImmunityAlpha = FindConVar("sv_disable_immunity_alpha");
-	
 	// Premium Command
 	RegConsoleCmd("sm_ghost", Command_Ghost, "Allows premium members to turn into a ghost when they're dead.");
 	
 	// Add Sound Hooks
-	AddTempEntHook("Shotgun Shot", Hook_SilenceShots);
 	AddNormalSoundHook(Hook_OnNormalSound);
 	
 	// Event Hooks
@@ -145,9 +139,6 @@ public void OnClientPostAdminCheck(int client)
 
 public void OnMapStart()
 {
-	// Required for the ghost body transparent effect to function
-	g_DisableImmunityAlpha.IntValue = 1;
-	
 	// Hook the player manager entity think, required to fake players dead state.
 	int cs_player_manager = GetPlayerResourceEntity();
 	if (cs_player_manager == -1)
@@ -162,8 +153,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 {
 	if (g_Players[client].IsClientGhost)
 	{
-		SetEntPropString(client, Prop_Data, "m_iGlobalname", (buttons & IN_USE) ? "parachute" : "");
-		
 		if (buttons & IN_USE)
 		{
 			buttons &= ~IN_USE;
@@ -251,58 +240,6 @@ Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	}
 	
 	return Plugin_Continue;
-}
-
-Action Hook_SilenceShots(const char[] teName, const int[] players, int numClients, float delay)
-{
-	int client = TE_ReadNum("m_iPlayer") + 1;
-	
-	if (!(1 <= client <= MaxClients))
-	{
-		return Plugin_Continue;
-	}
-	
-	int shooter_team = GetClientTeam(client);
-	
-	// Check which clients need to be excluded.
-	int[] newClients = new int[MaxClients];
-	int newTotal = 0;
-	
-	for (int current_client = 0; current_client < numClients; current_client++)
-	{
-		if (!g_Players[players[current_client]].IsClientGhost || GetClientTeam(players[current_client]) == shooter_team)
-		{
-			newClients[newTotal++] = players[current_client];
-		}
-	}
-	
-	// No clients were excluded.
-	if (newTotal == numClients)
-	{
-		return Plugin_Continue;
-	}
-	// All clients were excluded and there is no need to broadcast.
-	else if (newTotal == 0)
-	{
-		return Plugin_Stop;
-	}
-	
-	// Re-broadcast to clients that still need it.
-	float vTemp[3];
-	TE_Start("Shotgun Shot");
-	TE_ReadVector("m_vecOrigin", vTemp);
-	TE_WriteVector("m_vecOrigin", vTemp);
-	TE_WriteFloat("m_vecAngles[0]", TE_ReadFloat("m_vecAngles[0]"));
-	TE_WriteFloat("m_vecAngles[1]", TE_ReadFloat("m_vecAngles[1]"));
-	TE_WriteNum("m_weapon", TE_ReadNum("m_weapon"));
-	TE_WriteNum("m_iMode", TE_ReadNum("m_iMode"));
-	TE_WriteNum("m_iSeed", TE_ReadNum("m_iSeed"));
-	TE_WriteNum("m_iPlayer", TE_ReadNum("m_iPlayer"));
-	TE_WriteFloat("m_fInaccuracy", TE_ReadFloat("m_fInaccuracy"));
-	TE_WriteFloat("m_fSpread", TE_ReadFloat("m_fSpread"));
-	TE_Send(newClients, newTotal, delay);
-	
-	return Plugin_Stop;
 }
 
 Action Hook_OnNormalSound(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)

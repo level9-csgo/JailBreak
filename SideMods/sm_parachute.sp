@@ -131,9 +131,7 @@ new Handle:g_enabled = INVALID_HANDLE;
 new Handle:g_linear = INVALID_HANDLE;
 new Handle:g_decrease = INVALID_HANDLE;
 
-new x;
 new cl_flags;
-new cl_buttons;
 new Float:speed[3];
 new bool:isfallspeed;
 
@@ -244,50 +242,34 @@ public Check(client) {
 	}
 }
 
-public OnGameFrame()
+public void OnPlayerRunCmdPre(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
 {
-	if (GetConVarInt(g_enabled) == 0)return;
-	for (x = 1; x <= MaxClients; x++)
+	if (!GetConVarInt(g_enabled) || !(IsPlayerAlive(client) || JB_IsClientGhost(client)))
 	{
-		if (IsClientInGame(x) && (IsPlayerAlive(x) || JB_IsClientGhost(x)))
+		return;
+	}
+	
+	if ((buttons & IN_USE))
+	{
+		if (!inUse[client])
 		{
-			char global_name[16];
-			GetEntPropString(x, Prop_Data, "m_iGlobalname", global_name, sizeof(global_name));
-			
-			cl_buttons = GetClientButtons(x);
-			
-			if ((cl_buttons & IN_USE) || (JB_IsClientGhost(x) && StrEqual(global_name, "parachute")))
-			{
-				if (!inUse[x])
-				{
-					inUse[x] = true;
-					isfallspeed = false;
-					StartPara(x);
-				}
-				
-				StartPara(x);
-			}
-			else
-			{
-				if (inUse[x])
-				{
-					inUse[x] = false;
-					EndPara(x);
-				}
-			}
-			Check(x);
+			inUse[client] = true;
+			isfallspeed = false;
+			StartPara(client);
+		}
+		
+		StartPara(client);
+	}
+	else
+	{
+		if (inUse[client])
+		{
+			inUse[client] = false;
+			EndPara(client);
 		}
 	}
-}
-
-stock GetNextSpaceCount(String:text[], CurIndex) {
-	new Count = 0;
-	new len = strlen(text);
-	for (new i = CurIndex; i < len; i++) {
-		if (text[i] == ' ')return Count;
-		else Count++;
-	}
-	return Count;
+	
+	Check(client);
 }
 
 public CvarChange_Enabled(Handle:cvar, const String:oldvalue[], const String:newvalue[])
