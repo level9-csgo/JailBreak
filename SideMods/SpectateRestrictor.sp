@@ -7,49 +7,97 @@
 
 enum struct Player
 {
+	int index;
+	
 	bool is_admin;
 	
 	int team;
 	//================================//
-	void Init(int client)
+	void InitIndex(int client)
 	{
-		this.is_admin = GetUserAdmin(client) != INVALID_ADMIN_ID;
+		this.index = client;
+	}
+	
+	void InitAdmin()
+	{
+		this.is_admin = (GetUserAdmin(this.index) != INVALID_ADMIN_ID);
 	}
 	
 	void Close()
 	{
+		this.index = 0;
 		this.is_admin = false;
 		this.team = CS_TEAM_NONE;
 	}
 	
-	Action IsValidObserverTarget(Player target)
+	void OnObserverTargetChange(int &target)
 	{
+		// Don't override killer targets.
+		if (!SpecHooks_GetObserverMode(this.index))
+		{
+			return;
+		}
+		
 		// Full observe access to admins.
 		if (this.is_admin)
 		{
-			return Plugin_Continue;
+			return;
 		}
 		
-		return this.team == target.team ? Plugin_Handled : Plugin_Continue;
+		ArrayList exclude_array = this.BuildExcludeArray();
+		
+		int override_target = FindNextObserverTarget(this.index, false, exclude_array);
+		if (override_target != -1)
+		{
+			target = override_target;
+		}
+		
+		delete exclude_array;
 	}
 	
 	Action OnObserverModeChange(int &mode)
 	{
+		// Always allow to enter death camera observer mode.
+		if (mode == OBS_MODE_DEATHCAM || mode == OBS_MODE_FREEZECAM || mode == OBS_MODE_FIXED)
+		{
+			return Plugin_Continue;
+		}
+		
 		// Full observe access to admins.
 		if (this.is_admin)
 		{
 			return Plugin_Continue;
 		}
 		
-		if (mode == OBS_MODE_IN_EYE || mode == OBS_MODE_CHASE)
+		if (GetAliveClientCount() <= 0)
 		{
 			return Plugin_Continue;
 		}
-		else
+		
+		if (!(mode == OBS_MODE_IN_EYE || mode == OBS_MODE_CHASE))
 		{
 			mode = OBS_MODE_IN_EYE;
 			return Plugin_Changed;
 		}
+		
+		return Plugin_Continue;
+	}
+	
+	ArrayList BuildExcludeArray()
+	{
+		ArrayList arr = new ArrayList();
+		
+		for (int current_client = 1, team; current_client <= MaxClients; current_client++)
+		{
+			team = GetClientTeamEx(current_client);
+			
+			if (team != CS_TEAM_NONE && team != this.team)
+			{
+				arr.Push(current_client);
+			}
+		}
+		
+		return arr;
 	}
 }
 
@@ -91,9 +139,24 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	return APLRes_Success;
 }
 
+public void OnRebuildAdminCache(AdminCachePart part)
+{
+	Lateload();
+}
+
+public void OnClientPutInServer(int client)
+{
+	g_Players[client].InitIndex(client);
+}
+
 public void OnClientPostAdminCheck(int client)
 {
-	g_Players[client].Init(client);
+	g_Players[client].InitAdmin();
+}
+
+public void OnClientDisconnect(int client)
+{
+	g_Players[client].Close();
 }
 
 void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
@@ -105,9 +168,10 @@ void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-public Action SpecHooks_OnValidObserverTarget(int client, int target)
+public Action SpecHooks_OnObserverTargetChange(int client, int &target, int last_target)
 {
-	return g_Players[client].IsValidObserverTarget(g_Players[target]);
+	g_Players[client].OnObserverTargetChange(target);
+	return Plugin_Continue;
 }
 
 public Action SpecHooks_OnObserverModeChange(int client, int &mode, int last_mode)
@@ -121,9 +185,91 @@ void Lateload()
 	{
 		if (IsClientInGame(current_client))
 		{
-			OnClientPostAdminCheck(current_client);
+			g_Players[current_client].Close();
+			g_Players[current_client].InitIndex(current_client);
+			g_Players[current_client].InitAdmin();
 			
 			g_Players[current_client].team = GetClientTeam(current_client);
 		}
 	}
+}
+
+int GetClientTeamEx(int client)
+{
+	return g_Players[client].team;
+}
+
+// CBaseEntity * CBasePlayer::FindNextObserverTarget(bool bReverse)
+int FindNextObserverTarget(int client, bool reverse, ArrayList exclude_list)
+{
+	int startIndex = GetNextObserverSearchStartPoint(client, reverse);
+	
+	if (startIndex > MaxClients)
+		startIndex = 1;
+	else if (startIndex < 1)
+		startIndex = MaxClients;
+	
+	int currentIndex = startIndex;
+	int iDir = reverse ? -1 : 1;
+	
+	do
+	{
+		if (IsClientInGame(currentIndex) && SpecHooks_IsValidObserverTarget(client, currentIndex) && exclude_list.FindValue(currentIndex) == -1)
+		{
+			return currentIndex; // found next valid player
+		}
+		
+		currentIndex += iDir;
+		
+		// Loop through the clients
+		if (currentIndex > MaxClients)
+			currentIndex = 1;
+		else if (currentIndex < 1)
+			currentIndex = MaxClients;
+		
+	} while (currentIndex != startIndex);
+	
+	return -1;
+}
+
+// int CBasePlayer::GetNextObserverSearchStartPoint( bool bReverse )
+int GetNextObserverSearchStartPoint(int client, bool reverse)
+{
+	int iDir = reverse ? -1 : 1;
+	
+	int startIndex;
+	
+	int target = SpecHooks_GetObserverTarget(client);
+	if (target != -1)
+	{
+		// start using last followed player
+		startIndex = target;
+	}
+	else
+	{
+		// start using own player index
+		startIndex = client;
+	}
+	
+	startIndex += iDir;
+	if (startIndex > MaxClients)
+		startIndex = 1;
+	else if (startIndex < 1)
+		startIndex = MaxClients;
+	
+	return startIndex;
+}
+
+int GetAliveClientCount()
+{
+	int count;
+	for (int current_client = 1; current_client <= MaxClients; current_client++)
+	{
+		if (IsClientInGame(current_client) && IsPlayerAlive(current_client))
+		{
+			count++;
+		}
+	}
+	
+	return count;
 } 
