@@ -80,9 +80,9 @@ enum struct Player
 	void RemoveHatEntity()
 	{
 		int entity = this.GetHatEntity();
-		if (entity != -1)
+		if (entity != -1 && IsValidEdict(entity))
 		{
-			RemoveEntity(entity);
+			RemoveEdict(entity);
 		}
 	}
 	
@@ -265,7 +265,7 @@ public void Shop_OnClientEmoteStop(int client)
 	TransmitManager_SetEntityState(entity, client, false);
 }
 
-public void SpecHooks_OnObserverTargetChange(int client, int target, int last_target)
+public void SpecHooks_OnObserverTargetChangePost(int client, int target, int last_target)
 {
 	if (last_target != -1 && g_Players[last_target].equipped_hat)
 	{
