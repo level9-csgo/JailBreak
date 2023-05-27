@@ -293,7 +293,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					
 				}
 				
-				if (g_ClientsData[client].OwnedEntities != null && (buttons & IN_ATTACK2) && !(g_ClientsData[client].OldButtons & IN_ATTACK2))
+				if (!g_ClientsData[client].OwnedEntities && (buttons & IN_ATTACK2) && !(g_ClientsData[client].OldButtons & IN_ATTACK2))
 				{
 					float fEntityPos[3];
 					
