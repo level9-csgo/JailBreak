@@ -152,7 +152,10 @@ public void JB_OnLrEnd(int currentLr, const char[] lrName, int winner, int loser
 			}
 		}
 		
-		g_PendingLoserID = GetClientUserId(loser);
+		if (loser != INVALID_LR_LOSER)
+		{
+			g_PendingLoserID = GetClientUserId(loser);
+		}
 		
 		DeleteAllTimers();
 		g_bIsLrActivated = false;
