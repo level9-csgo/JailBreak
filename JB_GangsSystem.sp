@@ -2036,10 +2036,10 @@ void SQL_UpdateCash(int gangId)
 void SQL_TransferOwner(int gangId, int client, int newOwner)
 {
 	char szQuery[512];
-	g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs_players` SET `rank` = %d WHERE `steam_id` = '%s' AND `gang` = '%s'", Rank_Manager, g_esClients[client].szAuth, g_esGangs[gangId].szName);
+	g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs_players` SET `rank` = %d WHERE `steam_id` = '%s' AND `gang` = '%s'", g_esClients[client].iRank, g_esClients[client].szAuth, g_esGangs[gangId].szName);
 	g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 	
-	g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs_players` SET `rank` = %d WHERE `steam_id` = '%s' AND `gang` = '%s'", Rank_Leader, g_esClients[newOwner].szAuth, g_esGangs[gangId].szName);
+	g_dbDatabase.Format(szQuery, sizeof(szQuery), "UPDATE `jb_gangs_players` SET `rank` = %d WHERE `steam_id` = '%s' AND `gang` = '%s'", g_esClients[newOwner].iRank, g_esClients[newOwner].szAuth, g_esGangs[gangId].szName);
 	g_dbDatabase.Query(SQL_CheckForErrors, szQuery);
 }
 
