@@ -167,6 +167,7 @@ enum struct AuctionItem
 ConVar jb_ah_fee_percent;
 ConVar jb_ah_over_bid_percent;
 ConVar jb_ah_default_value;
+ConVar jb_ah_extend_time;
 
 Database g_Database;
 
@@ -412,6 +413,8 @@ enum struct Auction
 	
 	void HandleEndAuctionTimer()
 	{
+		delete this.end_timer;
+		
 		int remaining_time = this.end_time - GetTime();
 		if (remaining_time <= 0)
 		{
@@ -497,9 +500,16 @@ enum struct Auction
 		g_Database.Query(SQL_InsertAuctionBid_CB, query, dp);
 	}
 	
+	void UpdateEndTimeData()
+	{
+		char query[128];
+		g_Database.Format(query, sizeof(query), "UPDATE `jb_auctions` SET `end_time` = %d WHERE `id` = %d", this.end_time, this.row_id);
+		g_Database.Query(SQL_CheckForErrors, query);
+	}
+	
 	void UpdateBidData(AuctionBid bid)
 	{
-		char query[512];
+		char query[128];
 		g_Database.Format(query, sizeof(query), "UPDATE `jb_auctions_bids` SET `return_bid` = %d WHERE `auction_id` = %d AND `bidder_account_id` = %d", bid.return_bid, this.row_id, bid.bidder_account_id);
 		g_Database.Query(SQL_CheckForErrors, query);
 	}
@@ -740,6 +750,7 @@ public void OnPluginStart()
 	jb_ah_fee_percent = CreateConVar("jb_ah_fee_percent", "5", "Fee percent to charge from the auction item price.", .hasMin = true, .hasMax = true, .max = 100.0);
 	jb_ah_over_bid_percent = CreateConVar("jb_ah_over_bid_percent", "5", "Overbid percent to add from the previous bid value.", .hasMin = true, .hasMax = true, .max = 100.0);
 	jb_ah_default_value = CreateConVar("jb_ah_default_value", "500", "Default auction value in credits.");
+	jb_ah_extend_time = CreateConVar("jb_ah_extend_time", "300", "The amount of time the auction will be extended.");
 	
 	#if !defined DEVELOPMENT
 	AutoExecConfig();
@@ -810,8 +821,9 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 			}
 			
 			Auction auction;
+			int auction_idx;
 			
-			if (!auction.FindByRowID(g_Players[client].auction_id))
+			if (!auction.FindByRowID(g_Players[client].auction_id, auction_idx))
 			{
 				PrintToChat(client, "%s The auction no longer exists!", PREFIX_ERROR);
 				return Plugin_Handled;
@@ -903,6 +915,14 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 			
 			PrintToChat(client, "%s Successfully placed your bid of \x03%s\x01 credits on \x0E%s\x01 auction.", PREFIX, JB_AddCommas(value), item_name);
 			auction.InsertBidData(new_auction_bid);
+			
+			if (!auction.GetRemainingTime())
+			{
+				auction.end_time += jb_ah_extend_time.IntValue;
+				auction.HandleEndAuctionTimer();
+				auction.UpdateEndTimeData();
+				g_Auctions.SetArray(auction_idx, auction);
+			}
 		}
 	}
 	
@@ -1013,7 +1033,7 @@ int Handler_AuctionHouseMain(Menu menu, MenuAction action, int param1, int param
 			}
 		}
 	}
-	else if (action == MenuAction_Select)
+	else if (action == MenuAction_End)
 	{
 		delete menu;
 	}
