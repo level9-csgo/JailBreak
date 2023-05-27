@@ -1651,8 +1651,8 @@ public int Native_GetPlayerGang(Handle plugin, int numParams)
 	
 	if (client == 0)
 		return 0;
-	if (!IsClientInGame(client))
-		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index (%d)", client);
+	if (!IsClientConnected(client))
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not connected", client);
 	
 	return g_esClients[client].iGang;
 }
