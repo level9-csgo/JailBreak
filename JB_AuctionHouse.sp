@@ -1033,7 +1033,7 @@ int Handler_AuctionHouseMain(Menu menu, MenuAction action, int param1, int param
 			}
 		}
 	}
-	else if (action == MenuAction_Select)
+	else if (action == MenuAction_End)
 	{
 		delete menu;
 	}
