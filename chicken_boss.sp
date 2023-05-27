@@ -3,7 +3,7 @@
 #include <sdkhooks>
 #include <cstrike>
 #include <regex>
-
+// perform a shake effect on chicken jump phase
 // Platform includes.
 #include <JailBreak>
 
