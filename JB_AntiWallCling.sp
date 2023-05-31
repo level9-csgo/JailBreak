@@ -37,7 +37,16 @@ public void OnPluginStart()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if (StrEqual(name, "JB_SpecialDays") && (g_BackstabDayIndex = JB_FindSpecialDay("Backstab Day")) == -1)
+	if (StrEqual(name, "JB_SpecialDays"))
+	{
+		// Wait a frame for all special days to get registered.
+		RequestFrame(Frame_FindBackstabIdx);
+	}
+}
+
+void Frame_FindBackstabIdx()
+{
+	if ((g_BackstabDayIndex = JB_FindSpecialDay("Backstab Day")) == -1)
 	{
 		SetFailState("Unable to find 'Backstab' day.");
 	}
