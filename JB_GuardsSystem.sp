@@ -197,10 +197,13 @@ public void OnClientDisconnect(int client)
 	
 	if (g_esClientsData[client].iGuardRank == Guard_Main)
 	{
-		if (GetOnlineTeamCount(CS_TEAM_CT, false) - 1) {
+		if (GetOnlineTeamCount(CS_TEAM_CT, false) - 1)
+		{
 			SelectNewMainGuard(client);
-		} else if (!g_bIsVoteDisabled && !g_bIsVoteOn && GetOnlineTeamCount(CS_TEAM_T, false) - 1 >= 1 && !JB_IsSpecialDayRunning() && !JB_IsSpecialDayVoteRunning()) {
-			StartVoteCT(false);
+		}
+		else if (!g_bIsVoteDisabled && !g_bIsVoteOn && GetOnlineTeamCount(CS_TEAM_T, false) - 1 >= 1 && !JB_IsSpecialDayRunning() && !JB_IsSpecialDayVoteRunning())
+		{
+			StartVoteCT(false, client);
 			PrintToChatAll("%s Since the old \x0Bmain guard\x01 \x04%N\x01 has left, a new vote ct has started!", PREFIX, client);
 		}
 	}
@@ -337,14 +340,14 @@ void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 			
 			if (iMainGuardIndex != -1)
 			{
-				showMainGuardMenu(iMainGuardIndex);
+				RequestFrame(showMainGuardMenu, iMainGuardIndex);
 			}
 			
 			ShowPanel2("<font class='fontSize-xl'>The <font color='#235CB8'>Main Guard</font> has to choose %d guard%s | Time Left: %ds</font>", iAvailableGuards, iAvailableGuards > 1 ? "s":"", g_iTimer);
 		}
 		else if (iMainGuardIndex != -1)
 		{
-			showInviteMenu(iMainGuardIndex);
+			RequestFrame(showInviteMenu, iMainGuardIndex);
 		}
 	}
 }
@@ -1118,6 +1121,12 @@ public int Handler_Invite(Menu menu, MenuAction action, int client, int itemNum)
 {
 	if (action == MenuAction_Select)
 	{
+		if (GetAvailableGuards() <= 0)
+		{
+			PrintToChat(client, "%s No \x0Cguards\x01 are needed anymore!", PREFIX);
+			return 0;
+		}
+		
 		switch (itemNum)
 		{
 			case 0:
@@ -1558,7 +1567,7 @@ any[] GetVoteByIndex(int index)
 	return VoteData;
 }
 
-void StartVoteCT(bool broadcast = true)
+void StartVoteCT(bool broadcast = true, int disconnecting_client = -1)
 {
 	if (JB_IsSpecialDayRunning() || JB_IsSpecialDayVoteRunning())
 	{
@@ -1602,7 +1611,7 @@ void StartVoteCT(bool broadcast = true)
 		if (IsClientInGame(iCurrentClient))
 		{
 			g_esClientsData[iCurrentClient].Reset(false);
-			if (GetClientTeam(iCurrentClient) == CS_TEAM_CT) {
+			if (GetClientTeam(iCurrentClient) == CS_TEAM_CT && iCurrentClient != disconnecting_client) {
 				ChangeClientTeam(iCurrentClient, CS_TEAM_T);
 			}
 			if (!IsPlayerAlive(iCurrentClient)) {
