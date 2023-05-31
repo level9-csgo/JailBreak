@@ -624,7 +624,7 @@ public int PlayerManager_ToggleClientCategoryOff(Handle plugin, int numParams)
 	
 	h_KvClientItems[client].Rewind();
 	if (!h_KvClientItems[client].GotoFirstSubKey())
-		return;
+		return 0;
 	
 	char sItemId[16];
 	do
@@ -667,6 +667,8 @@ public int PlayerManager_ToggleClientCategoryOff(Handle plugin, int numParams)
 	while (h_KvClientItems[client].GotoNextKey());
 	
 	h_KvClientItems[client].Rewind();
+	
+	return 0;
 }
 
 public int PlayerManager_GetClientItems(Handle plugin, int numParams)
