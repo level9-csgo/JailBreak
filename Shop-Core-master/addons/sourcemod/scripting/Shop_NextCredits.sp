@@ -109,7 +109,7 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 public Action Command_NextCredits(int client, int args)
 {
 	// Deny the command access from the console
-	if (!client)
+	if (!client || !IsClientInGame(client))
 	{
 		return Plugin_Handled;
 	}
