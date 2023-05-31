@@ -50,6 +50,6 @@ void OnSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
-	SetEntityCollisionGroup(client, 2);
+	SetEntityCollisionGroup(client, 3);
 	EntityCollisionRulesChanged(client);
 }
