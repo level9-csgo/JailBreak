@@ -5,7 +5,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define MAP_NAME "jb_clouds_beta02"
+#define MAP_NAME "jb_clouds_final5"
 #define MAP2_NAME "jb_dystopian_b6"
 #define DEFAULT_AIRACCELERATE 2000
 
