@@ -133,15 +133,11 @@ public void OnPluginStart()
 	}
 }
 
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	g_Lateload = late;
 	return APLRes_Success;
-}
-
-public void OnRebuildAdminCache(AdminCachePart part)
-{
-	Lateload();
 }
 
 public void OnClientPutInServer(int client)
