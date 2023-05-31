@@ -7,6 +7,7 @@
 #include <shop>
 #include <JB_GuardsSystem>
 #include <spec_hooks>
+#include <PTaH>
 
 #undef REQUIRE_PLUGIN
 #include <JB_SettingsSystem>
@@ -133,6 +134,8 @@ public void OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("player_hurt", Event_PlayerHurt);
 	
+	PTaH(PTaH_GiveNamedItemPost, Hook, Hook_OnGiveNamedItemPost);
+	
 	// Late plugin load stuff
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
@@ -145,6 +148,15 @@ public void OnPluginStart()
 	if (Shop_IsStarted())
 	{
 		Shop_Started();
+	}
+}
+
+// Fixes giving items to players in a middle of a dance.
+void Hook_OnGiveNamedItemPost(int iClient, const char[] sClassname, const CEconItemView pItemView, int iEntity, bool bOriginNULL, const float vecOrigin[3])
+{
+	if (g_ClientsData[iClient].IsDancing())
+	{
+		EquipPlayerWeapon(iClient, iEntity);
 	}
 }
 
