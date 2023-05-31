@@ -1,6 +1,5 @@
 #include <sourcemod>
 #include <regex>
-#include <ripext>
 #include <profiler>
 #include <JailBreak>
 #include <JB_NetWorth>
@@ -163,11 +162,11 @@ void OnPlayerNetWorthCalculatedSuccess(Database db, DBResultSet results, const c
 		return;
 	}
 	
-	char json_str[256];
-	results.FetchString(0, json_str, sizeof(json_str));
+	char response[256];
+	results.FetchString(0, response, sizeof(response));
 	
 	// No data for 'account_id'.
-	if (!json_str[0])
+	if (!response[0])
 	{
 		if (failure_callback != INVALID_FUNCTION)
 		{
@@ -177,40 +176,20 @@ void OnPlayerNetWorthCalculatedSuccess(Database db, DBResultSet results, const c
 		return;
 	}
 	
-	EscapeBackslashes(json_str, sizeof(json_str));
-	
-	JSONObject jsonObject = JSONObject.FromString(json_str, JSON_DECODE_ANY);
+	// Parse the data according to the response format.
+	char exploded_response_data[4][MAX_NAME_LENGTH];
+	ExplodeString(response, ":", exploded_response_data, sizeof(exploded_response_data), sizeof(exploded_response_data[]));
 	
 	char target_name[MAX_NAME_LENGTH];
-	jsonObject.GetString("player_name", target_name, sizeof(target_name));
+	strcopy(target_name, sizeof(target_name), exploded_response_data[0]);
 	
-	int credits = jsonObject.GetInt("credits");
-	int shop_items_value = jsonObject.GetInt("items");
-	int runes_value = jsonObject.GetInt("runes_value");
-	
-	delete jsonObject;
+	int credits = StringToInt(exploded_response_data[1]);
+	int shop_items_value = StringToInt(exploded_response_data[2]);
+	int runes_value = StringToInt(exploded_response_data[3]);
 	
 	if (success_callback != INVALID_FUNCTION)
 	{
 		Call_OnPlayerNetWorthSuccess(success_callback, plugin, account_id, target_name, data, credits + shop_items_value + runes_value, credits, shop_items_value, runes_value, response_time);
-	}
-}
-
-void EscapeBackslashes(char[] str, int size)
-{
-	char[] truncted_str = new char[size];
-	
-	for (int i; str[i]; i++)
-	{
-		if (str[i] == '\\')
-		{
-			strcopy(truncted_str, size, str);
-			ReplaceString(truncted_str, size, str[i], "");
-			
-			Format(str, size, "%s\\%s", truncted_str, str[i]);
-			
-			i++;
-		}
 	}
 }
 
