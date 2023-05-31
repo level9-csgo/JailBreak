@@ -58,24 +58,44 @@ enum struct Player
 		AcceptEntityInput(prop_dynamic_override, "SetParentAttachment");
 		
 		TransmitManager_AddEntityHooks(prop_dynamic_override);
-		TransmitManager_SetEntityState(prop_dynamic_override, this.index, false);
+		this.SetFacemaskTransmitState(this.index, false, prop_dynamic_override);
 		
 		this.facemask_entity_reference = EntIndexToEntRef(prop_dynamic_override);
 	}
 	
 	void RemoveFacemaskEntity()
 	{
+		if (this.facemask_entity_reference == INVALID_ENT_REFERENCE)
+		{
+			return;
+		}
+		
 		int entity = this.GetFacemaskEntity();
-		if (entity != -1 && IsValidEdict(entity))
+		if (entity != -1)
 		{
 			RemoveEdict(entity);
 		}
+		
+		this.facemask_entity_reference = INVALID_ENT_REFERENCE;
 	}
 	
 	// -1 for invalid.
 	int GetFacemaskEntity()
 	{
 		return EntRefToEntIndex(this.facemask_entity_reference);
+	}
+	
+	void SetFacemaskTransmitState(int client, bool can, int entity = -1)
+	{
+		if (entity == -1 && (entity = this.GetFacemaskEntity()) == -1)
+		{
+			return;
+		}
+		
+		if (IsValidEdict(entity) && TransmitManager_IsEntityHooked(entity))
+		{
+			TransmitManager_SetEntityState(entity, client, can);
+		}
 	}
 }
 
@@ -134,10 +154,7 @@ public void Shop_Started()
 
 public void OnClientPutInServer(int client)
 {
-	if (!IsFakeClient(client))
-	{
-		g_Players[client].Init(client);
-	}
+	g_Players[client].Init(client);
 }
 
 public void OnClientDisconnect(int client)
@@ -175,54 +192,32 @@ void Frame_ApplyClientFacemask(int userid)
 
 public void Shop_OnClientEmotePost(int client)
 {
-	if (!g_Players[client].equipped_facemask)
+	if (g_Players[client].equipped_facemask)
 	{
-		return;
+		g_Players[client].SetFacemaskTransmitState(client, true);
 	}
-	
-	int entity = g_Players[client].GetFacemaskEntity();
-	if (entity == -1)
-	{
-		return;
-	}
-	
-	TransmitManager_SetEntityState(entity, client, true);
 }
 
 public void Shop_OnClientEmoteStop(int client)
 {
-	if (!g_Players[client].equipped_facemask)
+	if (g_Players[client].equipped_facemask)
 	{
-		return;
+		g_Players[client].SetFacemaskTransmitState(client, false);
 	}
-	
-	int entity = g_Players[client].GetFacemaskEntity();
-	if (entity == -1)
-	{
-		return;
-	}
-	
-	TransmitManager_SetEntityState(entity, client, false);
 }
 
 public void SpecHooks_OnObserverTargetChangePost(int client, int target, int last_target)
 {
+	// Handle last target.
 	if (last_target != -1 && g_Players[last_target].equipped_facemask)
 	{
-		int entity = g_Players[last_target].GetFacemaskEntity();
-		if (entity != -1)
-		{
-			TransmitManager_SetEntityState(entity, client, true);
-		}
+		g_Players[last_target].SetFacemaskTransmitState(client, true);
 	}
 	
+	// Handle current target.
 	if (g_Players[target].equipped_facemask)
 	{
-		int entity = g_Players[target].GetFacemaskEntity();
-		if (entity != -1)
-		{
-			TransmitManager_SetEntityState(entity, client, !(SpecHooks_GetObserverMode(client) == OBS_MODE_IN_EYE));
-		}
+		g_Players[target].SetFacemaskTransmitState(client, !(SpecHooks_GetObserverMode(client) == OBS_MODE_IN_EYE));
 	}
 }
 
@@ -231,11 +226,7 @@ public void SpecHooks_OnObserverModeChangePost(int client, int mode, int last_mo
 	int observer_target = SpecHooks_GetObserverTarget(client);
 	if (observer_target != -1 && g_Players[observer_target].equipped_facemask)
 	{
-		int entity = g_Players[observer_target].GetFacemaskEntity();
-		if (entity != -1)
-		{
-			TransmitManager_SetEntityState(entity, client, !(SpecHooks_GetObserverMode(client) == OBS_MODE_IN_EYE));
-		}
+		g_Players[observer_target].SetFacemaskTransmitState(client, !(SpecHooks_GetObserverMode(client) == OBS_MODE_IN_EYE));
 	}
 }
 
