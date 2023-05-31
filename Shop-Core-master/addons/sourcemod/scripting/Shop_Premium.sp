@@ -27,12 +27,20 @@
 
 enum struct Client
 {
+	int index;
 	int account_id;
 	int expire_unixstamp;
 	int daily_award_unixstamp;
 	
+	void Init(int client)
+	{
+		this.index = client;
+		this.account_id = GetSteamAccountID(client);
+	}
+	
 	void Reset()
 	{
+		this.index = 0;
 		this.account_id = 0;
 		this.expire_unixstamp = 0;
 		this.daily_award_unixstamp = 0;
@@ -40,18 +48,20 @@ enum struct Client
 	
 	bool IsPremium(int client, bool notify = true)
 	{
+		int time = GetTime();
+		
 		if (!this.expire_unixstamp)
 		{
 			return false;
 		}
-		else if (this.expire_unixstamp - GetTime() < 0)
+		else if (this.expire_unixstamp - time < 0)
 		{
 			if (notify)
 			{
 				PrintToChat(client, "%s Your premium has just expired!", PREFIX);
 			}
 			
-			this.expire_unixstamp = 0;
+			RemoveClientPremium(this.index, this.expire_unixstamp / DAY_CONVERTED_SECONDS);
 			
 			return false;
 		}
@@ -119,18 +129,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_p", Command_Premium, "Access the premium information menu. (An Alias)");
 }
 
-public void OnPluginEnd()
-{
-	// Loop throgh all the online clients, make sure to send their data to the database
-	for (int current_client = 1; current_client <= MaxClients; current_client++)
-	{
-		if (IsClientInGame(current_client))
-		{
-			OnClientDisconnect(current_client);
-		}
-	}
-}
-
 //================================[ Events ]================================//
 
 public void Shop_Started()
@@ -138,31 +136,21 @@ public void Shop_Started()
 	SQL_TryToConnect();
 }
 
-public void OnClientPostAdminCheck(int client)
+public void OnClientAuthorized(int client, const char[] auth)
 {
 	if (IsFakeClient(client))
 	{
 		return;
 	}
 	
-	// If we couldn't get the client steam account id, we won't be able to fetch the client from the database
-	if (!(g_ClientsData[client].account_id = GetSteamAccountID(client)))
-	{
-		KickClient(client, "Verification error, please reconnect.");
-		return;
-	}
+	g_ClientsData[client].Init(client);
 	
-	// Get the client data from the database
 	SQL_FetchClient(client);
 }
 
 public void OnClientDisconnect(int client)
 {
-	// If the client is not fake, send the client data to the database
-	if (!IsFakeClient(client))
-	{
-		SQL_UpdateClient(client);
-	}
+	g_ClientsData[client].Reset();
 }
 
 public bool Shop_OnItemDescription(int client, ShopMenu menu_action, CategoryId category_id, ItemId item_id, const char[] description, char[] buffer, int maxlength)
@@ -209,7 +197,7 @@ public Action CP_OnChatMessage(int &author, ArrayList recipients, char[] flagstr
 
 //================================[ Commands ]================================//
 
-public Action Command_GivePremium(int client, int args)
+Action Command_GivePremium(int client, int args)
 {
 	// Deny the command access from the console
 	if (!client)
@@ -270,7 +258,7 @@ public Action Command_GivePremium(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Command_RemovePremium(int client, int args)
+Action Command_RemovePremium(int client, int args)
 {
 	// Deny the command access from the console
 	if (!client)
@@ -340,7 +328,7 @@ public Action Command_RemovePremium(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Command_Premium(int client, int args)
+Action Command_Premium(int client, int args)
 {
 	// Deny the command access from the console
 	if (!client)
@@ -499,7 +487,7 @@ public int Native_GivePremium(Handle plugin, int numParams)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid specified premium days amount, Must be over 0! (Got: %d)", days_amount);
 	}
 	
-	GiveClientPremium(client, days_amount);
+	GiveClientPremium(client, days_amount, plugin);
 	
 	return true;
 }
@@ -525,7 +513,7 @@ public int Native_RemovePremium(Handle plugin, int numParams)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid specified premium days amount, Must be over 0! (Got: %d)", days_amount);
 	}
 	
-	RemoveClientPremium(client, days_amount);
+	RemoveClientPremium(client, days_amount, plugin);
 	
 	return true;
 }
@@ -555,9 +543,9 @@ void SQL_TryToConnect()
 	// Loop through all the online clients, for late plugin load
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
-		if (IsClientInGame(current_client) && !IsFakeClient(current_client))
+		if (IsClientInGame(current_client))
 		{
-			OnClientPostAdminCheck(current_client);
+			OnClientAuthorized(current_client, "");
 		}
 	}
 }
@@ -598,20 +586,6 @@ public void SQL_FetchClient_CB(Database db, DBResultSet results, const char[] er
 void SQL_UpdateClient(int client)
 {
 	// Update the client premium data
-	char query[128];
-	g_Database.Format(query, sizeof(query), "SELECT * FROM `%s` WHERE `account_id` = %d", g_TableName, g_ClientsData[client].account_id);
-	g_Database.Query(SQL_UpdateClient_CB, query, client);
-}
-
-public void SQL_UpdateClient_CB(Database db, DBResultSet results, const char[] error, int client)
-{
-	// If the string is not empty, an error has occurred
-	if (error[0])
-	{
-		LogError("Client update databse error, %s", error);
-		return;
-	}
-	
 	char query[512];
 	
 	g_Database.Format(query, sizeof(query), "INSERT INTO `%s` (`account_id`, `expire_unixstamp`, `daily_award_unixstamp`) VALUES (%d, %d, %d) ON DUPLICATE KEY UPDATE `account_id` = VALUES(`account_id`), `expire_unixstamp` = VALUES(`expire_unixstamp`), `daily_award_unixstamp` = VALUES(`daily_award_unixstamp`)", 
@@ -622,9 +596,6 @@ public void SQL_UpdateClient_CB(Database db, DBResultSet results, const char[] e
 		);
 	
 	g_Database.Query(SQL_CheckForErrors, query);
-	
-	// Make sure to reset the client data, to avoid client data override
-	g_ClientsData[client].Reset();
 }
 
 public void SQL_CheckForErrors(Database db, DBResultSet results, const char[] error, any data)
@@ -639,17 +610,33 @@ public void SQL_CheckForErrors(Database db, DBResultSet results, const char[] er
 
 //================================[ Functions ]================================//
 
-void GiveClientPremium(int client, int days)
+void GiveClientPremium(int client, int days, Handle plugin = null)
 {
+	int last_unixstamp = g_ClientsData[client].expire_unixstamp;
+	
 	g_ClientsData[client].expire_unixstamp += ((!g_ClientsData[client].expire_unixstamp ? GetTime() : 0) + (days * DAY_CONVERTED_SECONDS));
+	
+	SQL_UpdateClient(client);
+	
+	char file_path[PLATFORM_MAX_PATH];
+	GetPluginFilename(plugin, file_path, sizeof(file_path));
+	WriteLogLine("%L premium timestamp has changed from %d to %d by plugin %s", client, last_unixstamp, g_ClientsData[client].expire_unixstamp, file_path);
 }
 
-void RemoveClientPremium(int client, int days)
+void RemoveClientPremium(int client, int days, Handle plugin = null)
 {
+	int last_unixstamp = g_ClientsData[client].expire_unixstamp;
+	
 	if ((g_ClientsData[client].expire_unixstamp -= (days * DAY_CONVERTED_SECONDS)) < GetTime())
 	{
 		g_ClientsData[client].expire_unixstamp = 0;
 	}
+	
+	SQL_UpdateClient(client);
+	
+	char file_path[PLATFORM_MAX_PATH];
+	GetPluginFilename(plugin, file_path, sizeof(file_path));
+	WriteLogLine("%L premium timestamp has changed from %d to %d by plugin %s", client, last_unixstamp, g_ClientsData[client].expire_unixstamp, file_path);
 }
 
 void ExecuteDailyAward(int client)
@@ -681,6 +668,8 @@ void ExecuteDailyAward(int client)
 	
 	// Apply the award cooldown
 	g_ClientsData[client].daily_award_unixstamp = (GetTime() + (HOUR_CONVERTED_SECONDS * g_cvDailyAwardCooldown.IntValue));
+	
+	SQL_UpdateClient(client);
 }
 
 char[] GetTableName()

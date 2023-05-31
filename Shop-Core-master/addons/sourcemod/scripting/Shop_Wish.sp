@@ -50,19 +50,12 @@ enum struct Client
 		this.DeleteTimer();
 	}
 	
-	void DeleteTimer(int client = 0)
+	void DeleteTimer()
 	{
 		if (this.WishAnimationTimer != INVALID_HANDLE)
 		{
 			KillTimer(this.WishAnimationTimer);
 			this.WishAnimationTimer = INVALID_HANDLE;
-			
-			if (client)
-			{
-				this.wishes_amount++;
-				
-				SQL_UpdateClient(client);
-			}
 		}
 	}
 	
@@ -139,29 +132,27 @@ public void OnPluginEnd()
 
 //================================[ Events ]================================//
 
-public void OnClientPostAdminCheck(int client)
+public void OnClientAuthorized(int client, const char[] auth)
 {
-	// Make sure to reset the client data, to avoid client data override
-	g_ClientsData[client].Reset();
-	
-	if (!IsFakeClient(client))
+	if (IsFakeClient(client))
 	{
-		// If we couldn't get the client steam account id, we won't be able to fetch the client from the database
-		if (!(g_ClientsData[client].account_id = GetSteamAccountID(client)))
-		{
-			KickClient(client, "Verification error, please reconnect.");
-			return;
-		}
-		
-		// Get the client data from the database
-		SQL_FetchClient(client);
+		return;
 	}
+	
+	g_ClientsData[client].account_id = GetSteamAccountID(client);
+	
+	SQL_FetchClient(client);
 }
 
 public void OnClientDisconnect(int client)
 {
+	if (g_ClientsData[client].IsWishRolling())
+	{
+		GiveClientWish(client);
+	}
+	
 	// FIX: Set the timers handle back to invalid to avoid connection error
-	g_ClientsData[client].DeleteTimer(client);
+	g_ClientsData[client].Reset();
 }
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -484,7 +475,7 @@ void SQL_OnDatabaseConnected_CB(Database db, const char[] error, any data)
 	{
 		if (IsClientInGame(current_client))
 		{
-			OnClientPostAdminCheck(current_client);
+			OnClientAuthorized(current_client, "");
 		}
 	}
 }
@@ -546,15 +537,15 @@ public void SQL_OnPremiumsFetch_CB(Database db, DBResultSet results, const char[
 		return;
 	}
 	
-	char Query[128];
+	char query[128];
 	
 	int wishes_amount;
 	
 	while (results.FetchRow())
 	{
 		wishes_amount = (1 + (results.FetchInt(1) > GetTime() ? PREMIUM_WISHES_BONUS : 0));
-		g_Database.Format(Query, sizeof(Query), "UPDATE `jb_wish_data` SET `wishes_amount` = %d WHERE `account_id` = %d AND `wishes_amount` < %d", wishes_amount, results.FetchInt(0), wishes_amount);
-		g_Database.Query(SQL_CheckForErrors, Query);
+		g_Database.Format(query, sizeof(query), "UPDATE `jb_wish_data` SET `wishes_amount` = %d WHERE `account_id` = %d AND `wishes_amount` < %d", wishes_amount, results.FetchInt(0), wishes_amount);
+		g_Database.Query(SQL_CheckForErrors, query);
 	}
 }
 
