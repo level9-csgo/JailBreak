@@ -165,6 +165,11 @@ public void OnClientPostAdminCheck(int client)
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
+	if (!IsClientInGame(client))
+	{
+		return Plugin_Continue;
+	}
+	
 	// Make sure the client's edit state isn't none
 	if (g_ClientsData[client].edit_state != Edit_None)
 	{

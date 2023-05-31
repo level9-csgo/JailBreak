@@ -218,7 +218,7 @@ public void Hook_OnCellsStatusChange(const char[] output, int caller, int activa
 public Action Command_Open(int client, int args)
 {
 	// Deney the command access from the server console
-	if (!client)
+	if (!client || !IsClientInGame(client))
 	{
 		return Plugin_Handled;
 	}
@@ -255,7 +255,7 @@ public Action Command_Open(int client, int args)
 public Action Command_Close(int client, int args)
 {
 	// Deney the command access from the server console
-	if (!client)
+	if (!client || !IsClientInGame(client))
 	{
 		return Plugin_Handled;
 	}
