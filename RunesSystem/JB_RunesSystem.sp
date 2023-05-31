@@ -1171,7 +1171,7 @@ public int Native_PerformRuneLevelUpgrade(Handle plugin, int numParams)
 	bool replicate_forward = GetNativeCell(4);
 	
 	// Decides whether or not the rune level upgrade has succeeded
-	bool bIsSucceed = GetRandomInt(0, 100) <= success_chances;
+	bool bIsSucceed = (GetURandomInt() % 100) <= success_chances;
 	
 	if (replicate_forward)
 	{
@@ -2071,7 +2071,7 @@ public int Handler_UpgradeAgreement(Menu menu, MenuAction action, int client, in
 				Shop_TakeClientCredits(client, iUpgradePrice, CREDITS_BY_BUY_OR_SELL);
 				
 				// Decides whether or not the rune level upgrade has succeeded
-				bool bIsSucceed = GetRandomInt(0, 100) <= CalculateUpgradeSuccessRate(ClientRuneData.RuneStar, ClientRuneData.RuneLevel);
+				bool bIsSucceed = (GetURandomInt() % 100) <= CalculateUpgradeSuccessRate(ClientRuneData.RuneStar, ClientRuneData.RuneLevel);
 				
 				bool fwdReturn;
 				
