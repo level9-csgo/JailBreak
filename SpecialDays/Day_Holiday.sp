@@ -26,6 +26,8 @@
 #define UTILITY_WEAPON_TAG "weapon_smokegrenade"
 #define UTILITY_REFILL_TIME 15.0
 
+#define DEFAULT_PRIMARY_WEAPON "TAR-21"
+
 //====================//
 
 enum
@@ -103,9 +105,9 @@ char g_CustomWeapons[][][] =
 	{ "weapon_knife", "Hammer", "models/weapons/eminem/csnz/hammer/v_hammer_halloween.mdl", "models/weapons/eminem/csnz/hammer/w_hammer_halloween.mdl", "models/weapons/eminem/csnz/hammer/w_hammer_halloween_dropped.mdl", "", "0.0", "1" }, 
 	{ "weapon_deagle", "AMT AutoMag V", "models/weapons/eminem/csnz/amt_automag_v/v_amt_automag_v.mdl", "models/weapons/eminem/csnz/amt_automag_v/w_amt_automag_v.mdl", "models/weapons/eminem/csnz/amt_automag_v/w_amt_automag_v_dropped.mdl", "sound/weapons/eminem/csnz/amt_automag_v/amg_fire.wav", "0.2", "1" }, 
 	{ "weapon_mag7", "Rail Cannon", "models/weapons/eminem/csnz/rail_cannon/v_rail_cannon.mdl", "models/weapons/eminem/csnz/rail_cannon/w_rail_cannon.mdl", "models/weapons/eminem/csnz/rail_cannon/w_rail_cannon_dropped.mdl", "sound/weapons/eminem/csnz/rail_cannon/railcanon_fire.wav", "0.215", "0" }, 
-	{ "weapon_bizon", "TDI Dual Kriss Super Vector", "models/weapons/eminem/csnz/dual_kriss/v_dual_kriss.mdl", "models/weapons/eminem/csnz/dual_kriss/w_dual_kriss.mdl", "models/weapons/eminem/csnz/dual_kriss/w_dual_kriss_dropped.mdl", "sound/weapons/eminem/csnz/dual_kriss/dualkriss_fire.wav", "0.2", "0" }, 
-	{ "weapon_p90", "TAR-21", "models/weapons/eminem/csnz/tar_21/v_tar_21.mdl", "models/weapons/eminem/csnz/tar_21/w_tar_21.mdl", "models/weapons/eminem/csnz/tar_21/w_tar_21_dropped.mdl", "sound/weapons/eminem/csnz/tar_21/tar_21_fire.wav", "0.2", "0" }, 
-	{ "weapon_scar20", "PSG-1", "models/weapons/eminem/csnz/psg_1/v_psg_1.mdl", "models/weapons/eminem/csnz/psg_1/w_psg_1.mdl", "models/weapons/eminem/csnz/psg_1/w_psg_1_dropped.mdl", "sound/weapons/eminem/csnz/psg_1/psg1_fire.wav", "0.12", "0" }, 
+	{ "weapon_bizon", "TDI Dual Kriss Super Vector", "models/weapons/eminem/csnz/dual_kriss/v_dual_kriss.mdl", "models/weapons/eminem/csnz/dual_kriss/w_dual_kriss.mdl", "models/weapons/eminem/csnz/dual_kriss/w_dual_kriss_dropped.mdl", "sound/weapons/eminem/csnz/dual_kriss/dualkriss_fire.wav", "0.05", "0" }, 
+	{ "weapon_p90", "TAR-21", "models/weapons/eminem/csnz/tar_21/v_tar_21.mdl", "models/weapons/eminem/csnz/tar_21/w_tar_21.mdl", "models/weapons/eminem/csnz/tar_21/w_tar_21_dropped.mdl", "sound/weapons/eminem/csnz/tar_21/tar_21_fire.wav", "0.1", "0" }, 
+	{ "weapon_scar20", "PSG-1", "models/weapons/eminem/csnz/psg_1/v_psg_1.mdl", "models/weapons/eminem/csnz/psg_1/w_psg_1.mdl", "models/weapons/eminem/csnz/psg_1/w_psg_1_dropped.mdl", "sound/weapons/eminem/csnz/psg_1/psg1_fire.wav", "0.08", "0" }, 
 	{ "weapon_negev", "FN Mk 48", "models/weapons/eminem/csnz/fn_mk_48/v_fn_mk_48.mdl", "models/weapons/eminem/csnz/fn_mk_48/w_fn_mk_48.mdl", "models/weapons/eminem/csnz/fn_mk_48/w_fn_mk_48_dropped.mdl", "sound/weapons/eminem/csnz/fn_mk_48/mk48_fire.wav", "0.08", "0" }
 };
 
@@ -235,6 +237,8 @@ public void JB_OnSpecialDayStart(int specialDayId)
 		HookEvent("weapon_fire", Event_WeaponFire, EventHookMode_Post);
 		HookEvent("smokegrenade_detonate", Event_SmokeDetonate, EventHookMode_Post);
 		
+		AddAmbientSoundHook(AdjustCustomWeaponVolume);
+		
 		char current_class_name[32];
 		for (int current_entity = MaxClients + 1; current_entity < GetMaxEntities(); current_entity++)
 		{
@@ -276,6 +280,8 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 				
 				UnhookEvent("weapon_fire", Event_WeaponFire, EventHookMode_Post);
 				UnhookEvent("smokegrenade_detonate", Event_SmokeDetonate, EventHookMode_Post);
+				
+				RemoveAmbientSoundHook(AdjustCustomWeaponVolume);
 			}
 		}
 		else
@@ -292,6 +298,18 @@ public void JB_OnSpecialDayEnd(int specialDayId, const char[] dayName, int winne
 		g_IsDayActivated = false;
 		g_IsWeaponSelectionPeriod = false;
 	}
+}
+
+Action AdjustCustomWeaponVolume(char sample[PLATFORM_MAX_PATH], int &entity, float &volume, int &level, int &pitch, float pos[3], int &flags, float &delay)
+{
+	int idx = FindCustomWeaponBySound(sample);
+	if (idx != -1)
+	{
+		volume = StringToFloat(g_CustomWeapons[idx][Item_FireSoundVolume]);
+		return Plugin_Changed;
+	}
+	
+	return Plugin_Continue;
 }
 
 public void OnClientDisconnect(int client)
@@ -627,7 +645,7 @@ int GetDefaultPrimaryIndex()
 {
 	for (int current_weapon; current_weapon < sizeof(g_CustomWeapons); current_weapon++)
 	{
-		if (StrEqual(g_CustomWeapons[current_weapon][Item_DefaultLoadout], "0"))
+		if (StrEqual(g_CustomWeapons[current_weapon][Item_DisplayName], DEFAULT_PRIMARY_WEAPON))
 		{
 			return current_weapon;
 		}
@@ -792,6 +810,19 @@ void ResetProgressBar(int client)
 {
 	SetEntDataFloat(client, g_flProgressBarStartTime, 0.0, true);
 	SetEntData(client, g_iProgressBarDuration, 0, 1, true);
+}
+
+int FindCustomWeaponBySound(const char[] sound)
+{
+	for (int current_wep; current_wep < sizeof(g_CustomWeapons); current_wep++)
+	{
+		if (StrEqual(g_CustomWeapons[current_wep][Item_FireSoundPath][6], sound))
+		{
+			return current_wep;
+		}
+	}
+	
+	return -1;
 }
 
 //================================================================//
