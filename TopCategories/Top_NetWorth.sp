@@ -57,11 +57,6 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	if (!(top_show_clients_amount = FindConVar("top_show_clients_amount")))
-	{
-		SetFailState("Failed to find cvar 'top_show_clients_amount'.");
-	}
-	
 	// Connect to the database
 	Database db = JB_GetDatabase();
 	
@@ -75,6 +70,19 @@ public void OnPluginStart()
 	// 'OnClientAuthorized'/'OnClientDisconnect' replacements.
 	HookEvent("player_connect", Event_PlayerConnect);
 	HookEvent("player_disconnect", Event_PlayerDisconnect);
+}
+
+public void OnConfigsExecuted()
+{
+	RequestFrame(OnConfigsExecutedPost);
+}
+
+void OnConfigsExecutedPost()
+{
+	if (!(top_show_clients_amount = FindConVar("top_show_clients_amount")))
+	{
+		SetFailState("Failed to find cvar 'top_show_clients_amount'.");
+	}
 }
 
 void Event_PlayerConnect(Event event, const char[] name, bool dontBroadcast)
