@@ -345,12 +345,12 @@ bool IsPathClear(float start_pos[3], float end_pos[3], int victimIndex)
 	SubtractVectors(end_pos, start_pos, client_angles);
 	GetVectorAngles(client_angles, client_angles);
 	
-	TR_TraceRayFilter(start_pos, client_angles, 33570827, RayType_Infinite, Filter_HitTargetOnly, victimIndex);
+	TR_TraceRayFilter(start_pos, client_angles, MASK_ALL, RayType_Infinite, Filter_HitTargetOnly, victimIndex);
 	
 	return victimIndex == TR_GetEntityIndex();
 }
 
-public bool Filter_HitTargetOnly(int entity, int contentsMask, any data)
+bool Filter_HitTargetOnly(int entity, int contentsMask, any data)
 {
 	return data == entity;
 }
