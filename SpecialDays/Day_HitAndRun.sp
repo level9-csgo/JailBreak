@@ -14,7 +14,7 @@
 
 #define DAY_NAME "HitAndRun Day"
 #define DAY_GRAVITY 0.20
-#define DAY_HEALTH 32767
+#define DAY_HEALTH 100
 
 #define COUNTDOWN_DEATH 15.0
 #define PLAYERS_PER_INFECTED 7
@@ -299,7 +299,6 @@ public void Hook_OnStartTouch(int entity, int other)
 				SetEntityRenderColor(iCurrentClient, 58, 70, 240, 255);
 				
 				CreateTimer(2.0, Timer_UnFreeze, GetClientSerial(iCurrentClient));
-				
 			}
 		}
 	}
