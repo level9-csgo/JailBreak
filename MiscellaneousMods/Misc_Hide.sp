@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdkhooks>
 #include <JailBreak>
+#include <misc_ghost>
 #include <TransmitManager>
 
 #define PLUGIN_AUTHOR "KoNLiG"
@@ -49,6 +50,12 @@ public void OnClientDisconnect(int client)
 
 Action Command_Hide(int client, int args)
 {
+	if (JB_IsClientGhost(client))
+	{
+		PrintToChat(client, "%s Hide feature is not available while you are a ghost!", PREFIX_ERROR);
+		return Plugin_Handled;
+	}
+	
 	g_Hide[client] = !g_Hide[client];
 	UpdateClientHideState(client);
 	
