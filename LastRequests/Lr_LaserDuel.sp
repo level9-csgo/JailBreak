@@ -103,14 +103,10 @@ public void OnPluginStart()
 	g_iBlockingUseActionInProgress = FindSendPropInfo("CCSPlayer", "m_iBlockingUseActionInProgress");
 	
 	g_cvInfiniteAmmo = FindConVar("sv_infinite_ammo");
-}
-
-public void OnPluginEnd()
-{
-	// If the last request is running, and the plugin has come to his end, abort the last request game
-	if (g_IsLrActivated)
+	
+	if (LibraryExists(JB_LRSYSTEM_LIBNAME))
 	{
-		JB_StopLr();
+		OnLibraryAdded(JB_LRSYSTEM_LIBNAME);
 	}
 }
 
@@ -118,9 +114,9 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if (StrEqual(name, "JB_LrSystem"))
+	if (StrEqual(name, JB_LRSYSTEM_LIBNAME))
 	{
-		g_LrIndex = JB_AddLr(LR_NAME, false, false, true, true);
+		g_LrIndex = JB_AddLr(LR_NAME, false, false, true, true, 9);
 	}
 }
 

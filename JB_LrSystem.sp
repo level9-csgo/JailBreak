@@ -33,6 +33,9 @@ enum struct LastRequest
 	bool bWeaponDrop;
 	bool bActivateBeacons;
 	bool bIncludeRandom;
+	int menu_position;
+	
+	Handle plugin;
 }
 
 GlobalForward g_fwdOnLrSelected;
@@ -119,6 +122,44 @@ public void OnLibraryAdded(const char[] name)
 		JB_CreateSettingCategory("Sound Settings", "This category is associated with sound in general, as well as music settings.");
 		g_iSoundsSettingId = JB_CreateSetting("setting_lr_general_sounds", "Controls the last request general sounds volume. (Float setting)", "Last Request General Sounds", "Sound Settings", Setting_Float, 1.0, "0.5");
 	}
+}
+
+public void OnNotifyPluginUnloaded(Handle plugin)
+{
+	// Prepare loop vars.
+	int lr_idx = GetLrByPlugin(plugin);
+	if (lr_idx == -1)
+	{
+		return;
+	}
+	
+	if (g_iCurrentLr == lr_idx)
+	{
+		ResetValues(false, false);
+	}
+	
+	// Release the lr data from the plugin.
+	g_arLrsData.Erase(lr_idx);
+	
+	// Don't break the index sequence.
+	g_arLrsData.ShiftUp(lr_idx - 1);
+}
+
+int GetLrByPlugin(Handle plugin)
+{
+	LastRequest last_request;
+	
+	for (int current_lr; current_lr < g_arLrsData.Length; current_lr++)
+	{
+		g_arLrsData.GetArray(current_lr, last_request);
+		
+		if (last_request.plugin == plugin)
+		{
+			return current_lr;
+		}
+	}
+	
+	return -1;
 }
 
 public void OnMapStart()
@@ -535,6 +576,9 @@ public int Native_AddLr(Handle plugin, int numParams)
 	LrData.bWeaponDrop = GetNativeCell(3);
 	LrData.bActivateBeacons = GetNativeCell(4);
 	LrData.bIncludeRandom = GetNativeCell(5);
+	LrData.menu_position = GetNativeCell(6);
+	
+	LrData.plugin = plugin;
 	
 	return g_arLrsData.PushArray(LrData, sizeof(LrData));
 }
@@ -712,21 +756,52 @@ int Handler_LrInfo(Menu menu, MenuAction action, int client, int itemNum)
 
 void showLastRequestMenu(int client)
 {
-	char szItemInfo[16];
 	Menu menu = new Menu(Handler_LastRequest);
 	menu.SetTitle("%s Last Request - Choose A Game\n ", PREFIX_MENU);
 	
 	menu.AddItem("", "Random Lr");
 	
-	LastRequest CurrentLrData;
-	for (int iCurrentLr = 0; iCurrentLr < g_arLrsData.Length; iCurrentLr++)
+	ArrayList sorted_lrs = g_arLrsData.Clone();
+	sorted_lrs.SortCustom(CustomSort_MenuPosition);
+	
+	LastRequest last_request;
+	for (int current_last_request; current_last_request < sorted_lrs.Length; current_last_request++)
 	{
-		IntToString(iCurrentLr, szItemInfo, sizeof(szItemInfo));
-		CurrentLrData = GetLrByIndex(iCurrentLr);
-		menu.AddItem(szItemInfo, CurrentLrData.szName);
+		sorted_lrs.GetArray(current_last_request, last_request);
+		menu.AddItem(last_request.szName, last_request.szName);
 	}
 	
+	delete sorted_lrs;
+	
 	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+/**
+ * Sort comparison function for ADT Array elements. Function provides you with
+ * indexes currently being sorted, use ADT Array functions to retrieve the
+ * index values and compare.
+ *
+ * @param index1        First index to compare.
+ * @param index2        Second index to compare.
+ * @param array         Array that is being sorted (order is undefined).
+ * @param hndl          Handle optionally passed in while sorting.
+ * @return              -1 if first should go before second
+ *                      0 if first is equal to second
+ *                      1 if first should go after second
+ */
+int CustomSort_MenuPosition(int index1, int index2, Handle array, Handle hndl)
+{
+	ArrayList lrs = view_as<ArrayList>(array);
+	
+	LastRequest last_request1; lrs.GetArray(index1, last_request1);
+	LastRequest last_request2; lrs.GetArray(index2, last_request2);
+	
+	if (last_request1.menu_position == -1 || last_request2.menu_position == -1)
+	{
+		return 0;
+	}
+	
+	return FloatCompare(float(last_request1.menu_position), float(last_request2.menu_position));
 }
 
 public int Handler_LastRequest(Menu menu, MenuAction action, int client, int itemNum)
@@ -738,9 +813,10 @@ public int Handler_LastRequest(Menu menu, MenuAction action, int client, int ite
 			return 0;
 		}
 		
-		char szItem[16];
-		menu.GetItem(itemNum, szItem, sizeof(szItem));
-		int iLrId = -1;
+		char last_request_name[64];
+		menu.GetItem(itemNum, last_request_name, sizeof(last_request_name));
+		
+		int lr_id = -1;
 		
 		switch (itemNum)
 		{
@@ -748,18 +824,25 @@ public int Handler_LastRequest(Menu menu, MenuAction action, int client, int ite
 			{
 				do
 				{
-					iLrId = GetRandomInt(0, g_arLrsData.Length - 1);
-				} while (!GetLrByIndex(iLrId).bIncludeRandom);
+					lr_id = GetRandomInt(0, g_arLrsData.Length - 1);
+				} while (!GetLrByIndex(lr_id).bIncludeRandom);
 			}
-			default:iLrId = StringToInt(szItem);
+			default:
+			{
+				if ((lr_id = g_arLrsData.FindString(last_request_name)) == -1)
+				{
+					PrintToChat(client, "%s This last request game is unavailable, please contact a programmer.", PREFIX_ERROR);
+					return 0;
+				}
+			}
 		}
 		
 		DeleteAllTimers(false);
-		g_iCurrentLr = iLrId;
+		g_iCurrentLr = lr_id;
 		
 		Call_StartForward(itemNum == 0 ? g_fwdOnRandomLrSelected:g_fwdOnLrSelected);
 		Call_PushCell(client);
-		Call_PushCell(iLrId);
+		Call_PushCell(lr_id);
 		Call_Finish();
 	}
 	else if (action == MenuAction_End)

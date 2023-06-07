@@ -51,12 +51,10 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	g_cvFallDamageScale = FindConVar("sv_falldamage_scale");
-}
-
-public void OnPluginEnd()
-{
-	if (g_bIsLrActivated) {
-		JB_StopLr();
+	
+	if (LibraryExists(JB_LRSYSTEM_LIBNAME))
+	{
+		OnLibraryAdded(JB_LRSYSTEM_LIBNAME);
 	}
 }
 
@@ -64,9 +62,9 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if (StrEqual(name, "JB_LrSystem"))
+	if (StrEqual(name, JB_LRSYSTEM_LIBNAME))
 	{
-		g_iLrId = JB_AddLr(LR_NAME, false, false, true, true);
+		g_iLrId = JB_AddLr(LR_NAME, false, false, true, true, 6);
 	}
 }
 

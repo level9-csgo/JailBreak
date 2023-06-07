@@ -101,10 +101,11 @@ public Plugin myinfo =
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
-public void OnPluginEnd()
+public void OnPluginStart()
 {
-	if (g_bIsLrActivated) {
-		JB_StopLr();
+	if (LibraryExists(JB_LRSYSTEM_LIBNAME))
+	{
+		OnLibraryAdded(JB_LRSYSTEM_LIBNAME);
 	}
 }
 
@@ -112,9 +113,9 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if (StrEqual(name, "JB_LrSystem"))
+	if (StrEqual(name, JB_LRSYSTEM_LIBNAME))
 	{
-		g_iLrId = JB_AddLr(LR_NAME, false, false, true, true);
+		g_iLrId = JB_AddLr(LR_NAME, false, false, true, true, 8);
 	}
 }
 
@@ -293,7 +294,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					
 				}
 				
-				if (!g_ClientsData[client].OwnedEntities && (buttons & IN_ATTACK2) && !(g_ClientsData[client].OldButtons & IN_ATTACK2))
+				if (g_ClientsData[client].OwnedEntities && (buttons & IN_ATTACK2) && !(g_ClientsData[client].OldButtons & IN_ATTACK2))
 				{
 					float fEntityPos[3];
 					

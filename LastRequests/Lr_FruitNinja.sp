@@ -80,16 +80,22 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	HookEvent("player_spawn", Event_PlayerSpawn);
-}
-
-public void OnPluginEnd()
-{
-	if (g_bIsLrActivated) {
-		JB_StopLr();
+	
+	if (LibraryExists(JB_LRSYSTEM_LIBNAME))
+	{
+		OnLibraryAdded(JB_LRSYSTEM_LIBNAME);
 	}
 }
 
 /* Events */
+
+public void OnLibraryAdded(const char[] name)
+{
+	if (StrEqual(name, JB_LRSYSTEM_LIBNAME))
+	{
+		g_iLrId = JB_AddLr(LR_NAME, false, false, true, true, 7);
+	}
+}
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
@@ -104,14 +110,6 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 		RequestFrame(Frame_RemoveCustomWeapon, g_PendingLoserID);
 		
 		g_PendingLoserID = 0;
-	}
-}
-
-public void OnLibraryAdded(const char[] name)
-{
-	if (StrEqual(name, "JB_LrSystem"))
-	{
-		g_iLrId = JB_AddLr(LR_NAME, false, false, true, true);
 	}
 }
 

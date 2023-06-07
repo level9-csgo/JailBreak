@@ -69,10 +69,11 @@ public Plugin myinfo =
 	url = "https://steamcommunity.com/id/KoNLiG/ || KoNLiG#6417"
 };
 
-public void OnPluginEnd()
+public void OnPluginStart()
 {
-	if (g_bIsLrActivated) {
-		JB_StopLr();
+	if (LibraryExists(JB_LRSYSTEM_LIBNAME))
+	{
+		OnLibraryAdded(JB_LRSYSTEM_LIBNAME);
 	}
 }
 
@@ -80,9 +81,9 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if (StrEqual(name, "JB_LrSystem"))
+	if (StrEqual(name, JB_LRSYSTEM_LIBNAME))
 	{
-		g_iLrId = JB_AddLr(LR_NAME, false, false, true, false);
+		g_iLrId = JB_AddLr(LR_NAME, false, false, true, false, 5);
 	}
 }
 
