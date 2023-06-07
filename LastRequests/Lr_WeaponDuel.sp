@@ -12,7 +12,7 @@
 
 #define RANDOM_GUARD_STRING "Random Guard"
 
-#define LR_NAME "Custom Duel"
+#define LR_NAME "Weapon Duel"
 #define ABORT_SYMBOL "-1"
 
 #define DEFAULT_HEALTH 100
@@ -68,12 +68,10 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	g_InfiniteAmmo = FindConVar("sv_infinite_ammo");
-}
-
-public void OnPluginEnd()
-{
-	if (g_bIsLrActivated) {
-		JB_StopLr();
+	
+	if (LibraryExists(JB_LRSYSTEM_LIBNAME))
+	{
+		OnLibraryAdded(JB_LRSYSTEM_LIBNAME);
 	}
 }
 
@@ -81,9 +79,9 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if (StrEqual(name, "JB_LrSystem"))
+	if (StrEqual(name, JB_LRSYSTEM_LIBNAME))
 	{
-		g_iLrId = JB_AddLr(LR_NAME, false, false, true, true);
+		g_iLrId = JB_AddLr(LR_NAME, false, false, true, true, 0);
 	}
 }
 
