@@ -191,10 +191,13 @@ int Handler_GlowManagement(Menu menu, MenuAction action, int param1, int param2)
 				if (aimed_target <= 0)
 				{
 					PrintToChat(client, "%s You aren't aiming on any player!", PREFIX_ERROR);
-					return 0;
+				}
+				else
+				{
+					GlowPlayer(aimed_target, client, g_ClientsData[client].glow_color_index);
 				}
 				
-				GlowPlayer(aimed_target, client, g_ClientsData[client].glow_color_index);
+				ShowGlowManagementMenu(client);
 			}
 			case 3:
 			{
