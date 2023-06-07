@@ -398,6 +398,9 @@ void ToggleGhostFeature(int client, bool toggle_mode, bool apply_effect = true, 
 		// Set client god mode on
 		SetEntProp(client, Prop_Data, "m_takedamage", 0, 1);
 		
+		// Disables any interaction with map triggers.
+		SetEntProp(client, Prop_Send, "m_nSolidType", 0);
+		
 		PrintCenterText(client, "<font color='#1CC752' class='fontSize-xl'>Press G to noclip</font>");
 	}
 	else
