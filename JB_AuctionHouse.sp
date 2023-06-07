@@ -411,7 +411,8 @@ enum struct Auction
 		this.InsertData();
 	}
 	
-	void HandleEndAuctionTimer()
+	// Retrieves true if the auction was over and deleted, false otherwise.
+	bool HandleEndAuctionTimer()
 	{
 		delete this.end_timer;
 		
@@ -419,11 +420,14 @@ enum struct Auction
 		if (remaining_time <= 0)
 		{
 			Timer_EndAuction(null, this.row_id);
+			return true;
 		}
 		else
 		{
 			this.end_timer = CreateTimer(float(remaining_time), Timer_EndAuction, this.row_id);
 		}
+		
+		return false;
 	}
 	
 	bool FindHighestBid(AuctionBid bid)
@@ -456,15 +460,18 @@ enum struct Auction
 		this.item.rune_star = result.FetchInt(9);
 		this.item.rune_level = result.FetchInt(10);
 		
-		this.HandleEndAuctionTimer();
-		
 		if (this.type == AuctionType_Bids)
 		{
 			this.bids_array = new ArrayList(sizeof(AuctionBid));
-			SQL_FetchAuctionBids(this.row_id);
 		}
 		
 		g_Auctions.PushArray(this);
+		
+		// Only fetch bids if the auction is still on-going.
+		if (!this.HandleEndAuctionTimer() && this.bids_array)
+		{
+			SQL_FetchAuctionBids(this.row_id);
+		}
 	}
 	
 	void InsertData()
