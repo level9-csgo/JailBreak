@@ -1254,12 +1254,12 @@ int GetStuckEntity(int entity)
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", pos);
 	
 	// Create a global trace hull that will ensure the entity will not stuck inside the world/another entity
-	TR_TraceHullFilter(pos, pos, ent_mins, ent_maxs, MASK_ALL, Filter_OnlyPlayers, entity);
+	TR_TraceHullFilter(pos, pos, ent_mins, ent_maxs, MASK_SOLID, Filter_ExcludePlayers, entity);
 	
 	return TR_GetEntityIndex();
 }
 
-bool Filter_OnlyPlayers(int entity, int contentsMask, int other)
+bool Filter_ExcludePlayers(int entity, int contentsMask, int other)
 {
 	return entity > MaxClients && entity != EntRefToEntIndex(g_ClientsData[other].entities.emote_ent_ref);
 }
