@@ -32,14 +32,14 @@ enum struct Player
 	
 	void OnObserverTargetChange(int &target)
 	{
-		// Don't override killer targets.
-		if (!SpecHooks_GetObserverMode(this.index))
+		// Full observe access to admins.
+		if (this.is_admin)
 		{
 			return;
 		}
 		
-		// Full observe access to admins.
-		if (this.is_admin)
+		// Don't override killer targets.
+		if (!SpecHooks_GetObserverMode(this.index))
 		{
 			return;
 		}
