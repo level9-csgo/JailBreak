@@ -56,7 +56,7 @@ enum struct Client
 		}
 		else if (this.expire_unixstamp - time < 0)
 		{
-			if (notify)
+			if (notify && IsClientInGame(client))
 			{
 				PrintToChat(client, "%s Your premium has just expired!", PREFIX);
 			}
