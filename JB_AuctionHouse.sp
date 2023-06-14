@@ -2225,6 +2225,11 @@ public int SortADTAuctions(int index1, int index2, Handle array, Handle hndl)
 		return 1;
 	}
 	
+	if (Struct1.item.rune_level == RuneLevel_15 || Struct2.item.rune_level == RuneLevel_15)
+	{
+		return Struct1.item.rune_level == RuneLevel_15 ? -1 : 1;
+	}
+	
 	// Second preference is the rune's star
 	if (Struct1.item.rune_star != Struct2.item.rune_star)
 	{
