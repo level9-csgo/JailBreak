@@ -93,6 +93,13 @@ char g_RpsEmoteUniques[][] =
 	"Emote_RockPaperScissor_Scissor"
 };
 
+char g_PlayerEmoteAnims[][] = 
+{
+	"rom_skin", 
+	"surrender", 
+	"grenade_near_fire_crouch"
+};
+
 bool g_IsSettingsLoaded;
 
 int g_DancesVolumeSettingIndex = -1;
@@ -532,11 +539,19 @@ void ExecuteEmote(int client, char[] anim1, char[] anim2, char[] sound_name, boo
 	}*/
 	
 	// Create the emote visual entity
-	int entity = CreateEmoteEntity(client, anim1, anim2, sound_name, is_looped);
-	if (entity == -1)
+	
+	if (GetPlayerEmoteAnim(anim1) != -1)
 	{
-		PrintToChat(client, "%s Unable to create your %s entity, plesae try again later.", PREFIX, category_type == Shop_Dances ? "dance" : "emote");
-		return;
+		playeranim(client, anim1);
+	}
+	else
+	{
+		int entity = CreateEmoteEntity(client, anim1, anim2, sound_name, is_looped);
+		if (entity == -1)
+		{
+			PrintToChat(client, "%s Unable to create your %s entity, plesae try again later.", PREFIX, category_type == Shop_Dances ? "dance" : "emote");
+			return;
+		}
 	}
 	
 	ToggleClientViewAngle(client, true);
@@ -561,6 +576,41 @@ void ExecuteEmote(int client, char[] anim1, char[] anim2, char[] sound_name, boo
 	Call_StartForward(g_OnClientEmotePost);
 	Call_PushCell(client);
 	Call_Finish();
+}
+
+void playeranim(int client, const char[] animation)
+{
+	int entity = CreateEntityByName("prop_dynamic_override");
+	
+	char model[PLATFORM_MAX_PATH];
+	GetClientModel(client, model, sizeof(model));
+	
+	DispatchKeyValue(entity, "model", model);
+	DispatchSpawn(entity);
+	
+	float origin[3], angles[3];
+	GetClientAbsOrigin(client, origin);
+	GetClientEyeAngles(client, angles);
+	angles[0] = 0.0;
+	TeleportEntity(entity, origin, angles);
+	
+	SetVariantString(animation);
+	AcceptEntityInput(entity, "SetAnimation");
+	
+	SetAttached(client, entity);
+	
+	SetEntityRenderMode(entity, RENDER_NONE);
+	
+	g_ClientsData[client].entities.emote_ent_ref = EntIndexToEntRef(entity);
+}
+
+void SetAttached(int entity, int parent)
+{
+	SetVariantString("!activator");
+	AcceptEntityInput(entity, "SetParent", parent);
+	SetEntityMoveType(entity, MOVETYPE_NONE);
+	SetEntProp(entity, Prop_Send, "m_fEffects", 0x001 | 0x080 | 0x200);
+	TeleportEntity(entity, view_as<float>( { 0.0, 0.0, 0.0 } ));
 }
 
 void StopEmote(int client)
@@ -776,6 +826,12 @@ void StartEmoteById(int client, ItemId item_id)
 	char item_unique[64];
 	Shop_GetItemById(item_id, item_unique, sizeof(item_unique));
 	
+	if (GetPlayerEmoteAnim(item_unique) != -1)
+	{
+		ExecuteEmote(client, item_unique, "none", "", false, Shop_Emotes);
+		return;
+	}
+	
 	if (StrEqual(item_unique, "Emote_Fonzie_Pistol"))
 	{
 		ExecuteEmote(client, "Emote_Fonzie_Pistol", "none", "", false, Shop_Emotes);
@@ -901,8 +957,41 @@ void RegisterDances()
 	kv.Close();
 }
 
+void RegisterEmotesOverride()
+{
+	if (Shop_StartItem(g_ShopCategoryID[Shop_Emotes], "rom_skin"))
+	{
+		int price = 850000;
+		Shop_SetInfo("Jelly", "", price, price / 2, Item_Togglable, 0, -1, -1);
+		Shop_SetCallbacks(.use_toggle = OnEquipItem);
+		
+		Shop_EndItem();
+	}
+	
+	if (Shop_StartItem(g_ShopCategoryID[Shop_Emotes], "surrender"))
+	{
+		int price = 750000;
+		Shop_SetInfo("Surrender", "Only when you have no other option.", price, price / 2, Item_Togglable, 0, -1, -1);
+		Shop_SetCallbacks(.use_toggle = OnEquipItem);
+		
+		Shop_EndItem();
+	}
+	
+	if (Shop_StartItem(g_ShopCategoryID[Shop_Emotes], "grenade_near_fire_crouch"))
+	{
+		int price = 600000;
+		
+		Shop_SetInfo("Slap", "", price, price / 2, Item_Togglable, 0, -1, -1);
+		Shop_SetCallbacks(.use_toggle = OnEquipItem);
+		
+		Shop_EndItem();
+	}
+}
+
 void RegisterEmotes()
 {
+	RegisterEmotesOverride();
+	
 	// Load KeyValues Config
 	KeyValues kv = CreateKeyValues("Emotes");
 	
@@ -976,7 +1065,8 @@ int CreateEmoteEntity(int client, char[] emote_animation, char[] default_animati
 	
 	float pos[3], ang[3];
 	GetClientAbsOrigin(client, pos);
-	GetClientAbsAngles(client, ang);
+	GetClientEyeAngles(client, ang);
+	ang[0] = 0.0;
 	
 	DispatchKeyValue(emote_entity, "model", "models/player/custom_player/kodua/fortnite_emotes_v2.mdl");
 	DispatchKeyValue(emote_entity, "solid", "0");
@@ -1277,6 +1367,19 @@ ArrayList GetClientSpectators(int client)
 	}
 	
 	return spectators;
+}
+
+int GetPlayerEmoteAnim(const char[] str)
+{
+	for (int i; i < sizeof(g_PlayerEmoteAnims); i++)
+	{
+		if (StrEqual(g_PlayerEmoteAnims[i], str))
+		{
+			return i;
+		}
+	}
+	
+	return -1;
 }
 
 //================================================================//
