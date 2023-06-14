@@ -88,7 +88,8 @@ int g_AuthorizedClients[] =
 {
 	912414245,  // KoNLiG 
 	928490446,  // Ravid
-	133307701 // Nur
+	133307701, // Nur
+	414937845 // Cooly
 };
 
 public Plugin myinfo = 
