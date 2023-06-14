@@ -566,17 +566,18 @@ void CS_CreateExplosion(int attacker, float damage, float radius, float pos[3])
 	// Play the explosion sound effect to everyone from the explode position
 	EmitSoundToAll("weapons/hegrenade/explode4.wav", SOUND_FROM_LOCAL_PLAYER, .volume = 1.0, .origin = pos);
 	
-	float current_position[3], current_distance;
+	float current_position[3], current_position2[3], current_distance;
 	
 	for (int current_victim = 1; current_victim <= MaxClients; current_victim++)
 	{
 		if (IsClientInGame(current_victim) && IsPlayerAlive(current_victim))
 		{
 			GetClientAbsOrigin(current_victim, current_position);
+			GetClientEyePosition(current_victim, current_position2);
 			
 			if (IsPathClear(pos, current_position, current_victim))
 			{
-				current_distance = GetVectorDistance(pos, current_position);
+				current_distance = FloatMin(GetVectorDistance(pos, current_position), GetVectorDistance(pos, current_position2));
 				
 				if (current_distance <= radius)
 				{
@@ -608,6 +609,11 @@ void CS_CreateExplosion(int attacker, float damage, float radius, float pos[3])
 			}
 		}
 	}
+}
+
+float FloatMin(float val1, float val2)
+{
+	return val1 < val2 ? val1 : val2;
 }
 
 bool IsPathClear(float start_pos[3], float end_pos[3], int victim)
@@ -649,7 +655,7 @@ int DeleteMines()
 				{
 					g_iMine[owner] = 0;
 				}
-				AcceptEntityInput(entity, "Kill", -1, -1, 0);
+				AcceptEntityInput(entity, "Kill");
 				iMinesDeleted++;
 			}
 		}
