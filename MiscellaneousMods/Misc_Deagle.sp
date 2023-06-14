@@ -122,6 +122,11 @@ int Handler_DeagleGiver(Menu menu, MenuAction action, int client, int itemNum)
 
 void GiveDeagle(int client, bool empty)
 {
+	if (!IsPlayerAlive(client))
+	{
+		return;
+	}
+	
 	if (GetPlayerWeapon(client, CSWeapon_DEAGLE) != -1) {
 		return;
 	}
