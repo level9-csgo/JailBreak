@@ -13,6 +13,7 @@
 #include <Misc_Ghost>
 #include <multicolors>
 #include <clientprefs>
+#include <spec_hooks>
 
 #define PLUGIN_AUTHOR "KoNLiG"
 
@@ -20,8 +21,6 @@
 
 #define DEFAULT_GUARD_PRIMARY "weapon_m4a1"
 #define DEFAULT_GUARD_SECONDARY "weapon_deagle"
-
-#define SPECMODE_FREELOOK 6
 
 //====================//
 
@@ -491,7 +490,10 @@ ArrayList GetClientSpectators(int client)
 	
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
-		if (IsClientInGame(current_client) && !IsPlayerAlive(current_client) && GetEntProp(current_client, Prop_Send, "m_iObserverMode") != SPECMODE_FREELOOK && GetEntPropEnt(current_client, Prop_Send, "m_hObserverTarget") == client)
+		if (IsClientInGame(current_client)
+			 && !IsPlayerAlive(current_client)
+			 && SpecHooks_GetObserverTarget(current_client) == client
+			 && SpecHooks_GetObserverMode(current_client) != OBS_MODE_ROAMING)
 		{
 			spectators.Push(current_client);
 		}

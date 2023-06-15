@@ -127,23 +127,29 @@ stock char[] JB_AddCommas(int value, const char[] seperator = ",")
 
 stock void DisarmPlayer(int client)
 {
-	static int max_weapons;
-	
-	if (!max_weapons)
-	{
-		max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
-	}
-	
-	int ent = -1;
-	
-	for (int current_index = 0; current_index < max_weapons; current_index++)
-	{
-		if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", current_index)) != -1)
-		{
-			RemovePlayerItem(client, ent);
-			AcceptEntityInput(ent, "Kill");
-		}
-	}
+	static int m_hMyWeaponsOffset;
+    if (!m_hMyWeaponsOffset)
+    {
+        m_hMyWeaponsOffset = FindSendPropInfo("CCSPlayer", "m_hMyWeapons");
+    }
+
+    static int max_weapons;
+    if (!max_weapons)
+    {
+        // Always 64.
+        max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+    }
+
+    for (int weapon, ent; weapon < max_weapons; weapon++)
+    {
+        if ((ent = GetEntDataEnt2(client, m_hMyWeaponsOffset + weapon * 4)) == -1)
+        {
+            continue;
+        }
+
+        SDKHooks_DropWeapon(client, ent);
+        RemoveEntity(ent);
+    }
 }
 
 stock void JB_FixMenuGap(Menu menu, int substruct = 0)
@@ -159,7 +165,7 @@ stock int GetOnlineTeamCount(int team, bool alive = true)
 	int iCounter = 0;
 	for (int iCurrentClient = 1; iCurrentClient <= MaxClients; iCurrentClient++)
 	{
-		if (IsClientInGame(iCurrentClient) && GetClientTeam(iCurrentClient) == team && !IsFakeClient(iCurrentClient)) {
+		if (IsClientInGame(iCurrentClient) && GetClientTeam(iCurrentClient) == team) {
 			if (alive) {
 				if (IsPlayerAlive(iCurrentClient)) {
 					iCounter++;
