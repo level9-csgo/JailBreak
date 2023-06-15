@@ -36,11 +36,15 @@
 #define EVACUATE_COMMAND "leave"
 #define AUTO_EVACUATE_TIME 90
 
-#define BOSS_HEALTH 2000.0
-#define GIFT_COUNT (5 * GetClientCount())
+//#define BOSS_HEALTH 250000.0
+#define BOSS_HEALTH 10000.0
+// #define GIFT_COUNT (5 * GetClientCount())
+#define GIFT_COUNT 150
 
 #define PHASES_COUNT 3
 #define DMG_PER_PHASE (BOSS_HEALTH / (PHASES_COUNT + 1))
+
+#define TREE_MODEL "models/props_foliage/urban_tree_giant01.mdl"
 
 enum struct Player
 {
@@ -102,6 +106,8 @@ char g_LaserSounds[][] =
 int m_vecOriginOffset;
 int m_angRotationOffset;
 
+int g_TreeEntityReference = INVALID_ENT_REFERENCE;
+
 enum struct ChickenBoss
 {
 	int entity_reference;
@@ -152,6 +158,8 @@ enum struct ChickenBoss
 	
 	int Spawn(float origin[3])
 	{
+		this.RemoveTree();
+		
 		int entity = CreateEntityByName("chicken");
 		if (entity == -1)
 		{
@@ -209,6 +217,8 @@ enum struct ChickenBoss
 	
 	void RemoveEntity()
 	{
+		this.SpawnTree();
+		
 		float origin[3], angles[3];
 		GetEntDataVector(this.entity_reference, m_vecOriginOffset, origin);
 		
@@ -257,14 +267,15 @@ enum struct ChickenBoss
 				{
 					CS_RespawnPlayer(current_client);
 					
-					TeleportEntity(current_client, { 7916.043457, 7567.659668, -91.906189 }, { 0.117253, 0.134460, 0.000000 } );
+					// TeleportEntity(current_client, { 7916.043457, 7567.659668, -91.906189 }, { 0.117253, 0.134460, 0.000000 } );
 				}
 				
 				SDKUnhook(current_client, SDKHook_OnTakeDamage, Hook_OnClientTakeDamage);
 				
 				if (g_Players[current_client].damage_dealt)
 				{
-					RP_GiveClientCash(current_client, BANK_CASH, RoundFloat(g_Players[current_client].damage_dealt / 4));
+					// FIX: GIVE MONEY
+					// RP_GiveClientCash(current_client, BANK_CASH, RoundFloat(g_Players[current_client].damage_dealt / 4));
 				}
 				
 				g_Players[current_client].Close();
@@ -319,7 +330,7 @@ enum struct ChickenBoss
 	{
 		// This is a repeated timer that will constantly change the map area weather and time.
 		// The timer will automatically be closed once the chicken boss entity is removed from the world.
-		CreateTimer(DEATH_PHASE_THUNDERSTORM_FREQ, Timer_ThunderStorm, .flags = TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+		// CreateTimer(DEATH_PHASE_THUNDERSTORM_FREQ, Timer_ThunderStorm, .flags = TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	}
 	
 	void EmitRandomSound(char[][] buffer, int size)
@@ -507,6 +518,83 @@ enum struct ChickenBoss
 		AddVectors(fwd, up, sum);
 		SubtractVectors(boss_origin, sum, eye_position);
 	}
+	
+	// Restricts the chickene entity to stay still on the world ground.
+	void ValidateOrigin()
+	{
+		int entity = EntRefToEntIndex(this.entity_reference);
+		if (entity == -1)
+		{
+			return;
+		}
+		
+		float boss_origin[3];
+		GetEntDataVector(entity, m_vecOriginOffset, boss_origin);
+		
+		TR_TraceRayFilter(boss_origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite, Filter_WorldOnly);
+		
+		if (TR_DidHit())
+		{
+			TR_GetEndPosition(boss_origin);
+			TeleportEntity(entity, boss_origin);
+		}
+	}
+	
+	int SpawnTree()
+	{
+		int boss_entity = EntRefToEntIndex(this.entity_reference);
+		if (boss_entity == -1)
+		{
+			return -1;
+		}
+		
+		// tree!
+		int prop_dynamic_override = CreateEntityByName("prop_dynamic_override");
+		if (prop_dynamic_override == -1)
+		{
+			return -1;
+		}
+		
+		DispatchKeyValue(prop_dynamic_override, "model", TREE_MODEL);
+		// DispatchKeyValue(prop_dynamic_override, "solid", "6"); // makes entity solid
+		
+		float boss_origin[3];
+		GetEntDataVector(boss_entity, m_vecOriginOffset, boss_origin);
+		
+		DispatchKeyValueVector(prop_dynamic_override, "origin", boss_origin);
+		
+		DispatchKeyValue(prop_dynamic_override, "glowenabled", "1");
+		DispatchKeyValue(prop_dynamic_override, "glowdist", "999999");
+		DispatchKeyValue(prop_dynamic_override, "glowstyle", "1");
+		
+		char color[16];
+		Format(color, sizeof(color), "%d %d %d", 255, 0, 0);
+		DispatchKeyValue(prop_dynamic_override, "glowcolor", color);
+		
+		if (!DispatchSpawn(prop_dynamic_override))
+		{
+			return -1;
+		}
+		
+		DispatchKeyValue(prop_dynamic_override, "rendermode", "4"); // SetEntityRenderMode(ent, RENDER_TRANSCOLOR);
+		DispatchKeyValue(prop_dynamic_override, "renderamt", "0");
+		
+		g_TreeEntityReference = EntIndexToEntRef(prop_dynamic_override);
+		
+		Frame_FadeEntityAlpha(g_TreeEntityReference);
+		Frame_FadeEntity(g_TreeEntityReference);
+		
+		return prop_dynamic_override;
+	}
+	
+	void RemoveTree()
+	{
+		int entity = EntRefToEntIndex(g_TreeEntityReference);
+		if (entity != -1)
+		{
+			RemoveEntity(entity);
+		}
+	}
 }
 
 ChickenBoss g_ChickenBoss;
@@ -598,6 +686,8 @@ public void OnPluginEnd()
 	{
 		RemoveEntity(entity);
 	}
+	
+	g_ChickenBoss.RemoveTree();
 }
 
 //================================[ Forwards ]================================//
@@ -613,6 +703,8 @@ public void OnMapStart()
 	
 	PrecacheSound(WIND_PHASE_SOUND);
 	PrecacheSound(MISSILE_EXPLODE_SOUND);
+	
+	PrecacheModel(TREE_MODEL);
 	
 	g_LaserBeam = PrecacheModel("materials/sprites/laserbeam.vmt");
 	g_FireSpriteIndex = PrecacheModel("sprites/sprite_fire01.vmt");
@@ -742,6 +834,8 @@ Action Hook_OnBossThink(int entity)
 	{
 		SetEntitySequence(entity, 5);
 	}
+	
+	// g_ChickenBoss.ValidateOrigin();
 	
 	return Plugin_Continue;
 }
@@ -906,7 +1000,8 @@ Action Command_Evecuate(int client, int argc)
 		return Plugin_Handled;
 	}
 	
-	TeleportEntity(client, { -2044.297729, -3319.993408, -79.906189 }, { 2.155786, 90.591316, 0.000000 } );
+	// TeleportEntity(client, { -2044.297729, -3319.993408, -79.906189 }, { 2.155786, 90.591316, 0.000000 } );
+	CS_RespawnPlayer(client);
 	
 	SetPlayerGodMode(client, false);
 	
@@ -1070,6 +1165,7 @@ Action Timer_FinishWindPhase(Handle timer)
 			AddVectors(fwd, up, velocity);
 			
 			TeleportEntity(current_client, .velocity = velocity);
+			PerformScreenShake(current_client, 100.0);
 		}
 	}
 	
@@ -1167,30 +1263,6 @@ bool Filter_WorldOnly(int entity, int contentsMask, any data)
 	return entity == 0;
 }
 
-Action Timer_ThunderStorm(Handle timer)
-{
-	static int next_time;
-	
-	// Chicken boss entity has been removed. Stop the timer and reset the time.
-	if (!g_ChickenBoss.IsSpawned())
-	{
-		char current_time[8];
-		FormatTime(current_time, sizeof(current_time), "%H%M");
-		
-		SetEnvTime(StringToInt(current_time));
-		
-		next_time = 0;
-		
-		return Plugin_Stop;
-	}
-	
-	next_time = (next_time + 100) % 2300;
-	
-	SetEnvTime(next_time);
-	
-	return Plugin_Continue;
-}
-
 Action Timer_ReglowEntity(Handle timer, int entity_reference)
 {
 	int entity = EntRefToEntIndex(entity_reference);
@@ -1221,20 +1293,46 @@ native void RP_GiveClientVehicle(int client, const char[] vehicle_identifier);
 // bfffer will be the gift reward string
 void RewardClient(int client, char[] buffer, int maxlength, bool &rare_drop)
 {
+	strcopy(buffer, maxlength, "nothing");
+	
+	client = client + 1 - 1;
+	
 	// rng prize check
 	// 0.0009 = 0.09 / (0.09 / 100)
 	float rng = GetURandomFloat();
 	if (rng <= 0.0009)
 	{
-
+		
 		
 		rare_drop = true;
 	}
 }
 
+void Frame_FadeEntityAlpha(int ent_ref)
+{
+	int entity = EntRefToEntIndex(ent_ref);
+	if (entity == -1)
+	{
+		return;
+	}
+	
+	int color[4];
+	GetEntityRenderColor(entity, color[0], color[1], color[2], color[3]);
+	
+	int alpha = color[3];
+	if (alpha >= 255)
+	{
+		return;
+	}
+	
+	SetEntityRenderColor(entity, .a = alpha + 1);
+	
+	RequestFrame(Frame_FadeEntityAlpha, ent_ref);
+}
+
 void Frame_FadeEntity(int ent_ref)
 {
-	int entity = EntRefToEntIndex(g_ChickenBoss.entity_reference);
+	int entity = EntRefToEntIndex(ent_ref);
 	if (entity == -1)
 	{
 		return;
@@ -1266,12 +1364,6 @@ void Frame_FadeEntity(int ent_ref)
 	DispatchKeyValue(entity, "glowcolor", color);
 	
 	RequestFrame(Frame_FadeEntity, ent_ref);
-}
-
-// Accesses 'EnvironmentController' plugin's command to set a custom environment setting.
-void SetEnvTime(int time)
-{
-	ServerCommand("sm_setenv %d", time);
 }
 
 int ThrowGift(float origin[3], float angles[3])
@@ -1312,7 +1404,7 @@ void SetPlayerShootAbility(int client, bool value)
 	SetEntPropFloat(client, Prop_Send, "m_flNextAttack", value ? GetGameTime() : GetGameTime() + 999999.0);
 }
 
-int GetRandomIntEx(int min, int max)
+stock int GetRandomIntEx(int min, int max)
 {
 	int random = GetURandomInt();
 	if (!random)
