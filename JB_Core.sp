@@ -218,9 +218,10 @@ public Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcas
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(event.GetInt("userid"));
+	int userid = event.GetInt("userid");
+	int client = GetClientOfUserId(userid);
 	
-	RequestFrame(RenewClientTalkState, client);
+	RequestFrame(Frame_RenewClientTalkState, userid);
 	
 	DisarmPlayer(client);
 	GivePlayerItem(client, "weapon_knife");
@@ -465,6 +466,15 @@ void TogglePrisonersMute(bool bMute = true)
 		{
 			SetClientListeningFlags(iCurrentClient, bMute ? VOICE_MUTED:VOICE_NORMAL);
 		}
+	}
+}
+
+void Frame_RenewClientTalkState(int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if (client)
+	{
+		RenewClientTalkState(client);
 	}
 }
 
