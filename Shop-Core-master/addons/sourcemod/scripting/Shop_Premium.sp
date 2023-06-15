@@ -572,6 +572,8 @@ public void SQL_FetchClient_CB(Database db, DBResultSet results, const char[] er
 	// Make sure the client index is the index we want
 	if (!client)
 	{
+		// Insert a row.
+		SQL_UpdateClient(client);
 		return;
 	}
 	
